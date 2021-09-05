@@ -1,6 +1,6 @@
 <?php
 
-/* v1.0.0.0.2021080310000, from home */
+/* v1.0.0.1.202109011610, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -28,15 +28,18 @@ class Login extends Controller
 
         $model = new Mlogin();
         $results = $model->checkin($user_id, $pswd);
+        if ($results==null)
+        {
+            $Arg['msg'] = '工号或密码错误, 请重新输入！';
+            $Arg['NextPage'] = 'login/signup';
+            exit('2');    
+        }
 
         foreach ($results as $row)
         {
             $Info['员工编号'] = $row->员工编号;
         }
 
-        $Arg['msg'] = '工号或密码错误, 请重新输入！';
-        $Arg['NextPage'] = 'login/signup';
-        exit('2');
     }
 
     public function signup()
