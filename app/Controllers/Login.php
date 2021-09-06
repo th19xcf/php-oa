@@ -1,6 +1,6 @@
 <?php
 
-/* v1.0.0.1.202109011610, from office */
+/* v1.0.0.1.202109061700, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -17,7 +17,6 @@ class Login extends Controller
     {
         $Arg['NextPage'] = base_url('login/checkin');
         echo view('Vlogin.php', $Arg);
-        return;
     }
 
     public function checkin()
@@ -32,7 +31,8 @@ class Login extends Controller
         {
             $Arg['msg'] = '工号或密码错误, 请重新输入！';
             $Arg['NextPage'] = 'login/signup';
-            exit('2');    
+            echo '1';
+            //exit('2');    
         }
 
         foreach ($results as $row)
