@@ -400,7 +400,7 @@
             $(window).resize(setWinSize); //窗口大小变化
             /*--加载树--*/
             $("#resTree").bind('show', hacktree);
-            $("#resTree").treeview({ url: "Frame/GetMenu", unique: true });
+            $("#resTree").treeview({ url: "Frame/get_menu", unique: true });
             /*--打开默认页--*/
             goto(-1, '首页', 'Frame/UserMis');
             $(".tabMain ul li[tags='-1']>a").remove();

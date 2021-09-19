@@ -10,7 +10,7 @@ class Mframe extends Model
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 根据不同用户, 构建menu
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function GetMenu($agent_id, $role_id)
+    public function get_menu($agent_id, $role_id)
     {
         $db = db_connect('btdc');
 

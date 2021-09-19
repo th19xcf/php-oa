@@ -1,6 +1,6 @@
 <?php
 
-/* v1.0.0.1.202109061700, from office */
+/* v1.0.0.1.202109152015, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -30,20 +30,13 @@ class Login extends Controller
         if ($results==null)
         {
             $Arg['msg'] = '工号或密码错误, 请重新输入！';
-            $Arg['NextPage'] = 'login/signup';
-            echo '1';
-            //exit('2');    
+            exit('2');    
         }
 
         foreach ($results as $row)
         {
             $Info['员工编号'] = $row->员工编号;
+            exit('1');
         }
-
-    }
-
-    public function signup()
-    {
-        echo 'sign up';
     }
 }
