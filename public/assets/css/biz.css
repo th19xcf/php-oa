@@ -1,0 +1,213 @@
+/* v6.0.201405011155, from home */
+
+table.table_banner
+{
+	width:100%;
+	height:30px;
+	border-collapse:collapse;
+	font-family:黑体;
+	font-size:25px;
+	text-align:center;
+}
+
+table.table_form
+{
+	width:600px;
+	border:2px solid #5F6F7E;
+	border-collapse:collapse;
+	font-family:宋体,Arial;
+}
+
+table.table_form td
+{
+	border:1px solid #ABABAB;
+	height:30px;
+	text-align:center;
+	line-height:150%;
+}
+
+table.table_form td.type0
+{
+	border:2px solid #5F6F7E;
+	height:35px;
+	font-family:黑体;
+	font-size:18px;
+	font-weight:bold;
+}
+
+table.table_form td.type1
+{
+	background:#EEE;
+	width:85px;
+}
+
+table.table_form td.type2
+{
+	border:2px solid #5F6F7E;
+	font-family:黑体;
+	height:50px;
+}
+
+table.table_form td.type3
+{
+	width:160px;
+}
+
+table.table_form td.type_Q1
+{
+	background:#EEE;
+	width:80px;
+	text-align:center;
+}
+
+table.table_form td.type_Q2
+{
+	background:#EEE;
+	text-align:left;
+	font-size:17px;
+	font-weight:bold;
+	color:#044;
+}
+
+table.table_form td.type_T1
+{
+	text-align:left;
+}
+
+table.table_form td.type_A2
+{
+	text-align:center;
+}
+
+table.table_form td.type9
+{
+	width:210px;
+	text-align:center;
+}
+
+table.table_form input
+{
+	height:28px;
+	margin:1px;
+	padding:1px 1px 1px 3px;
+	border:1px;
+	font-family:宋体,Arial;
+	font-size:17px;
+	text-align:left;
+	line-height:26px;
+}
+
+table.table_form input.input_text
+{
+	width:98%;
+	border-collapse:collapse;
+	border:1px;
+	color:#15428B;
+	font-weight:bold;
+}
+
+table.table_form input.input_radio
+{
+	font-weight:bold;
+}
+
+table.table_form input.input_text_long
+{
+	width:98%;
+	color:#15428B;
+	font-weight:bold;
+}
+
+table.table_form input.input_button_enable
+{
+	width:70px;
+	height:22px;
+	line-height:20px;	/*垂直居中*/
+	font-family:黑体;
+	font-size:13px;
+	text-align:center;
+	color:#000;
+	background-color:#0BF;
+	border:1px solid #5F6F7E;
+	cursor:hand;
+}
+
+table.table_form input.input_button_disable
+{
+	width:70px;
+	height:22px;
+	line-height:20px;	/*垂直居中*/
+	font-family:黑体;
+	font-size:13px;
+	text-align:center;
+	color:#000;
+	background-color:#DDD;
+	border:1px solid #5F6F7E;
+}
+
+table.table_form input.input_submit
+{
+	width:70px;
+	line-height:20px;	/*垂直居中*/
+	font-family:黑体;
+	font-size:15px;
+	text-align:center;
+	color:#000;
+	background-color:#0BF;
+	border:2px solid #5F6F7E;
+	border-radius: 6px;
+}
+
+table.table_form select
+{
+	width:95%;
+	border:1px solid #FFF;
+	font-size: 17px;
+	color: #15428B;
+	font-weight:bold;
+}
+
+.input_text_short
+{
+	width:170px;
+	font-size:16px;
+}
+
+.input_text_long
+{
+	width:350px;
+	font-size:16px;
+}
+
+.btn_style
+{
+	background:#0BF; 
+	border:1px solid #000; 
+	border-radius: 3px;
+	font-size:18px;
+	font-weight:bold;
+}
+
+.STYLE1
+{
+	color: #006633;
+	font-weight: bold;
+	font-size: 18px;
+}
+
+.STYLE2
+{
+	color: #990000;
+	font-weight: bold;
+}
+
+.STYLE3
+{
+	font-size:16px;
+}
+
+.STYLE5
+{
+	font-size:16px;color:#0000FF;
+	font-weight:bold;
+}
