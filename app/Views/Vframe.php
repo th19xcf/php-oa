@@ -216,7 +216,7 @@
                 $("#MRight").append("<div class='mainTab' id='mainTab" + res_id + "' style='overflow:auto; z-index:999;'><iframe id='iframe" + res_id + "' name='" + res_name + "' border='0' frameborder='0'></iframe></div>");
                 $("#iframe" + res_id).height($(window).height() - 65).width(gFrameWidth);
                 document.getElementById("iframe" + res_id).src = res_url;
-                $.get("Frame/Pointlog", { name:res_name, url:res_url }); //点击量
+                //$.get("Frame/Pointlog", { name:res_name, url:res_url }); //点击量
             }
             else if (typeof (refresh) != 'undefined' && refresh == 1) 
             {

@@ -1,6 +1,6 @@
 <?php
 
-/* v1.0.0.1.202110071730, from home */
+/* v1.0.0.1.202110132330, from home */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -26,21 +26,35 @@ class Mframe extends Model
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 通用查询
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function get_condition($menu_id)
+    public function get_column($menu_id)
     {
         $db = db_connect('btdc');
 
-        $sql = 'select 条件模块,对象名称,对象类型,行位置,列位置,变量名称,字段名称
-            from def_condition
-            where 条件模块 in
+        $sql = 'select 查询模块,列名,列类型,字段,顺序
+            from def_query_column
+            where 查询模块 in
             (
-                select 条件模块
+                select 查询模块
                 from def_function
                 where 功能编码=?
-            )
-            order by 行位置,列位置';
+            )';
 
         $query = $db->query($sql, $menu_id);
+        $results = $query->getResult();
+
+        $db->close();
+
+        return $results;
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 通用查询
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function get_data($sql)
+    {
+        $db = db_connect('btdc');
+
+        $query = $db->query($sql);
         $results = $query->getResult();
 
         $db->close();
