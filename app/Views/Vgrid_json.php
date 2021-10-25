@@ -1,4 +1,4 @@
-<!-- v1.3.0.1.202110241645, from home -->
+<!-- v1.4.0.1.202110250010, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -29,23 +29,28 @@
             //main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
             main_tb.data.add({id:'新增', type:'button', value:'新增'});
 
-            $$('condbox').style.height = document.documentElement.clientHeight*0.85 + 'px';
-            $$('gridbox').style.height = document.documentElement.clientHeight*0.85 + 'px';
-            $$('footbox').style.height = document.documentElement.clientHeight*0.03 + 'px';
+            $$('condbox').style.height = document.documentElement.clientHeight*0.84 + 'px';
+            $$('gridbox').style.height = document.documentElement.clientHeight*0.84 + 'px';
+            $$('addbox').style.height = document.documentElement.clientHeight*0.84 + 'px';
+            $$('footbox').style.height = document.documentElement.clientHeight*0.04 + 'px';
 
             $$('condbox').style.display = 'none';
+            $$('addbox').style.display = 'none';
             $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{} , 汇总:{} , 平均:{}</b>';
 
             // 数据表列信息
             var data_column_obj = JSON.parse('<?php echo $column_json; ?>');
             console.log('data_column_obj', data_column_obj);
 
-            var data_columns_arr = [];
-            var column_select_arr = [{'type':'checkbox','name':'全选','text':'全选','checked':false},{'type':'checkbox','name':'全不选','text':'全不选','checked':false}];
+            var data_columns_arr = [];  // 数据表使用
+            var add_columns_arr = [];  // 新增记录使用
+            var column_select_arr = [];  // 选择字段使用
+
+            column_select_arr = [{'type':'checkbox','name':'全选','text':'全选','checked':false},{'type':'checkbox','name':'全不选','text':'全不选','checked':false}];
 
             for (var key in data_column_obj)
             {
-                // 生成表头
+                // 生成数据表头
                 var col_obj = {};
 
                 col_obj['id'] = data_column_obj[key].id;
@@ -80,8 +85,8 @@
                 column_select_arr.push(col_obj);
             }
 
-            console.log('data_columns_arr', data_columns_arr);
-            console.log('column_select_arr', column_select_arr);
+            //console.log('data_columns_arr', data_columns_arr);
+            //console.log('column_select_arr', column_select_arr);
 
             // 生成数据grid
             var data_grid = new dhx.Grid('gridbox', {columns:data_columns_arr, resizable:true, selection:'complex'});
@@ -242,7 +247,7 @@
                     {
                         console.log('status' + " " + err.statusText);
                     });
-                }
+                }           
             });
 
             function tb_column_click()
@@ -289,7 +294,7 @@
                     }
                     column_select_arr[0]['checked'] = false;
                     column_select_arr[1]['checked'] = false;
-                    console.log(column_select_arr);
+                    //console.log(column_select_arr);
                 });
             }
 
@@ -305,33 +310,62 @@
                     movable: true
                 });
 
-                // 生成数据grid
-                var add_grid = new dhx.Grid('gridbox', {columns:data_columns_arr, resizable:true, selection:'complex'});
-
-                /*
-                // 生成条件grid
-                var add_grid = new dhx.Grid('add_grid',
+                var layout = new dhx.Layout("input", 
                 {
-                    columns:
-                    [
-                        {id:'列名', header:[{text:'列名'}], editable:false },
-                        {id:'类型', header:[{text:'类型'}], editable:false },
-                        {id:'赋值', header:[{text:'赋值'}]}
-                    ],
-                    autoWidth: true,
-                    resizable: true,
-                    editable: true,
-                    selection: 'complex'
+                    type: "space",
+                    rows:
+                    [{
+                        id: 'tb',
+                        html: "1",
+                    },
+                    {
+                        id: 'aa',
+                        html: "2",
+                    }]
                 });
 
-                // 加载数据
-                var add_grid_obj = JSON.parse('<?php echo $row_json; ?>');
-                console.log('add_grid_obj', add_grid_obj);
-                add_grid.data.parse(add_grid_obj);
-                */
-
-                win.attach(add_grid);
+                win.attach(layout);
                 win.show();
+
+                var add_columns_arr = [];  // 新增记录使用
+
+                for (var key in data_column_obj)
+                {
+                    // 生成数据表头
+                    var col_obj = {};
+
+                    col_obj['id'] = data_column_obj[key].id;
+
+                    col_obj['header'] = [];
+                    var text = {};
+                    text['text'] = data_column_obj[key].header['text'];
+                    col_obj['header'].push(text);
+
+                    if (data_column_obj[key].options.length == 0)
+                    {
+                        col_obj['editorType'] = 'input';
+                    }
+                    else
+                    {
+                        col_obj['editorType'] = 'combobox';
+                        col_obj['options'] = data_column_obj[key].options;
+                    }
+
+                    col_obj['type'] = data_column_obj[key].type;
+
+                    add_columns_arr.push(col_obj);
+                }
+
+                console.log('add_columns_arr', add_columns_arr);
+
+                // 生成数据grid
+                var add_grid = new dhx.Grid('addbox', {columns:add_columns_arr, editable:true, resizable:true, selection:'complex', autoEmptyRow:true});
+
+                //win.attach(add_grid);
+                //win.show();
+
+                layout.getCell('aa').attach(add_grid);
+
             }
         }
 
@@ -345,6 +379,7 @@
         <div id='cond_grid' style='width:100%; height:92%; background-color:blue;'></div>
     </div>
     <div id='gridbox' style='width:100%; height:600px; background-color:lightblue;'></div>
+    <div id='addbox' style='width:100%; height:600px; background-color:lightblue;'></div>
     <div id='footbox' style='width:100%; height:10px; margin-top:5px; background-color: lightblue;'></div>
 </body>
 

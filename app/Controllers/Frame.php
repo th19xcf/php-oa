@@ -1,6 +1,6 @@
 <?php
 
-/* v1.3.0.1.202110241645, from home */
+/* v1.4.0.1.202110250010, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -51,7 +51,7 @@ class Frame extends Controller
     public function get_condition($menu_id='')
     {
         $sql = sprintf('
-            select 查询模块,列名,列类型,字段,类型
+            select 查询模块,列名,列类型,字段,对象,if(类型 is null,"",类型) as 类型
             from view_function 
             where 功能编码=%s
             group by 列名', $menu_id);
@@ -67,8 +67,11 @@ class Frame extends Controller
         foreach ($results as $row)
         {
             // 表头信息
-            $columns_arr[$row->列名]['id'] = $row->列名;
             $columns_arr[$row->列名]['header'] = array();
+            $columns_arr[$row->列名]['options'] = array();
+
+            $columns_arr[$row->列名]['id'] = $row->列名;
+
             $columns_arr[$row->列名]['header']['text'] = $row->列名;
             $columns_arr[$row->列名]['header']['content'] = $row->类型;
 
@@ -79,6 +82,16 @@ class Frame extends Controller
             else
             {
                 $columns_arr[$row->列名]['type'] = 'string';
+            }
+
+            if ($row->类型 == '下拉')
+            {
+                //$columns_arr[$row->列名]['options'] = $model->get_data(sprintf('select 对象值 from def_object where 对象名称="%s" order by 顺序',$row->对象));
+                $rslt = $model->get_data(sprintf('select 对象值 from def_object where 对象名称="%s" order by 顺序',$row->对象));
+                foreach($rslt as $vv)
+                {
+                    array_push($columns_arr[$row->列名]['options'], $vv->对象值);
+                }
             }
 
             if ($columns_str != '')
