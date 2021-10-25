@@ -1,6 +1,6 @@
 <?php
 
-/* v1.2.0.1.202110172320, from home */
+/* v1.3.0.1.202110221655, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -50,12 +50,21 @@ class Frame extends Controller
 	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function get_condition($menu_id='')
     {
-        $model = new Mframe();
-        $results = $model->get_column($menu_id);
-
         $columns_str = '';
-        $columns_arr = array();
+        $columns_arr = array();  // 列数据
         $cond_arr = array();  // 条件数据
+
+        //$model = new Mframe();
+        //$results = $model->get_column($menu_id);
+
+        $sql = sprintf('
+            select 查询模块,列名,列类型,字段 
+            from view_function 
+            where 功能编码=%s
+            group by 列名', $menu_id);
+
+        $model = new Mframe();
+        $results = $model->get_data($sql);
 
         foreach ($results as $row)
         {
@@ -69,6 +78,7 @@ class Frame extends Controller
             }
             $columns_str = $columns_str . $row->字段 . ' as ' . $row->列名;
 
+            // 设置条件使用
             $cond = array();
             $cond['列名'] = $row->列名;
             $cond['类型'] = $row->列类型;
@@ -83,15 +93,26 @@ class Frame extends Controller
             array_push($cond_arr, $cond);
         }
 
+        // 取出查询配置
+        $table_name = '';
+        $sql = sprintf('select 表名 from def_query_config where 查询模块 in (select 查询模块 from def_function where 功能编码=%s)', $menu_id);
+        $results = $model->get_data($sql);
+        foreach ($results as $row)
+        {
+            $table_name = $row->表名;
+            break;
+        }
+
+        $sql = sprintf('select %s from %s', $columns_str, $table_name);
+        $results = $model->get_data($sql);
+
         // 存入session
         $session_arr = [];
-        $session_arr['func_id_'.$menu_id] = $columns_str;
+        $session_arr[$menu_id.'-columns'] = $columns_str;
+        $session_arr[$menu_id.'-table_name'] = $table_name;
 
         $session = \Config\Services::session();
         $session->set($session_arr);
-
-        $sql = sprintf('select %s from biz_income', $columns_str);
-        $results = $model->get_data($sql);
 
         $send['column_json'] = json_encode($columns_arr);
         $send['data_json'] = json_encode($results);
@@ -204,9 +225,10 @@ class Frame extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $columns_str = $session->get('func_id_'.$menu_id);
+        $table_name = $session->get($menu_id.'-table_name');
+        $columns_str = $session->get($menu_id.'-columns');
 
-        $sql = sprintf('select %s from biz_income', $columns_str);
+        $sql = sprintf('select %s from %s', $columns_str, $table_name);
         if ($where != '')
         {
             $sql = $sql . ' where ' . $where;

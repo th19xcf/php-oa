@@ -1,4 +1,4 @@
-<!-- v1.3.0.1.202110210030, from home -->
+<!-- v1.3.0.1.202110221655, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -26,13 +26,15 @@
             main_tb.data.add({id:'条件查询', type:'button', value:'条件查询'});
             main_tb.data.add({id:'列选择', type:'button', value:'列选择'});
             main_tb.data.add({type:'separator'});
-            main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
+            //main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
+            main_tb.data.add({id:'新增', type:'button', value:'新增'});
 
-            $$('condbox').style.height = document.documentElement.clientHeight*0.84 + 'px';
-            $$('gridbox').style.height = document.documentElement.clientHeight*0.84 + 'px';
-            $$('footbox').style.height = document.documentElement.clientHeight*0.04 + 'px';
+            $$('condbox').style.height = document.documentElement.clientHeight*0.85 + 'px';
+            $$('gridbox').style.height = document.documentElement.clientHeight*0.85 + 'px';
+            $$('footbox').style.height = document.documentElement.clientHeight*0.03 + 'px';
 
             $$('condbox').style.display = 'none';
+            $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{} , 汇总:{} , 平均:{}</b>';
 
             // 数据表列信息
             var data_column_obj = JSON.parse('<?php echo $column_json; ?>');
@@ -118,6 +120,10 @@
                     case '列选择':
                         tb_column_click();
                         break;
+
+                    case '新增':
+                        tb_add_click();
+                        break;
                 }
             });
 
@@ -198,7 +204,7 @@
                         return;
                     }
 
-                    $$('footbox').innerHTML = '条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 平均:{' + average_str + '}';
+                    $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 平均:{' + average_str + '}</b>';
 
                     // 条件设置正确
                     dhx.ajax.post('<?php base_url(); ?>/Frame/set_condition/<?php echo $func_id; ?>', cond_json).then(function (data)
@@ -262,6 +268,28 @@
                     column_select_arr[1]['checked'] = false;
                     console.log(column_select_arr);
                 });
+            }
+
+            function tb_add_click()
+            {
+                var win = new dhx.Window(
+                {
+                    title: '录入窗口',
+                    modal: true,
+                    width: 600,
+                    height: 500,
+                    closable: true,
+                    movable: true
+                });
+
+                var form = new dhx.Form('add',
+                {
+                    rows: column_select_arr
+                });
+
+                win.attach(form);
+                win.show();
+
             }
         }
 

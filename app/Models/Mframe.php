@@ -1,6 +1,6 @@
 <?php
 
-/* v1.0.0.1.202110132330, from home */
+/* v1.3.0.1.202110221655, from office */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -30,7 +30,7 @@ class Mframe extends Model
     {
         $db = db_connect('btdc');
 
-        $sql = 'select 查询模块,列名,列类型,字段,顺序
+        $sql = 'select 查询模块,列名,列类型,字段,对象,顺序
             from def_query_column
             where 查询模块 in
             (
