@@ -1,6 +1,6 @@
 <?php
 
-/* v1.3.0.1.202110221655, from office */
+/* v1.3.0.1.202110241645, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -50,15 +50,8 @@ class Frame extends Controller
 	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function get_condition($menu_id='')
     {
-        $columns_str = '';
-        $columns_arr = array();  // 列数据
-        $cond_arr = array();  // 条件数据
-
-        //$model = new Mframe();
-        //$results = $model->get_column($menu_id);
-
         $sql = sprintf('
-            select 查询模块,列名,列类型,字段 
+            select 查询模块,列名,列类型,字段,类型
             from view_function 
             where 功能编码=%s
             group by 列名', $menu_id);
@@ -66,11 +59,27 @@ class Frame extends Controller
         $model = new Mframe();
         $results = $model->get_data($sql);
 
+        $columns_str = '';
+        $columns_arr = array();  // 表头列数据
+        $cond_arr = array();  // 条件数据
+        $row_arr = array();  // 新增记录数据
+
         foreach ($results as $row)
         {
+            // 表头信息
             $columns_arr[$row->列名]['id'] = $row->列名;
+            $columns_arr[$row->列名]['header'] = array();
             $columns_arr[$row->列名]['header']['text'] = $row->列名;
-            //$columns_arr[$row->列类型]['header']['text'] = $row->列类型;
+            $columns_arr[$row->列名]['header']['content'] = $row->类型;
+
+            if ($row->列类型 == '数字')
+            {
+                $columns_arr[$row->列名]['type'] = 'number';
+            }
+            else
+            {
+                $columns_arr[$row->列名]['type'] = 'string';
+            }
 
             if ($columns_str != '')
             {
@@ -91,11 +100,25 @@ class Frame extends Controller
             $cond['参数2'] = '';
 
             array_push($cond_arr, $cond);
+
+            // 新增记录使用
+            $new = array();
+            $new['列名'] = $row->列名;
+            $new['类型'] = $row->列类型;
+            $new['赋值'] = '';
+
+            array_push($row_arr, $new);
         }
 
-        // 取出查询配置
+        // 取出查询模块对应的表配置
         $table_name = '';
-        $sql = sprintf('select 表名 from def_query_config where 查询模块 in (select 查询模块 from def_function where 功能编码=%s)', $menu_id);
+
+        $sql = sprintf('
+            select 表名 
+            from view_function 
+            where 功能编码=%s
+            group by 功能编码', $menu_id);
+
         $results = $model->get_data($sql);
         foreach ($results as $row)
         {
@@ -103,6 +126,32 @@ class Frame extends Controller
             break;
         }
 
+        // 取出对象配置
+        // 下标列名, 取值保存为str, 在js转换
+        $objects_arr = array();  // 对象数据
+
+        $sql = sprintf('
+            select 列名,对象名称,对象值 
+            from view_function 
+            where 对象名称!="" and 功能编码=%s', $menu_id);
+
+        $results = $model->get_data($sql);
+        $col_name = '';
+
+        foreach ($results as $row)
+        {
+            if ($col_name != $row->列名)
+            {
+                $objects_arr[$row->列名] = $row->对象值;
+                $col_name = $row->列名;
+            }
+            else
+            {
+                $objects_arr[$row->列名] = $objects_arr[$row->列名] . ',' . $row->对象值;
+            }
+        }
+
+        // 读出数据
         $sql = sprintf('select %s from %s', $columns_str, $table_name);
         $results = $model->get_data($sql);
 
@@ -117,6 +166,8 @@ class Frame extends Controller
         $send['column_json'] = json_encode($columns_arr);
         $send['data_json'] = json_encode($results);
         $send['cond_json'] = json_encode($cond_arr);
+        $send['row_json'] = json_encode($row_arr);
+        $send['object_json'] = json_encode($objects_arr);
         $send['func_id'] = $menu_id;
 
         echo view('Vgrid_json.php', $send);

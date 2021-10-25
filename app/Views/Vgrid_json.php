@@ -1,4 +1,4 @@
-<!-- v1.3.0.1.202110221655, from office -->
+<!-- v1.3.0.1.202110241645, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -38,19 +38,40 @@
 
             // 数据表列信息
             var data_column_obj = JSON.parse('<?php echo $column_json; ?>');
-            //console.log(data_column_obj);
+            console.log('data_column_obj', data_column_obj);
 
             var data_columns_arr = [];
             var column_select_arr = [{'type':'checkbox','name':'全选','text':'全选','checked':false},{'type':'checkbox','name':'全不选','text':'全不选','checked':false}];
+
             for (var key in data_column_obj)
             {
+                // 生成表头
                 var col_obj = {};
+
                 col_obj['id'] = data_column_obj[key].id;
                 col_obj['header'] = [];
-                col_obj['header'].push(data_column_obj[key].header);
+
+                var text = {};
+                text['text'] = data_column_obj[key].header['text'];
+                col_obj['header'].push(text);
+
+                var content = {};
+                if (data_column_obj[key].header['content'] == '下拉')
+                {
+                    content['content'] = 'comboFilter';
+                    col_obj['header'].push(content);
+                }
+                else
+                {
+                    content['content'] = 'inputFilter';
+                    col_obj['header'].push(content);
+                }
+
+                col_obj['type'] = data_column_obj[key].type;
 
                 data_columns_arr.push(col_obj);
 
+                // 字段选择用
                 var col_obj = {};
                 col_obj['type'] = 'checkbox';
                 col_obj['name'] = data_column_obj[key].id;
@@ -59,10 +80,11 @@
                 column_select_arr.push(col_obj);
             }
 
-            console.log(column_select_arr);
+            console.log('data_columns_arr', data_columns_arr);
+            console.log('column_select_arr', column_select_arr);
 
             // 生成数据grid
-            var data_grid = new dhx.Grid('gridbox', {columns:data_columns_arr});
+            var data_grid = new dhx.Grid('gridbox', {columns:data_columns_arr, resizable:true, selection:'complex'});
 
             // 加载数据
             var data_grid_obj = JSON.parse('<?php echo $data_json; ?>');
@@ -90,7 +112,8 @@
                     {id:'条件2', header:[{text:'条件2'}], editorType:'select', options:['','大于','等于','小于','大于等于','小于等于','不等于','包含','不包含'] },
                     {id:'参数2', header:[{text:'参数2'}] }
                 ],
-                editable: true
+                editable: true,
+                selection:'complex'
             });
 
             // 加载数据
@@ -219,7 +242,7 @@
                     {
                         console.log('status' + " " + err.statusText);
                     });
-                }           
+                }
             });
 
             function tb_column_click()
@@ -282,14 +305,33 @@
                     movable: true
                 });
 
-                var form = new dhx.Form('add',
+                // 生成数据grid
+                var add_grid = new dhx.Grid('gridbox', {columns:data_columns_arr, resizable:true, selection:'complex'});
+
+                /*
+                // 生成条件grid
+                var add_grid = new dhx.Grid('add_grid',
                 {
-                    rows: column_select_arr
+                    columns:
+                    [
+                        {id:'列名', header:[{text:'列名'}], editable:false },
+                        {id:'类型', header:[{text:'类型'}], editable:false },
+                        {id:'赋值', header:[{text:'赋值'}]}
+                    ],
+                    autoWidth: true,
+                    resizable: true,
+                    editable: true,
+                    selection: 'complex'
                 });
 
-                win.attach(form);
-                win.show();
+                // 加载数据
+                var add_grid_obj = JSON.parse('<?php echo $row_json; ?>');
+                console.log('add_grid_obj', add_grid_obj);
+                add_grid.data.parse(add_grid_obj);
+                */
 
+                win.attach(add_grid);
+                win.show();
             }
         }
 
