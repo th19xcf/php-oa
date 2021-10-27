@@ -1,4 +1,4 @@
-<!-- v1.4.0.1.202110250010, from home -->
+<!-- v1.4.1.1.202110271615, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -303,30 +303,27 @@
                 var win = new dhx.Window(
                 {
                     title: '录入窗口',
+                    footer: true,
                     modal: true,
-                    width: 600,
+                    width: 700,
                     height: 500,
                     closable: true,
                     movable: true
                 });
 
-                var layout = new dhx.Layout("input", 
+                win.footer.data.add(
                 {
-                    type: "space",
-                    rows:
-                    [{
-                        id: 'tb',
-                        html: "1",
-                    },
-                    {
-                        id: 'aa',
-                        html: "2",
-                    }]
+                    type: 'button',
+                    id: '提交',
+                    value: '提交',
+                    view: 'flat',
+                    size: 'medium',
+                    color: 'primary',
                 });
 
-                win.attach(layout);
                 win.show();
 
+                // 关联表格
                 var add_columns_arr = [];  // 新增记录使用
 
                 for (var key in data_column_obj)
@@ -356,16 +353,11 @@
                     add_columns_arr.push(col_obj);
                 }
 
-                console.log('add_columns_arr', add_columns_arr);
+                //console.log('add_columns_arr', add_columns_arr);
 
                 // 生成数据grid
-                var add_grid = new dhx.Grid('addbox', {columns:add_columns_arr, editable:true, resizable:true, selection:'complex', autoEmptyRow:true});
-
-                //win.attach(add_grid);
-                //win.show();
-
-                layout.getCell('aa').attach(add_grid);
-
+                var add_grid = new dhx.Grid(null, {columns:add_columns_arr, editable:true, resizable:true, selection:'complex', autoEmptyRow:true});
+                win.attach(add_grid);
             }
         }
 
