@@ -1,6 +1,6 @@
 <?php
 
-/* v1.4.1.1.202110282355, from home */
+/* v1.4.2.1.202110291640, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -51,7 +51,8 @@ class Frame extends Controller
     public function get_condition($menu_id='')
     {
         $sql = sprintf('
-            select 查询模块,列名,列类型,字段名,查询名,对象,if(类型 is null,"",类型) as 类型
+            select 查询模块,列名,列类型,字段名,查询名,对象,可筛选,
+                if(类型 is null,"",类型) as 类型
             from view_function 
             where 功能编码=%s
             group by 列名', $menu_id);
@@ -73,7 +74,7 @@ class Frame extends Controller
             $grid_col_arr[$row->列名]['id'] = $row->列名;
 
             $grid_col_arr[$row->列名]['header']['text'] = $row->列名;
-            $grid_col_arr[$row->列名]['header']['content'] = $row->类型;
+            $grid_col_arr[$row->列名]['header']['content'] = $row->可筛选;
 
             if ($row->列类型 == '数字')
             {

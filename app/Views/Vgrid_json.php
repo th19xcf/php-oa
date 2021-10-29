@@ -1,4 +1,4 @@
-<!-- v1.4.1.1.202110282355, from home -->
+<!-- v1.4.2.1.202110291640, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -23,16 +23,18 @@
             // 生成主菜单栏
             var main_tb = new dhx.Toolbar('toolbarbox', {css: 'toobar-class'});
             main_tb.data.add({id:'名称', type:'title', value:'主菜单-->'});
+            main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
+            main_tb.data.add({type:'separator'});
             main_tb.data.add({id:'条件查询', type:'button', value:'条件查询'});
             main_tb.data.add({id:'列选择', type:'button', value:'列选择'});
             main_tb.data.add({type:'separator'});
-            //main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
             main_tb.data.add({id:'新增', type:'button', value:'新增'});
+            main_tb.data.add({id:'导出', type:'button', value:'导出excel'});
 
-            $$('condbox').style.height = document.documentElement.clientHeight*0.84 + 'px';
-            $$('gridbox').style.height = document.documentElement.clientHeight*0.84 + 'px';
-            $$('addbox').style.height = document.documentElement.clientHeight*0.84 + 'px';
-            $$('footbox').style.height = document.documentElement.clientHeight*0.04 + 'px';
+            $$('condbox').style.height = document.documentElement.clientHeight*0.85 + 'px';
+            $$('gridbox').style.height = document.documentElement.clientHeight*0.85 + 'px';
+            $$('addbox').style.height = document.documentElement.clientHeight*0.85 + 'px';
+            $$('footbox').style.height = document.documentElement.clientHeight*0.033 + 'px';
 
             $$('condbox').style.display = 'none';
             $$('addbox').style.display = 'none';
@@ -61,7 +63,7 @@
                 col_obj['header'].push(text);
 
                 var content = {};
-                if (data_column_obj[key].header['content'] == '下拉')
+                if (data_column_obj[key].header['content'] == '1')
                 {
                     content['content'] = 'comboFilter';
                     col_obj['header'].push(content);
@@ -131,6 +133,9 @@
             {
                 switch (id)
                 {
+                    case '刷新':
+                        window.location.reload();
+                        break;
                     case '条件查询':  
                         if ($$('condbox').style.display=='block')
                         {
@@ -151,6 +156,16 @@
 
                     case '新增':
                         tb_add_click();
+                        break;
+
+                    case '导出':
+                        //data_grid.export.csv();
+                        data_grid.export.xlsx(
+                        {
+                            name: 'grid_data',
+                            url: '//export.dhtmlx.com/excel'
+                        });
+
                         break;
                 }
             });
