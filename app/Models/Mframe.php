@@ -1,6 +1,6 @@
 <?php
 
-/* v1.0.0.1.202110132330, from home */
+/* v1.4.1.1.202110282355, from home */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -30,7 +30,7 @@ class Mframe extends Model
     {
         $db = db_connect('btdc');
 
-        $sql = 'select 查询模块,列名,列类型,字段,对象,顺序
+        $sql = 'select 查询模块,列名,列类型,字段名,查询名,对象,顺序
             from def_query_column
             where 查询模块 in
             (
@@ -50,7 +50,7 @@ class Mframe extends Model
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 通用查询
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function get_data($sql)
+    public function select($sql)
     {
         $db = db_connect('btdc');
 
@@ -60,6 +60,21 @@ class Mframe extends Model
         $db->close();
 
         return $results;
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 通用插入
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function add($sql)
+    {
+        $db = db_connect('btdc');
+
+        $db->query($sql);
+        $num = $db->affectedRows();
+
+        $db->close();
+
+        return $num;
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

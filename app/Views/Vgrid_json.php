@@ -1,4 +1,4 @@
-<!-- v1.4.1.1.202110271615, from office -->
+<!-- v1.4.1.1.202110282355, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -39,7 +39,7 @@
             $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{} , 汇总:{} , 平均:{}</b>';
 
             // 数据表列信息
-            var data_column_obj = JSON.parse('<?php echo $column_json; ?>');
+            var data_column_obj = JSON.parse('<?php echo $col_json; ?>');
             console.log('data_column_obj', data_column_obj);
 
             var data_columns_arr = [];  // 数据表使用
@@ -300,6 +300,8 @@
 
             function tb_add_click()
             {
+                var add_num = 0;
+
                 var win = new dhx.Window(
                 {
                     title: '录入窗口',
@@ -358,6 +360,30 @@
                 // 生成数据grid
                 var add_grid = new dhx.Grid(null, {columns:add_columns_arr, editable:true, resizable:true, selection:'complex', autoEmptyRow:true});
                 win.attach(add_grid);
+
+                win.footer.events.on('click', function (id) 
+                {
+                    var cells = add_grid.selection.getCells();
+                    if (cells.length == 0)
+                    {
+                        alert('error');
+                        return;
+                    }
+                    dhx.ajax.post('<?php base_url(); ?>/Frame/add_row/<?php echo $func_id; ?>', cells[0].row).then(function (data)
+                    {
+                        add_num ++;
+                        alert('ok');
+                    }).catch(function (err)
+                    {
+                        console.log('status' + " " + err.statusText);
+                    });
+                });
+
+                // 退出, 更新data_grid数据
+                win.events.on('AfterHide', function(position, events)
+                {
+                    //alert(add_num);
+                });
             }
         }
 

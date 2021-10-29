@@ -1,6 +1,6 @@
 <?php
 
-/* v1.4.0.1.202110250010, from home */
+/* v1.4.1.1.202110282355, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -51,54 +51,54 @@ class Frame extends Controller
     public function get_condition($menu_id='')
     {
         $sql = sprintf('
-            select 查询模块,列名,列类型,字段,对象,if(类型 is null,"",类型) as 类型
+            select 查询模块,列名,列类型,字段名,查询名,对象,if(类型 is null,"",类型) as 类型
             from view_function 
             where 功能编码=%s
             group by 列名', $menu_id);
 
         $model = new Mframe();
-        $results = $model->get_data($sql);
+        $results = $model->select($sql);
 
-        $columns_str = '';
-        $columns_arr = array();  // 表头列数据
-        $cond_arr = array();  // 条件数据
-        $row_arr = array();  // 新增记录数据
+        $select_str = '';
+        $grid_col_arr = array();  // 客户端grid列信息
+        $grid_cond_arr = array();  // 条件设置信息
+        $columns_arr = array();  // 列信息
 
         foreach ($results as $row)
         {
-            // 表头信息
-            $columns_arr[$row->列名]['header'] = array();
-            $columns_arr[$row->列名]['options'] = array();
+            // 客户端grid列信息
+            $grid_col_arr[$row->列名]['header'] = array();
+            $grid_col_arr[$row->列名]['options'] = array();
 
-            $columns_arr[$row->列名]['id'] = $row->列名;
+            $grid_col_arr[$row->列名]['id'] = $row->列名;
 
-            $columns_arr[$row->列名]['header']['text'] = $row->列名;
-            $columns_arr[$row->列名]['header']['content'] = $row->类型;
+            $grid_col_arr[$row->列名]['header']['text'] = $row->列名;
+            $grid_col_arr[$row->列名]['header']['content'] = $row->类型;
 
             if ($row->列类型 == '数字')
             {
-                $columns_arr[$row->列名]['type'] = 'number';
+                $grid_col_arr[$row->列名]['type'] = 'number';
             }
             else
             {
-                $columns_arr[$row->列名]['type'] = 'string';
+                $grid_col_arr[$row->列名]['type'] = 'string';
             }
 
             if ($row->类型 == '下拉')
             {
-                //$columns_arr[$row->列名]['options'] = $model->get_data(sprintf('select 对象值 from def_object where 对象名称="%s" order by 顺序',$row->对象));
-                $rslt = $model->get_data(sprintf('select 对象值 from def_object where 对象名称="%s" order by 顺序',$row->对象));
+                $rslt = $model->select(sprintf('select 对象值 from def_object where 对象名称="%s" order by 顺序',$row->对象));
                 foreach($rslt as $vv)
                 {
-                    array_push($columns_arr[$row->列名]['options'], $vv->对象值);
+                    array_push($grid_col_arr[$row->列名]['options'], $vv->对象值);
                 }
             }
 
-            if ($columns_str != '')
+            // 查询数据表对应的查询名
+            if ($select_str != '')
             {
-                $columns_str = $columns_str . ',';
+                $select_str = $select_str . ',';
             }
-            $columns_str = $columns_str . $row->字段 . ' as ' . $row->列名;
+            $select_str = $select_str . $row->查询名 . ' as ' . $row->列名;
 
             // 设置条件使用
             $cond = array();
@@ -112,15 +112,15 @@ class Frame extends Controller
             $cond['条件2'] = '';
             $cond['参数2'] = '';
 
-            array_push($cond_arr, $cond);
+            array_push($grid_cond_arr, $cond);
 
             // 新增记录使用
-            $new = array();
-            $new['列名'] = $row->列名;
-            $new['类型'] = $row->列类型;
-            $new['赋值'] = '';
+            $arr = array();
+            $arr['列名'] = $row->列名;
+            $arr['类型'] = $row->列类型;
+            $arr['字段名'] = $row->字段名;
 
-            array_push($row_arr, $new);
+            array_push($columns_arr, $arr);
         }
 
         // 取出查询模块对应的表配置
@@ -132,7 +132,7 @@ class Frame extends Controller
             where 功能编码=%s
             group by 功能编码', $menu_id);
 
-        $results = $model->get_data($sql);
+        $results = $model->select($sql);
         foreach ($results as $row)
         {
             $table_name = $row->表名;
@@ -148,7 +148,7 @@ class Frame extends Controller
             from view_function 
             where 对象名称!="" and 功能编码=%s', $menu_id);
 
-        $results = $model->get_data($sql);
+        $results = $model->select($sql);
         $col_name = '';
 
         foreach ($results as $row)
@@ -165,21 +165,21 @@ class Frame extends Controller
         }
 
         // 读出数据
-        $sql = sprintf('select %s from %s', $columns_str, $table_name);
-        $results = $model->get_data($sql);
+        $sql = sprintf('select %s from %s', $select_str, $table_name);
+        $results = $model->select($sql);
 
         // 存入session
         $session_arr = [];
-        $session_arr[$menu_id.'-columns'] = $columns_str;
+        $session_arr[$menu_id.'select_str'] = $select_str;
         $session_arr[$menu_id.'-table_name'] = $table_name;
+        $session_arr[$menu_id.'-columns_arr'] = $columns_arr;
 
         $session = \Config\Services::session();
         $session->set($session_arr);
 
-        $send['column_json'] = json_encode($columns_arr);
+        $send['col_json'] = json_encode($grid_col_arr);
         $send['data_json'] = json_encode($results);
-        $send['cond_json'] = json_encode($cond_arr);
-        $send['row_json'] = json_encode($row_arr);
+        $send['cond_json'] = json_encode($grid_cond_arr);
         $send['object_json'] = json_encode($objects_arr);
         $send['func_id'] = $menu_id;
 
@@ -192,15 +192,15 @@ class Frame extends Controller
     public function set_condition($menu_id='')
     {
         //$data = $this->request->getBody();
-        $cond_arr = $this->request->getJSON(true);
+        $grid_cond_arr = $this->request->getJSON(true);
 
         $where = '';
         $group = '';
         $average = '';
 
-        for ($ii=0; $ii<count($cond_arr); $ii++)
+        for ($ii=0; $ii<count($grid_cond_arr); $ii++)
         {
-            $cond = $cond_arr[$ii];
+            $cond = $grid_cond_arr[$ii];
             $cond_str = '';
             $cond_1 = '';
             $cond_2 = '';
@@ -290,9 +290,9 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $table_name = $session->get($menu_id.'-table_name');
-        $columns_str = $session->get($menu_id.'-columns');
+        $select_str = $session->get($menu_id.'select_str');
 
-        $sql = sprintf('select %s from %s', $columns_str, $table_name);
+        $sql = sprintf('select %s from %s', $select_str, $table_name);
         if ($where != '')
         {
             $sql = $sql . ' where ' . $where;
@@ -303,8 +303,49 @@ class Frame extends Controller
         }
 
         $model = new Mframe();
-        $results = $model->get_data($sql);
+        $results = $model->select($sql);
 
         exit(json_encode($results));
+    }
+
+	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 增加新行
+	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function add_row($menu_id='')
+    {
+        $row_arr = $this->request->getJSON(true);
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $table_name = $session->get($menu_id.'-table_name');
+        $columns_arr = $session->get($menu_id.'-columns_arr');
+
+        $flds_str = '';
+        $values_str = '';
+        foreach ($columns_arr as $col)
+        {
+            if ($flds_str != '')
+            {
+                $flds_str = $flds_str . ',';
+                $values_str = $values_str . ',';
+            }
+            $flds_str = $flds_str . $col['字段名'];
+            switch ($col['类型'])
+            {
+                case '字符':
+                    $values_str = sprintf('%s"%s"', $values_str, $row_arr[$col['列名']]);
+                    break;
+                case '数字':
+                    $values_str = sprintf('%s%.2f', $values_str, $row_arr[$col['列名']]);
+                    break;
+            }
+        }
+
+        $sql = sprintf('insert into %s (%s) values (%s)', $table_name, $flds_str, $values_str);
+
+        $model = new Mframe();
+        $num = $model->add($sql);
+
+        exit($num);
     }
 }
