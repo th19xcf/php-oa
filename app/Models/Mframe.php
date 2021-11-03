@@ -1,6 +1,6 @@
 <?php
 
-/* v1.4.1.1.202110282355, from home */
+/* v1.4.3.1.20211011700, from office */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -53,13 +53,10 @@ class Mframe extends Model
     public function select($sql)
     {
         $db = db_connect('btdc');
-
         $query = $db->query($sql);
-        $results = $query->getResult();
-
         $db->close();
 
-        return $results;
+        return $query;
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

@@ -1,4 +1,4 @@
-<!-- v1.4.2.1.202110291640, from office -->
+<!-- v1.4.3.1.20211011700, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -29,6 +29,7 @@
             main_tb.data.add({id:'列选择', type:'button', value:'列选择'});
             main_tb.data.add({type:'separator'});
             main_tb.data.add({id:'新增', type:'button', value:'新增'});
+            main_tb.data.add({id:'导入', type:'button', value:'导入'});
             main_tb.data.add({id:'导出', type:'button', value:'导出excel'});
 
             $$('condbox').style.height = document.documentElement.clientHeight*0.85 + 'px';
@@ -91,7 +92,7 @@
             //console.log('column_select_arr', column_select_arr);
 
             // 生成数据grid
-            var data_grid = new dhx.Grid('gridbox', {columns:data_columns_arr, resizable:true, selection:'complex'});
+            var data_grid = new dhx.Grid('gridbox', {columns:data_columns_arr, adjust:true, resizable:true, selection:'complex'});
 
             // 加载数据
             var data_grid_obj = JSON.parse('<?php echo $data_json; ?>');
@@ -159,14 +160,22 @@
                         break;
 
                     case '导出':
+                        var href = '<?php base_url(); ?>/Frame/export/<?php echo $func_id; ?>';
+                        $$('exp2xls').href = href;
+                        $$('exp2xls').click();
+                        break;
+                    /*
+                    case '导出':
                         //data_grid.export.csv();
                         data_grid.export.xlsx(
                         {
                             name: 'grid_data',
-                            url: '//export.dhtmlx.com/excel'
+                            url: '<?php base_url(); ?>/Frame/export/<?php echo $func_id; ?>'
+                            //url: '//export.dhtmlx.com/excel'
                         });
 
                         break;
+                    */
                 }
             });
 
@@ -387,7 +396,6 @@
                     dhx.ajax.post('<?php base_url(); ?>/Frame/add_row/<?php echo $func_id; ?>', cells[0].row).then(function (data)
                     {
                         add_num ++;
-                        alert('ok');
                     }).catch(function (err)
                     {
                         console.log('status' + " " + err.statusText);
@@ -397,7 +405,7 @@
                 // 退出, 更新data_grid数据
                 win.events.on('AfterHide', function(position, events)
                 {
-                    //alert(add_num);
+                    window.location.reload();
                 });
             }
         }
@@ -414,6 +422,7 @@
     <div id='gridbox' style='width:100%; height:600px; background-color:lightblue;'></div>
     <div id='addbox' style='width:100%; height:600px; background-color:lightblue;'></div>
     <div id='footbox' style='width:100%; height:10px; margin-top:5px; background-color: lightblue;'></div>
+    <a id='exp2xls'></a>
 </body>
 
 </html>

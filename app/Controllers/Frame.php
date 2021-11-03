@@ -1,6 +1,6 @@
 <?php
 
-/* v1.4.2.1.202110291640, from office */
+/* v1.4.3.1.20211011700, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -58,7 +58,8 @@ class Frame extends Controller
             group by 列名', $menu_id);
 
         $model = new Mframe();
-        $results = $model->select($sql);
+        $query = $model->select($sql);
+        $results = $query->getResult();
 
         $select_str = '';
         $grid_col_arr = array();  // 客户端grid列信息
@@ -87,7 +88,8 @@ class Frame extends Controller
 
             if ($row->类型 == '下拉')
             {
-                $rslt = $model->select(sprintf('select 对象值 from def_object where 对象名称="%s" order by 顺序',$row->对象));
+                $qry = $model->select(sprintf('select 对象值 from def_object where 对象名称="%s" order by 顺序',$row->对象));
+                $rslt = $qry->getResult();
                 foreach($rslt as $vv)
                 {
                     array_push($grid_col_arr[$row->列名]['options'], $vv->对象值);
@@ -133,7 +135,8 @@ class Frame extends Controller
             where 功能编码=%s
             group by 功能编码', $menu_id);
 
-        $results = $model->select($sql);
+        $query = $model->select($sql);
+        $results = $query->getResult();
         foreach ($results as $row)
         {
             $table_name = $row->表名;
@@ -149,9 +152,10 @@ class Frame extends Controller
             from view_function 
             where 对象名称!="" and 功能编码=%s', $menu_id);
 
-        $results = $model->select($sql);
-        $col_name = '';
+        $query = $model->select($sql);
+        $results = $query->getResult();
 
+        $col_name = '';
         foreach ($results as $row)
         {
             if ($col_name != $row->列名)
@@ -167,11 +171,13 @@ class Frame extends Controller
 
         // 读出数据
         $sql = sprintf('select %s from %s', $select_str, $table_name);
-        $results = $model->select($sql);
+        $query = $model->select($sql);
+        $results = $query->getResult();
 
         // 存入session
         $session_arr = [];
         $session_arr[$menu_id.'select_str'] = $select_str;
+        $session_arr[$menu_id.'query_str'] = $sql;
         $session_arr[$menu_id.'-table_name'] = $table_name;
         $session_arr[$menu_id.'-columns_arr'] = $columns_arr;
 
@@ -303,8 +309,15 @@ class Frame extends Controller
             $sql = $sql . ' group by ' . $group;
         }
 
+        // 存入session
+        $session_arr = [];
+        $session_arr[$menu_id.'query_str'] = $sql;
+        $session = \Config\Services::session();
+        $session->set($session_arr);
+
         $model = new Mframe();
-        $results = $model->select($sql);
+        $query = $model->select($sql);
+        $results = $query->getResult();
 
         exit(json_encode($results));
     }
@@ -348,5 +361,26 @@ class Frame extends Controller
         $num = $model->add($sql);
 
         exit($num);
+    }
+
+	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 导出到xls
+	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function export($menu_id='')
+    {
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $query_str = $session->get($menu_id.'query_str');
+
+        $table = new \CodeIgniter\View\Table();
+
+        $model = new Mframe();
+        $query = $model->select($query_str);
+
+        header('content-type:application/vnd.ms-excel; charset=gbk');
+        header('content-disposition:attachment;filename=aa.xls');
+        header('Accept-Ranges: bytes');
+
+        exit($table->generate($query));
     }
 }
