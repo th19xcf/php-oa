@@ -1,4 +1,4 @@
-<!-- v1.4.3.1.20211011700, from office -->
+<!-- v1.4.4.1.202111091400, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -31,14 +31,13 @@
             main_tb.data.add({id:'新增', type:'button', value:'新增'});
             main_tb.data.add({id:'导入', type:'button', value:'导入'});
             main_tb.data.add({id:'导出', type:'button', value:'导出excel'});
+            main_tb.data.add({id:'测试', type:'button', value:'测试'});
 
             $$('condbox').style.height = document.documentElement.clientHeight*0.85 + 'px';
             $$('gridbox').style.height = document.documentElement.clientHeight*0.85 + 'px';
-            $$('addbox').style.height = document.documentElement.clientHeight*0.85 + 'px';
             $$('footbox').style.height = document.documentElement.clientHeight*0.033 + 'px';
 
             $$('condbox').style.display = 'none';
-            $$('addbox').style.display = 'none';
             $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{} , 汇总:{} , 平均:{}</b>';
 
             // 数据表列信息
@@ -134,6 +133,11 @@
             {
                 switch (id)
                 {
+                    case '测试':
+                        var popup = new dhx.Popup();
+                        popup.attachHTML("<h1>Hello, I'm popup</h1>");
+                        popup.show({auto:true});
+                        break;
                     case '刷新':
                         window.location.reload();
                         break;
@@ -381,9 +385,28 @@
 
                 //console.log('add_columns_arr', add_columns_arr);
 
-                // 生成数据grid
+                // 生成add_grid
                 var add_grid = new dhx.Grid(null, {columns:add_columns_arr, editable:true, resizable:true, selection:'complex', autoEmptyRow:true});
                 win.attach(add_grid);
+
+                /*
+                add_grid.events.on('cellDblClick', function(row,column,e)
+                {
+                    console.log(row,column,e);
+                    var calendar = new dhx.Calendar(null, {dateFormat: "%Y-%m-%d"});
+                    var popup = new dhx.Popup();
+                    popup.attach(calendar);
+                    popup.show('toolbarbox');
+
+                    calendar.events.on('change',function()
+                    {
+                        var date = calendar.getValue();
+                        //console.log('date',date);
+                        row[column['id']] = date;
+                        add_grid.paint();
+                    });
+                });
+                */
 
                 win.footer.events.on('click', function (id) 
                 {
@@ -405,7 +428,7 @@
                 // 退出, 更新data_grid数据
                 win.events.on('AfterHide', function(position, events)
                 {
-                    window.location.reload();
+                    //window.location.reload();
                 });
             }
         }
@@ -415,12 +438,12 @@
 
 <body onload='doOnLoad();'>
     <div id='toolbarbox'></div>
+    <div id='popup'></div>
     <div id='condbox' style='width:100%; height:600px; background-color:lightblue;'>
         <div id='cond_toolbar'></div>
-        <div id='cond_grid' style='width:100%; height:92%; background-color:blue;'></div>
+        <div id='cond_grid' style='width:100%; height:92%; background-color:lightblue;'></div>
     </div>
     <div id='gridbox' style='width:100%; height:600px; background-color:lightblue;'></div>
-    <div id='addbox' style='width:100%; height:600px; background-color:lightblue;'></div>
     <div id='footbox' style='width:100%; height:10px; margin-top:5px; background-color: lightblue;'></div>
     <a id='exp2xls'></a>
 </body>

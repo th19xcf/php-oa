@@ -1,6 +1,6 @@
 <?php
 
-/* v1.4.3.1.20211011700, from office */
+/* v1.4.4.1.202111091400, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -54,8 +54,9 @@ class Frame extends Controller
             select 查询模块,列名,列类型,字段名,查询名,对象,可筛选,
                 if(类型 is null,"",类型) as 类型
             from view_function 
-            where 功能编码=%s
-            group by 列名', $menu_id);
+            where 功能编码=%s and 列顺序>0
+            group by 列名
+            order by 列顺序', $menu_id);
 
         $model = new Mframe();
         $query = $model->select($sql);
@@ -77,13 +78,17 @@ class Frame extends Controller
             $grid_col_arr[$row->列名]['header']['text'] = $row->列名;
             $grid_col_arr[$row->列名]['header']['content'] = $row->可筛选;
 
-            if ($row->列类型 == '数字')
+            switch ($row->列类型)
             {
-                $grid_col_arr[$row->列名]['type'] = 'number';
-            }
-            else
-            {
-                $grid_col_arr[$row->列名]['type'] = 'string';
+                case '数字':
+                    $grid_col_arr[$row->列名]['type'] = 'number';
+                    break;
+                case '字符':
+                    $grid_col_arr[$row->列名]['type'] = 'string';
+                    break;
+                case '日期':
+                    $grid_col_arr[$row->列名]['type'] = 'date';
+                    break;
             }
 
             if ($row->类型 == '下拉')
@@ -170,7 +175,9 @@ class Frame extends Controller
         }
 
         // 读出数据
-        $sql = sprintf('select %s from %s', $select_str, $table_name);
+        $sql = sprintf('select (@i:=@i+1) as 序号,%s 
+            from %s,(select @i:=0) as xh', 
+            $select_str, $table_name);
         $query = $model->select($sql);
         $results = $query->getResult();
 
@@ -347,6 +354,7 @@ class Frame extends Controller
             switch ($col['类型'])
             {
                 case '字符':
+                case '日期':
                     $values_str = sprintf('%s"%s"', $values_str, $row_arr[$col['列名']]);
                     break;
                 case '数字':
