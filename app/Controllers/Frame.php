@@ -1,6 +1,6 @@
 <?php
 
-/* v1.4.4.1.202111091400, from office */
+/* v2.0.0.1.202112021020, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -67,11 +67,67 @@ class Frame extends Controller
         $grid_cond_arr = array();  // 条件设置信息
         $columns_arr = array();  // 列信息
 
+        // 客户端grid列信息,手工增加选取列
+        $grid_col_arr['选取']['field'] = '选取';
+        $grid_col_arr['选取']['width'] = 90;
+        $grid_col_arr['选取']['resizable'] = true;
+        $grid_col_arr['选取']['checkboxSelection'] = true;
+
+        $grid_col_arr['序号']['field'] = '序号';
+        $grid_col_arr['序号']['width'] = 100;
+        $grid_col_arr['序号']['resizable'] = true;
+
         foreach ($results as $row)
         {
             // 客户端grid列信息
-            $grid_col_arr[$row->列名]['header'] = array();
-            $grid_col_arr[$row->列名]['options'] = array();
+            $grid_col_arr[$row->列名]['field'] = $row->列名;
+            $grid_col_arr[$row->列名]['sortable'] = true;
+            $grid_col_arr[$row->列名]['filter'] = true;
+            $grid_col_arr[$row->列名]['resizable'] = true;
+
+            // 查询数据表对应的查询名
+            if ($select_str != '')
+            {
+                $select_str = $select_str . ',';
+            }
+            $select_str = $select_str . $row->查询名 . ' as ' . $row->列名;
+        }
+
+        // 取出查询模块对应的表配置
+        $table_name = '';
+
+        $sql = sprintf('
+            select 表名 
+            from view_function 
+            where 功能编码=%s
+            group by 功能编码', $menu_id);
+
+        $query = $model->select($sql);
+        $results = $query->getResult();
+        foreach ($results as $row)
+        {
+            $table_name = $row->表名;
+            break;
+        }
+
+        // 读出数据
+        //$sql = sprintf('select "" as 选取,%s from %s', $select_str, $table_name);
+        $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
+            from %s,(select @i:=0) as xh limit 50', 
+            $select_str, $table_name);
+        $query = $model->select($sql);
+        $results = $query->getResult();
+
+        $send['col_json'] = json_encode($grid_col_arr);
+        $send['data_json'] = json_encode($results);
+        echo view('Vgrid_aggrid.php', $send);
+        return;
+
+        foreach ($results as $row)
+        {
+            // 客户端grid列信息
+            $grid_col_arr[$row->列名]['field'] = array();
+            $grid_col_arr[$row->列名]['sortable'] = array();
 
             $grid_col_arr[$row->列名]['id'] = $row->列名;
 
@@ -197,7 +253,7 @@ class Frame extends Controller
         $send['object_json'] = json_encode($objects_arr);
         $send['func_id'] = $menu_id;
 
-        echo view('Vgrid_json.php', $send);
+        echo view('Vgrid_aggrid.php', $send);
     }
 
 	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
