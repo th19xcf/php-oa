@@ -1,6 +1,6 @@
 <?php
 
-/* v2.0.0.1.202112021020, from office */
+/* v2.1.0.1.202112021650, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -50,8 +50,8 @@ class Frame extends Controller
 	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function get_condition($menu_id='')
     {
-        $sql = sprintf('
-            select 查询模块,列名,列类型,字段名,查询名,对象,可筛选,
+        $sql = sprintf(
+            'select 查询模块,列名,列类型,字段名,查询名,对象,可筛选,
                 if(类型 is null,"",类型) as 类型
             from view_function 
             where 功能编码=%s and 列顺序>0
@@ -63,27 +63,48 @@ class Frame extends Controller
         $results = $query->getResult();
 
         $select_str = '';
-        $grid_col_arr = array();  // 客户端grid列信息
+        $data_col_arr = array();  // 客户端data_grid列信息
         $grid_cond_arr = array();  // 条件设置信息
         $columns_arr = array();  // 列信息
 
-        // 客户端grid列信息,手工增加选取列
-        $grid_col_arr['选取']['field'] = '选取';
-        $grid_col_arr['选取']['width'] = 90;
-        $grid_col_arr['选取']['resizable'] = true;
-        $grid_col_arr['选取']['checkboxSelection'] = true;
+        $modify_col_arr = array();  // 客户端modify_grid列信息
+        $modify_value_arr = array();  // 客户端modify_grid值信息
 
-        $grid_col_arr['序号']['field'] = '序号';
-        $grid_col_arr['序号']['width'] = 100;
-        $grid_col_arr['序号']['resizable'] = true;
+        // 客户端modify_grid列信息,手工定义列
+        $modify_col_arr['字段名称']['field'] = '字段名称';
+        $modify_col_arr['字段名称']['width'] = 120;
+        $modify_col_arr['字段名称']['resizable'] = true;
+        $modify_col_arr['字段名称']['editable'] = false;
+
+        $modify_col_arr['字段类型']['field'] = '字段类型';
+        $modify_col_arr['字段类型']['width'] = 100;
+        $modify_col_arr['字段类型']['resizable'] = true;
+        $modify_col_arr['字段类型']['editable'] = false;
+
+        $modify_col_arr['字段值']['field'] = '字段值';
+        $modify_col_arr['字段值']['width'] = 200;
+        $modify_col_arr['字段值']['resizable'] = true;
+        $modify_col_arr['字段值']['editable'] = true;
+        //$modify_col_arr['字段值']['cellEditor'] = 'cellEditorSelector';
+        //$modify_col_arr['字段值']['cellEditorSelector'] = cellEditorSelector;
+
+        // 客户端data_grid列信息,手工增加选取列和序号列
+        $data_col_arr['选取']['field'] = '选取';
+        $data_col_arr['选取']['width'] = 90;
+        $data_col_arr['选取']['resizable'] = true;
+        $data_col_arr['选取']['checkboxSelection'] = true;
+
+        $data_col_arr['序号']['field'] = '序号';
+        $data_col_arr['序号']['width'] = 100;
+        $data_col_arr['序号']['resizable'] = true;
 
         foreach ($results as $row)
         {
-            // 客户端grid列信息
-            $grid_col_arr[$row->列名]['field'] = $row->列名;
-            $grid_col_arr[$row->列名]['sortable'] = true;
-            $grid_col_arr[$row->列名]['filter'] = true;
-            $grid_col_arr[$row->列名]['resizable'] = true;
+            // 客户端data_grid列信息
+            $data_col_arr[$row->列名]['field'] = $row->列名;
+            $data_col_arr[$row->列名]['sortable'] = true;
+            $data_col_arr[$row->列名]['filter'] = true;
+            $data_col_arr[$row->列名]['resizable'] = true;
 
             // 查询数据表对应的查询名
             if ($select_str != '')
@@ -91,6 +112,13 @@ class Frame extends Controller
                 $select_str = $select_str . ',';
             }
             $select_str = $select_str . $row->查询名 . ' as ' . $row->列名;
+
+            // 客户端modify_grid值
+            $value_arr = array();
+            $value_arr['字段名称'] = $row->列名;
+            $value_arr['字段类型'] = '';
+            $value_arr['字段值'] = '';
+            array_push($modify_value_arr, $value_arr);
         }
 
         // 取出查询模块对应的表配置
@@ -111,21 +139,23 @@ class Frame extends Controller
         }
 
         // 读出数据
-        //$sql = sprintf('select "" as 选取,%s from %s', $select_str, $table_name);
         $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
             from %s,(select @i:=0) as xh limit 50', 
             $select_str, $table_name);
         $query = $model->select($sql);
         $results = $query->getResult();
 
-        $send['col_json'] = json_encode($grid_col_arr);
-        $send['data_json'] = json_encode($results);
+        $send['data_col_json'] = json_encode($data_col_arr);
+        $send['data_value_json'] = json_encode($results);
+        $send['modify_col_json'] = json_encode($modify_col_arr);
+        $send['modify_value_json'] = json_encode($modify_value_arr);
+
         echo view('Vgrid_aggrid.php', $send);
         return;
 
         foreach ($results as $row)
         {
-            // 客户端grid列信息
+            // 客户端data_grid列信息
             $grid_col_arr[$row->列名]['field'] = array();
             $grid_col_arr[$row->列名]['sortable'] = array();
 
@@ -256,9 +286,9 @@ class Frame extends Controller
         echo view('Vgrid_aggrid.php', $send);
     }
 
-	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 通用条件设置模块
-	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function set_condition($menu_id='')
     {
         //$data = $this->request->getBody();
@@ -427,9 +457,9 @@ class Frame extends Controller
         exit($num);
     }
 
-	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 导出到xls
-	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function export($menu_id='')
     {
         // 从session中取出数据
