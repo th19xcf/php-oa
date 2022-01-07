@@ -1,6 +1,6 @@
 <?php
 
-/* v1.4.3.1.20211011700, from office */
+/* v3.1.0.0.202201072355, from home */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -57,6 +57,21 @@ class Mframe extends Model
         $db->close();
 
         return $query;
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 通用更新
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function modify($sql)
+    {
+        $db = db_connect('btdc');
+
+        $db->query($sql);
+        $num = $db->affectedRows();
+
+        $db->close();
+
+        return $num;
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

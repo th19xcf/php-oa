@@ -1,7 +1,5 @@
 <?php
-
-/* v2.1.0.1.202112021650, from office */
-
+/* v3.1.0.0.202201072355, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -50,9 +48,30 @@ class Frame extends Controller
 	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function get_condition($menu_id='')
     {
+        $select_str = '';
+        $primary_key = '';
+        $data_col_arr = array();  // 客户端data_grid列信息
+        $grid_cond_arr = array();  // 条件设置信息
+        $columns_arr = array();  // 列信息
+
+        $modify_value_arr = array();  // 客户端modify_grid值信息
+
+        // 客户端data_grid列信息,手工增加选取列和序号列
+        $data_col_arr['选取']['field'] = '选取';
+        $data_col_arr['选取']['width'] = 100;
+        $data_col_arr['选取']['resizable'] = true;
+        $data_col_arr['选取']['headerCheckboxSelection'] = true;
+        $data_col_arr['选取']['checkboxSelection'] = true;
+
+        $data_col_arr['序号']['field'] = '序号';
+        $data_col_arr['序号']['width'] = 100;
+        $data_col_arr['序号']['resizable'] = true;
+
+        $object_arr = array();  // 下拉选择的对象值
+
         $sql = sprintf(
-            'select 查询模块,列名,列类型,字段名,查询名,对象,可筛选,
-                if(类型 is null,"",类型) as 类型
+            'select 查询模块,列名,列类型,字段名,查询名,对象,可筛选,主键,
+                if(类型 is null,"",类型) as 赋值类型
             from view_function 
             where 功能编码=%s and 列顺序>0
             group by 列名
@@ -62,49 +81,34 @@ class Frame extends Controller
         $query = $model->select($sql);
         $results = $query->getResult();
 
-        $select_str = '';
-        $data_col_arr = array();  // 客户端data_grid列信息
-        $grid_cond_arr = array();  // 条件设置信息
-        $columns_arr = array();  // 列信息
-
-        $modify_col_arr = array();  // 客户端modify_grid列信息
-        $modify_value_arr = array();  // 客户端modify_grid值信息
-
-        // 客户端modify_grid列信息,手工定义列
-        $modify_col_arr['字段名称']['field'] = '字段名称';
-        $modify_col_arr['字段名称']['width'] = 120;
-        $modify_col_arr['字段名称']['resizable'] = true;
-        $modify_col_arr['字段名称']['editable'] = false;
-
-        $modify_col_arr['字段类型']['field'] = '字段类型';
-        $modify_col_arr['字段类型']['width'] = 100;
-        $modify_col_arr['字段类型']['resizable'] = true;
-        $modify_col_arr['字段类型']['editable'] = false;
-
-        $modify_col_arr['字段值']['field'] = '字段值';
-        $modify_col_arr['字段值']['width'] = 200;
-        $modify_col_arr['字段值']['resizable'] = true;
-        $modify_col_arr['字段值']['editable'] = true;
-        //$modify_col_arr['字段值']['cellEditor'] = 'cellEditorSelector';
-        //$modify_col_arr['字段值']['cellEditorSelector'] = cellEditorSelector;
-
-        // 客户端data_grid列信息,手工增加选取列和序号列
-        $data_col_arr['选取']['field'] = '选取';
-        $data_col_arr['选取']['width'] = 90;
-        $data_col_arr['选取']['resizable'] = true;
-        $data_col_arr['选取']['checkboxSelection'] = true;
-
-        $data_col_arr['序号']['field'] = '序号';
-        $data_col_arr['序号']['width'] = 100;
-        $data_col_arr['序号']['resizable'] = true;
-
         foreach ($results as $row)
         {
+            if ($row->主键 != 0)
+            {
+                $primary_key = $row->列名;
+            }
+
+            // 列信息
+            $arr = array();
+
+            $arr['列名'] = $row->列名;
+            $arr['类型'] = $row->列类型;
+            $arr['字段名'] = $row->字段名;
+            $arr['主键'] = $row->主键;
+            $arr['赋值类型'] = $row->赋值类型;
+            $arr['对象'] = $row->对象;
+
+            array_push($columns_arr, $arr);
+
             // 客户端data_grid列信息
             $data_col_arr[$row->列名]['field'] = $row->列名;
             $data_col_arr[$row->列名]['sortable'] = true;
             $data_col_arr[$row->列名]['filter'] = true;
             $data_col_arr[$row->列名]['resizable'] = true;
+            if ($row->主键 != 0)
+            {
+                $data_col_arr[$row->列名]['hide'] = true;
+            }
 
             // 查询数据表对应的查询名
             if ($select_str != '')
@@ -114,10 +118,27 @@ class Frame extends Controller
             $select_str = $select_str . $row->查询名 . ' as ' . $row->列名;
 
             // 客户端modify_grid值
+            if ($row->主键 != 0) continue;
             $value_arr = array();
             $value_arr['字段名称'] = $row->列名;
-            $value_arr['字段类型'] = '';
+            $value_arr['字段类型'] = $row->列类型;
+            //$value_arr['字段值'] = array();
             $value_arr['字段值'] = '';
+
+            if ($row->赋值类型 == '下拉')
+            {
+                $object_arr[$row->列名] = array();
+                $object_arr[$row->列名][0] = '';
+
+                $qry = $model->select(sprintf('select 对象值 from def_object where 对象名称="%s" order by 顺序',$row->对象));
+                $rslt = $qry->getResult();
+                foreach($rslt as $vv)
+                {
+                    //array_push($value_arr['字段值'], $vv->对象值);
+                    array_push($object_arr[$row->列名], $vv->对象值);
+                }
+            }
+
             array_push($modify_value_arr, $value_arr);
         }
 
@@ -145,10 +166,13 @@ class Frame extends Controller
         $query = $model->select($sql);
         $results = $query->getResult();
 
+        $send['columns_json'] = json_encode($columns_arr);
         $send['data_col_json'] = json_encode($data_col_arr);
         $send['data_value_json'] = json_encode($results);
-        $send['modify_col_json'] = json_encode($modify_col_arr);
         $send['modify_value_json'] = json_encode($modify_value_arr);
+        $send['object_json'] = json_encode($object_arr);
+        $send['func_id'] = $menu_id;
+        $send['primary_key'] = $primary_key;
 
         echo view('Vgrid_aggrid.php', $send);
         return;
@@ -282,6 +306,7 @@ class Frame extends Controller
         $send['cond_json'] = json_encode($grid_cond_arr);
         $send['object_json'] = json_encode($objects_arr);
         $send['func_id'] = $menu_id;
+        $send['primary_key'] = $primary_key;
 
         echo view('Vgrid_aggrid.php', $send);
     }
@@ -413,6 +438,26 @@ class Frame extends Controller
         $results = $query->getResult();
 
         exit(json_encode($results));
+    }
+
+	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 更新行记录
+	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function update_row($menu_id='')
+    {
+        $row_arr = $this->request->getJSON(true);
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $table_name = $session->get($menu_id.'-table_name');
+        $primary_key = $session->get($menu_id.'-primary_key');
+
+        $sql = sprintf('update %s set %s where %s', $table_name );
+
+        $model = new Mframe();
+        $num = $model->modify($sql);
+
+        exit($num);
     }
 
 	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

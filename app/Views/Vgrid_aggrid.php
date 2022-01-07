@@ -1,4 +1,4 @@
-<!-- v2.1.0.1.202112021650, from office -->
+<!-- v3.1.0.0.202201072355, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -33,31 +33,10 @@
         var main_tb = new dhx.Toolbar('toolbarbox', {css:'toobar-class'});
         main_tb.data.add({id:'名称', type:'title', value:'主菜单-->'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
+        main_tb.data.add({id:'分页', type:'button', value:'分页'});
         main_tb.data.add({type: 'separator'});
-        main_tb.data.add({id:'修改', type:'button', value: '修改'});
-        main_tb.data.add({id:'新增', type:'button', value: '新增'});
-
-        const layout = new dhx.Layout('gridbox', 
-        {
-            //type: "space",
-            cols: 
-            [
-                {
-                    id:'data_grid', 
-                    header:'数据窗口', 
-                    html:'<div id="data_grid" style="height:100%;"></div>',
-                    resizable:true
-                },
-                {
-                    id:'modify_grid', 
-                    header:'录入窗口', 
-                    width: '400px',
-                    html:'<div id="modify_grid" style="height:100%;"></div>', 
-                    resizable:true,
-                    //hidden:true
-                }
-            ]
-        });
+        main_tb.data.add({id:'修改', type:'button', value:'修改'});
+        main_tb.data.add({id:'新增', type:'button', value:'新增'});
 
         var data_columns_obj = JSON.parse('<?php echo $data_col_json; ?>');
         //console.log('data_column_obj', data_columns_obj);
@@ -70,7 +49,7 @@
         //console.log('data_grid_obj', data_grid_obj);
 
         // let the grid know which columns and what data to use
-        const data_grid_columns = 
+        const data_grid_options = 
         {
             columnDefs: data_columns_arr,
             rowData: data_grid_obj,
@@ -78,74 +57,197 @@
             pagination: true
         };
 
+        // lookup the container we want the Grid to use
+        //const eGridDiv = document.querySelector('#gridbox');
+
         // create the grid passing in the div to use together with the columns & data we want to use
-        new agGrid.Grid($$('data_grid'), data_grid_columns);
+        new agGrid.Grid($$('gridbox'), data_grid_options);
 
-        // 修改用表
-        var modify_columns_obj = JSON.parse('<?php echo $modify_col_json; ?>');
-        var modify_columns_arr = Object.values(modify_columns_obj);
+        var columns_obj = JSON.parse('<?php echo $columns_json; ?>');
+        var columns_arr = Object.values(columns_obj);
         var modify_grid_obj = JSON.parse('<?php echo $modify_value_json; ?>');
+        //console.log('columns_obj', columns_obj);
+        //console.log('columns_arr', columns_arr);
+        //console.log('name', columns_obj[0]);
 
-        //console.log('modify_columns_arr', modify_columns_arr);
+        var object_obj = JSON.parse('<?php echo $object_json; ?>');
+        //console.log('object_obj', object_obj);
 
-        /*
-        const modify_grid_columns = 
-        {
-            columnDefs: modify_columns_arr,
-            rowData: modify_grid_obj
-        };
-
-        new agGrid.Grid($$('modify_grid'), modify_grid_columns);
-        */
-
-        const modify_grid_columns = 
+        // 修改及新增记录使用
+        const modify_grid_options = 
         {
             columnDefs: 
             [
                 {field:'字段名称', width:'120px', resizable:true},
                 {field:'字段类型', width:'100px', resizable: true},
-                {field:'字段值', width:'200px', resizable:true, editable:true, cellEditorSelector:cellEditorSelector}
+                {field:'字段值', width:'300px', resizable:true, editable:true, cellEditorSelector:cellEditorSelector}
             ],
+            rowSelection: 'multiple',
             rowData: modify_grid_obj
         };
-        new agGrid.Grid($$('modify_grid'), modify_grid_columns);
+
+        // 提前生成录入窗口,否则得不到modify_grid
+        var win = new dhx.Window(
+        {
+            title: '操作窗口',
+            footer: true,
+            modal: true,
+            width: 700,
+            height: 500,
+            closable: true,
+            movable: true
+        });
+
+        win.footer.data.add(
+        {
+            type: 'button',
+            id: '清空',
+            value: '清空',
+            view: 'flat',
+            size: 'medium',
+            color: 'primary',
+        });
+
+        win.footer.data.add(
+        {
+            type: 'button',
+            id: '提交',
+            value: '提交',
+            view: 'flat',
+            size: 'medium',
+            color: 'primary',
+        });
+
+        var html = '<div id="modify_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
+        win.attachHTML(html);
+        win.hide();
+        var modify_grid_create = false;
 
         // 工具栏点击
         main_tb.events.on('click', function(id, e) 
         {
-            switch (id) {
+            switch (id)
+            {
+                case '修改':
+                    tb_modify_click(id);
+                    break;
                 case '新增':
-                    tb_add_click();
+                    tb_add_click(id);
                     break;
             }
         });
 
-        function tb_add_click()
+        function tb_modify_click(id) 
         {
-            layout.getCell('modify_grid').toggle();
+            var rows = data_grid_options.api.getSelectedRows();
+            if (rows.length==0)
+            {
+                alert('请先选择要修改的记录');
+                return;
+            }
+            console.log('select rows=', rows);
+
+            win.show();
+            if (modify_grid_create == false)
+            {
+                modify_grid_obj = JSON.parse('<?php echo $modify_value_json; ?>');
+
+                new agGrid.Grid($$('modify_grid'), modify_grid_options);
+                modify_grid_create = true;
+            }
+        }
+
+        function tb_add_click(id) 
+        {
+            win.show();
+            if (modify_grid_create == false)
+            {
+                new agGrid.Grid($$('modify_grid'), modify_grid_options);
+                modify_grid_create = true;
+            }
         }
 
         function cellEditorSelector(params)
         {
-            console.log('params',params.data.字段名称);
-            if (params.data.字段名称 === '姓名') {
-                return {
-                component: 'numericCellEditor',
-                };
-            }
+            //console.log('params', params);
+            var col_name = params.data.字段名称;
 
-            if (params.data.字段名称 === '学校') {
-                return {
-                    component: 'agSelectCellEditor',
-                    params: {
-                        values: ['Male', 'Female']
-                    },
-                };
+            for (var ii in columns_obj)
+            {
+                if (columns_obj[ii].列名 != col_name) continue;
+                switch (columns_obj[ii].赋值类型)
+                {
+                    case '下拉':
+                        return {
+                            component: 'agSelectCellEditor',
+                            params: {
+                                values: object_obj[params.data.字段名称]
+                            },
+                        };
+                }
+                break;
             }
         }
 
-      //console.log(data_grid_columns.api.getColumnDefs());
+        win.footer.events.on('click', function (id)
+        {
+            if (id=='清空')
+            {
+                modify_grid_obj = JSON.parse('<?php echo $modify_value_json; ?>');
+                modify_grid_options.api.setRowData(modify_grid_obj);
+            }
+            else if (id == '提交')
+            {
+                var modify_arr = [];
 
+                modify_grid_options.api.forEachNode((rowNode, index) => 
+                {
+                    if (rowNode.data['字段值'] != '')
+                    {
+                        var val = {};
+                        val[rowNode.data['字段名称']] = rowNode.data['字段值'];
+                        modify_arr.push(val);
+                        console.log('modify_arr', modify_arr);
+                    }
+                });
+
+                console.log('modify_arr=', modify_arr);
+
+                // 选择的记录
+                var rows = data_grid_options.api.getSelectedRows();
+
+                var key = '<?php echo $primary_key; ?>';
+                var key_values = '';
+
+                for (var ii in rows)
+                {
+                    if (key_values == '')
+                    {
+                        key_values = data_grid_obj[rows[ii].序号-1][key];
+                    }
+                    else
+                    {
+                        key_values = key_values + ',' + data_grid_obj[rows[ii].序号-1][key];
+                    }                    
+                }
+
+                var val = {};
+                val[key] = key_values;
+                modify_arr.push(val);
+
+                //console.log('modify_arr=', modify_arr);
+
+                dhx.ajax.post('<?php base_url(); ?>/Frame/update_row/<?php echo $func_id; ?>', modify_arr).then(function (data)
+                {
+                    console.log('update ok');
+                }).catch(function (err)
+                {
+                    console.log('status' + " " + err.statusText);
+                });
+
+                win.hide();
+            }
+        });
     </script>
 
 </body>
