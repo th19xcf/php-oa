@@ -1,5 +1,5 @@
 <?php
-/* v3.1.0.0.202201072355, from home */
+/* v3.1.1.1.202201091220, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -165,6 +165,17 @@ class Frame extends Controller
             $select_str, $table_name);
         $query = $model->select($sql);
         $results = $query->getResult();
+
+        // 存入session
+        $session_arr = [];
+        $session_arr[$menu_id.'-select_str'] = $select_str;
+        $session_arr[$menu_id.'-query_str'] = $sql;
+        $session_arr[$menu_id.'-table_name'] = $table_name;
+        $session_arr[$menu_id.'-columns_arr'] = $columns_arr;
+        $session_arr[$menu_id.'-primary_key'] = $primary_key;
+
+        $session = \Config\Services::session();
+        $session->set($session_arr);
 
         $send['columns_json'] = json_encode($columns_arr);
         $send['data_col_json'] = json_encode($data_col_arr);
@@ -452,7 +463,31 @@ class Frame extends Controller
         $table_name = $session->get($menu_id.'-table_name');
         $primary_key = $session->get($menu_id.'-primary_key');
 
-        $sql = sprintf('update %s set %s where %s', $table_name );
+        $set = '';
+        $where = '';
+        foreach ($row_arr as $row)
+        {
+            foreach ($row as $key => $value)
+            {
+                if ($key == $primary_key)
+                {
+                    $where = sprintf('%s in (%s)', $key, $value);
+                }
+                else
+                {
+                    if ($set == '')
+                    {
+                        $set = sprintf('%s="%s"', $key, $value);
+                    }
+                    else
+                    {
+                        $set = sprintf('%s,%s=%s', $set, $key, $value);
+                    }
+                }
+            }
+        }
+
+        $sql = sprintf('update %s set %s where %s', $table_name, $set, $where);
 
         $model = new Mframe();
         $num = $model->modify($sql);
