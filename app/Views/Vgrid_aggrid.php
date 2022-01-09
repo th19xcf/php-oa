@@ -1,4 +1,4 @@
-<!-- v3.1.0.0.202201072355, from home -->
+<!-- v3.1.2.1.202201091850, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -215,6 +215,7 @@
 
                 // 选择的记录
                 var rows = data_grid_options.api.getSelectedRows();
+               console.log('rows=', rows);
 
                 var key = '<?php echo $primary_key; ?>';
                 var key_values = '';
@@ -228,7 +229,7 @@
                     else
                     {
                         key_values = key_values + ',' + data_grid_obj[rows[ii].序号-1][key];
-                    }                    
+                    }
                 }
 
                 var val = {};
@@ -239,7 +240,27 @@
 
                 dhx.ajax.post('<?php base_url(); ?>/Frame/update_row/<?php echo $func_id; ?>', modify_arr).then(function (data)
                 {
-                    console.log('update ok');
+                    // 更改data_grid的记录(后期改变背景颜色)
+                    var rows = data_grid_options.api.getSelectedRows();
+
+                    for (var ii in rows)
+                    {
+                        for (var jj in modify_arr)
+                        {
+                            for (var kk in modify_arr[jj])
+                            {
+                                var id = kk;
+                                var vv = modify_arr[jj][kk];
+                                console.log('id,vv', ii, jj, id, vv);
+                                if (vv == '<?php echo $primary_key; ?>') continue;
+                                data_grid_obj[rows[ii].序号-1][id] = vv;
+                            }
+                        }
+                    }
+
+                    data_grid_options.api.refreshCells();
+
+                    alert('数据更新成功。');
                 }).catch(function (err)
                 {
                     console.log('status' + " " + err.statusText);
