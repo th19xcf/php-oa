@@ -1,5 +1,5 @@
 <?php
-/* v3.1.1.1.202201091220, from home */
+/* v3.1.3.1.202201092310, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -66,6 +66,7 @@ class Frame extends Controller
         $data_col_arr['序号']['field'] = '序号';
         $data_col_arr['序号']['width'] = 100;
         $data_col_arr['序号']['resizable'] = true;
+        $data_col_arr['序号']['sortable'] = true;
 
         $object_arr = array();  // 下拉选择的对象值
 
@@ -161,7 +162,7 @@ class Frame extends Controller
 
         // 读出数据
         $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
-            from %s,(select @i:=0) as xh limit 50', 
+            from %s,(select @i:=0) as xh limit 240', 
             $select_str, $table_name);
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -304,8 +305,8 @@ class Frame extends Controller
 
         // 存入session
         $session_arr = [];
-        $session_arr[$menu_id.'select_str'] = $select_str;
-        $session_arr[$menu_id.'query_str'] = $sql;
+        $session_arr[$menu_id.'-select_str'] = $select_str;
+        $session_arr[$menu_id.'-query_str'] = $sql;
         $session_arr[$menu_id.'-table_name'] = $table_name;
         $session_arr[$menu_id.'-columns_arr'] = $columns_arr;
 
@@ -426,7 +427,7 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $table_name = $session->get($menu_id.'-table_name');
-        $select_str = $session->get($menu_id.'select_str');
+        $select_str = $session->get($menu_id.'-select_str');
 
         $sql = sprintf('select %s from %s', $select_str, $table_name);
         if ($where != '')
@@ -440,7 +441,7 @@ class Frame extends Controller
 
         // 存入session
         $session_arr = [];
-        $session_arr[$menu_id.'query_str'] = $sql;
+        $session_arr[$menu_id.'-query_str'] = $sql;
         $session = \Config\Services::session();
         $session->set($session_arr);
 
@@ -544,7 +545,7 @@ class Frame extends Controller
     {
         // 从session中取出数据
         $session = \Config\Services::session();
-        $query_str = $session->get($menu_id.'query_str');
+        $query_str = $session->get($menu_id.'-query_str');
 
         $table = new \CodeIgniter\View\Table();
 

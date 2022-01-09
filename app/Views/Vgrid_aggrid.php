@@ -1,4 +1,4 @@
-<!-- v3.1.2.1.202201091850, from home -->
+<!-- v3.1.3.1.202201092310, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -18,6 +18,7 @@
     <div id='toolbarbox'></div>
     <div id='gridbox' class='ag-theme-alpine' style='width:100%; height:600px; background-color:lightblue;'></div>
     <div id='footbox' style='width:100%; height:10px; margin-top:5px; background-color: lightblue;'></div>
+    <a id='exp2xls'></a>
 
     <script type='text/javascript' charset='utf-8'>
         function $$(id)
@@ -31,12 +32,14 @@
 
         // 生成主菜单栏
         var main_tb = new dhx.Toolbar('toolbarbox', {css:'toobar-class'});
-        main_tb.data.add({id:'名称', type:'title', value:'主菜单-->'});
+        //main_tb.data.add({id:'名称', type:'title', value:'主菜单-->'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         main_tb.data.add({id:'分页', type:'button', value:'分页'});
-        main_tb.data.add({type: 'separator'});
+        main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'修改', type:'button', value:'修改'});
         main_tb.data.add({id:'新增', type:'button', value:'新增'});
+        main_tb.data.add({type:'spacer'});
+        main_tb.data.add({id:'导出', type:'button', value:'导出'});
 
         var data_columns_obj = JSON.parse('<?php echo $data_col_json; ?>');
         //console.log('data_column_obj', data_columns_obj);
@@ -128,14 +131,29 @@
         {
             switch (id)
             {
+                case '刷新':
+                    window.location.reload();
+                    break;
+                case '分页':
+                    tb_paging_click(id);
+                    break;
                 case '修改':
                     tb_modify_click(id);
                     break;
                 case '新增':
                     tb_add_click(id);
                     break;
+                case '导出':
+                    var href = '<?php base_url(); ?>/Frame/export/<?php echo $func_id; ?>';
+                    $$('exp2xls').href = href;
+                    $$('exp2xls').click();
+                    break;
             }
         });
+
+        function tb_paging_click(id) 
+        {
+        }
 
         function tb_modify_click(id) 
         {
