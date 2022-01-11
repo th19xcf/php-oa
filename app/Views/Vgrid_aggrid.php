@@ -1,4 +1,4 @@
-<!-- v3.1.4.1.202201111640, from office -->
+<!-- v3.1.5.1.202201112100, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -8,6 +8,7 @@
 
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-grid.css'>
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-theme-alpine.css'>
+    <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-locale-cn.js'></script>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-community.noStyle.js'></script>
 
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/dhtmlx/codebase/suite.css'>
@@ -57,7 +58,8 @@
             columnDefs: data_columns_arr,
             rowData: data_grid_obj,
             rowSelection: 'multiple',
-            pagination: true
+            pagination: true,
+            localeText: AG_GRID_LOCALE_CN
         };
 
         // lookup the container we want the Grid to use
