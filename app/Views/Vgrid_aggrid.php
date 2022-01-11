@@ -1,4 +1,4 @@
-<!-- v3.1.3.1.202201092310, from home -->
+<!-- v3.1.4.1.202201111640, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -86,6 +86,7 @@
                 {field:'字段值', width:'300px', resizable:true, editable:true, cellEditorSelector:cellEditorSelector}
             ],
             rowSelection: 'multiple',
+            singleClickEdit: true,
             rowData: modify_grid_obj
         };
 
@@ -216,6 +217,8 @@
             }
             else if (id == '提交')
             {
+                modify_grid_options.api.stopEditing();
+
                 var modify_arr = [];
 
                 modify_grid_options.api.forEachNode((rowNode, index) => 
