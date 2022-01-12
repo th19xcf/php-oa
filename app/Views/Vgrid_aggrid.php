@@ -1,4 +1,4 @@
-<!-- v3.1.5.1.202201112100, from home -->
+<!-- v3.2.1.1.202201121715, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -59,7 +59,9 @@
             rowData: data_grid_obj,
             rowSelection: 'multiple',
             pagination: true,
-            localeText: AG_GRID_LOCALE_CN
+            localeText: AG_GRID_LOCALE_CN,
+
+            onCellValueChanged: cell_value_changed
         };
 
         // lookup the container we want the Grid to use
@@ -154,7 +156,7 @@
             }
         });
 
-        function tb_paging_click(id) 
+        function tb_paging_click(id)
         {
         }
 
@@ -188,6 +190,11 @@
             }
         }
 
+        function cell_value_changed(params)
+        {
+            alert('vv changed');
+        }
+
         function cellEditorSelector(params)
         {
             //console.log('params', params);
@@ -201,6 +208,13 @@
                     case '下拉':
                         return {
                             component: 'agSelectCellEditor',
+                            params: {
+                                values: object_obj[params.data.字段名称]
+                            },
+                        };
+                    case '日期':
+                        return {
+                            component: 'agDateInput',
                             params: {
                                 values: object_obj[params.data.字段名称]
                             },
@@ -230,15 +244,15 @@
                         var val = {};
                         val[rowNode.data['字段名称']] = rowNode.data['字段值'];
                         modify_arr.push(val);
-                        console.log('modify_arr', modify_arr);
+                        //console.log('modify_arr', modify_arr);
                     }
                 });
 
-                console.log('modify_arr=', modify_arr);
+                //console.log('modify_arr=', modify_arr);
 
                 // 选择的记录
                 var rows = data_grid_options.api.getSelectedRows();
-               console.log('rows=', rows);
+                //console.log('rows=', rows);
 
                 var key = '<?php echo $primary_key; ?>';
                 var key_values = '';
@@ -274,7 +288,6 @@
                             {
                                 var id = kk;
                                 var vv = modify_arr[jj][kk];
-                                console.log('id,vv', ii, jj, id, vv);
                                 if (vv == '<?php echo $primary_key; ?>') continue;
                                 data_grid_obj[rows[ii].序号-1][id] = vv;
                             }
@@ -283,7 +296,7 @@
 
                     data_grid_options.api.refreshCells();
 
-                    alert('数据更新成功。');
+                    alert('数据更新成功');
                 }).catch(function (err)
                 {
                     console.log('status' + " " + err.statusText);

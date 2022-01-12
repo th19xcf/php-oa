@@ -1,5 +1,5 @@
 <?php
-/* v3.1.3.1.202201092310, from home */
+/* v3.2.1.1.202201121715, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -71,8 +71,7 @@ class Frame extends Controller
         $object_arr = array();  // 下拉选择的对象值
 
         $sql = sprintf(
-            'select 查询模块,列名,列类型,字段名,查询名,对象,可筛选,主键,
-                if(类型 is null,"",类型) as 赋值类型
+            'select 查询模块,列名,列类型,字段名,查询名,对象,可筛选,主键,赋值类型
             from view_function 
             where 功能编码=%s and 列顺序>0
             group by 列名
