@@ -1,4 +1,4 @@
-/*-- v1.1.0.1.202201262120, from home --*/
+/*-- v1.1.1.1.202201270920, from office --*/
 
 function get_date_picker()
 {
@@ -10,6 +10,7 @@ function get_date_picker()
         // create the cell
         this.eInput = document.createElement('input');
         this.eInput.setAttribute('type', 'date');
+        this.eInput.setAttribute('pattern', '[0-9]{4}-[0-9]{2}-[0-9]{2}');
         this.eInput.value = params.value;
         this.eInput.classList.add('ag-input');
         this.eInput.style.width = '100%';

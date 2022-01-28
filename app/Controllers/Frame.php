@@ -1,5 +1,5 @@
 <?php
-/* v3.2.1.1.202201121715, from office */
+/* v3.3.1.1.202201281010, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -54,7 +54,7 @@ class Frame extends Controller
         $grid_cond_arr = array();  // 条件设置信息
         $columns_arr = array();  // 列信息
 
-        $modify_value_arr = array();  // 客户端modify_grid值信息
+        $update_value_arr = array();  // 客户端update_grid值信息
 
         // 客户端data_grid列信息,手工增加选取列和序号列
         $data_col_arr['选取']['field'] = '选取';
@@ -117,13 +117,13 @@ class Frame extends Controller
             }
             $select_str = $select_str . $row->查询名 . ' as ' . $row->列名;
 
-            // 客户端modify_grid值
+            // 客户端update_grid值
             if ($row->主键 != 0) continue;
             $value_arr = array();
-            $value_arr['字段名称'] = $row->列名;
-            $value_arr['字段类型'] = $row->列类型;
-            //$value_arr['字段值'] = array();
-            $value_arr['字段值'] = '';
+            $value_arr['列名'] = $row->列名;
+            $value_arr['字段名'] = $row->字段名;
+            $value_arr['列类型'] = $row->列类型;
+            $value_arr['取值'] = '';
 
             if ($row->赋值类型 == '下拉')
             {
@@ -139,7 +139,7 @@ class Frame extends Controller
                 }
             }
 
-            array_push($modify_value_arr, $value_arr);
+            array_push($update_value_arr, $value_arr);
         }
 
         // 取出查询模块对应的表配置
@@ -180,7 +180,7 @@ class Frame extends Controller
         $send['columns_json'] = json_encode($columns_arr);
         $send['data_col_json'] = json_encode($data_col_arr);
         $send['data_value_json'] = json_encode($results);
-        $send['modify_value_json'] = json_encode($modify_value_arr);
+        $send['update_value_json'] = json_encode($update_value_arr);
         $send['object_json'] = json_encode($object_arr);
         $send['func_id'] = $menu_id;
         $send['primary_key'] = $primary_key;
@@ -467,22 +467,19 @@ class Frame extends Controller
         $where = '';
         foreach ($row_arr as $row)
         {
-            foreach ($row as $key => $value)
+            if ($row['fld_name'] == $primary_key)
             {
-                if ($key == $primary_key)
+                $where = sprintf('%s in (%s)', $row['fld_name'], $row['value']);
+            }
+            else
+            {
+                if ($set == '')
                 {
-                    $where = sprintf('%s in (%s)', $key, $value);
+                    $set = sprintf('%s="%s"', $row['fld_name'], $row['value']);
                 }
                 else
                 {
-                    if ($set == '')
-                    {
-                        $set = sprintf('%s="%s"', $key, $value);
-                    }
-                    else
-                    {
-                        $set = sprintf('%s,%s=%s', $set, $key, $value);
-                    }
+                    $set = sprintf('%s,%s=%s', $set, $row['fld_name'], $row['value']);
                 }
             }
         }
@@ -505,26 +502,25 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $table_name = $session->get($menu_id.'-table_name');
-        $columns_arr = $session->get($menu_id.'-columns_arr');
 
         $flds_str = '';
         $values_str = '';
-        foreach ($columns_arr as $col)
+        foreach ($row_arr as $row)
         {
             if ($flds_str != '')
             {
                 $flds_str = $flds_str . ',';
                 $values_str = $values_str . ',';
             }
-            $flds_str = $flds_str . $col['字段名'];
-            switch ($col['类型'])
+            $flds_str = $flds_str . $row['fld_name'];
+            switch ($row['type'])
             {
                 case '字符':
                 case '日期':
-                    $values_str = sprintf('%s"%s"', $values_str, $row_arr[$col['列名']]);
+                    $values_str = sprintf('%s"%s"', $values_str, $row['value']);
                     break;
                 case '数字':
-                    $values_str = sprintf('%s%.2f', $values_str, $row_arr[$col['列名']]);
+                    $values_str = sprintf('%s%.2f', $values_str, $row['value']);
                     break;
             }
         }
