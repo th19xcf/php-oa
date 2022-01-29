@@ -1,4 +1,4 @@
-<!-- v3.3.2.1.202201291015, from office -->
+<!-- v3.3.3.1.202201292250, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -115,7 +115,8 @@
             columnDefs: data_columns_arr,
             rowData: data_grid_obj,
             rowSelection: 'multiple',
-            pagination: true
+            pagination: true,
+            localeText: AG_GRID_LOCALE_CN
         };
 
         new agGrid.Grid($$('data_grid'), data_grid_options);
