@@ -1,4 +1,4 @@
-<!-- v1.2.1.1.202201281010, from office -->
+<!-- v3.3.2.1.202201291015, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -27,6 +27,10 @@
         <div id='update_tb'></div>
         <div id='update_grid' class='ag-theme-alpine' style='width:100%; height:92%; background-color:lightblue;'></div>
     </div>
+    <div id='conditionbox' style='width:100%;'>
+        <div id='cond_tb'></div>
+        <div id='cond_grid' class='ag-theme-alpine' style='width:100%; height:92%; background-color:lightblue;'></div>
+    </div>
     <div id='footbox' style='width:100%; height:10px; margin-top:5px; background-color: lightblue;'></div>
     <a id='exp2xls'></a>
 
@@ -38,10 +42,12 @@
 
         $$('databox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
         $$('updatebox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
+        $$('conditionbox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
         $$('footbox').style.height = document.documentElement.clientHeight * 0.033 + 'px';
 
         $$('databox').style.display = 'block';
         $$('updatebox').style.display = 'none';
+        $$('conditionbox').style.display = 'none';
         $$('footbox').style.display = 'block';
 
         $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{} , 汇总:{} , 平均:{}</b>';
@@ -54,6 +60,20 @@
             this.value = '';
         }
 
+        function CondInfo()
+        {
+            this.col_name = '';
+            this.fld_name = '';
+            this.type = '';
+            this.group = '';
+            this.average = '';
+            this.cond_1 = '';
+            this.arg_1 = '';
+            this.and_or = '';
+            this.cond_2 = '';
+            this.arg_2 = '';
+        }
+
         var update_flag = '';  // modify或add
 
         // 生成主菜单栏
@@ -61,6 +81,7 @@
         //data_tb.data.add({id:'名称', type:'title', value:'主菜单-->'});
         data_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         data_tb.data.add({id:'分页', type:'button', value:'分页'});
+        data_tb.data.add({id:'设置条件', type:'button', value:'设置条件'});
         data_tb.data.add({type:'separator'});
         data_tb.data.add({id:'修改', type:'button', value:'修改'});
         data_tb.data.add({id:'新增', type:'button', value:'新增'});
@@ -73,6 +94,13 @@
         update_tb.data.add({type:'separator'});
         update_tb.data.add({id:'清空', type:'button', value:'清空'});
         update_tb.data.add({id:'提交', type:'button', value:'提交'});
+
+        // 生成设置条件用菜单栏
+        var cond_tb = new dhx.Toolbar('cond_tb', {css:'toobar-class'});
+        cond_tb.data.add({id:'返回', type:'button', value:'返回'});
+        cond_tb.data.add({type:'separator'});
+        cond_tb.data.add({id:'清空', type:'button', value:'清空'});
+        cond_tb.data.add({id:'提交', type:'button', value:'提交'});
 
         // 生成data_grid
         var data_columns_obj = JSON.parse('<?php echo $data_col_json; ?>');
@@ -104,8 +132,8 @@
             columnDefs: 
             [
                 {field:'列名', width:'120px', resizable:true},
-                {field:'字段名', width:'100px', resizable: true},
-                {field:'列类型', width:'100px', resizable: true},
+                {field:'字段名', width:'120px', resizable:true, hide:true},
+                {field:'列类型', width:'100px', resizable:true},
                 {field:'取值', width:'300px', resizable:true, editable:true, cellEditorSelector:cellEditorSelector}
             ],
             singleClickEdit: true,
@@ -119,6 +147,76 @@
 
         new agGrid.Grid($$('update_grid'), update_grid_options);
 
+
+        // cond_grid
+        var cond_grid_obj = JSON.parse('<?php echo $cond_value_json; ?>');
+        const cond_grid_options = 
+        {
+            columnDefs: 
+            [
+                {field:'列名', width:'120px', editable:false},
+                {field:'字段名', width:'120px', editable:false},
+                {field:'列类型', editable:false},
+                {
+                    field:'汇总',
+                    cellEditor: 'agSelectCellEditor',
+                    cellEditorParams: 
+                    {
+                        values: ['','√'],
+                    },
+                },
+                {
+                    field:'平均',
+                    cellEditor: 'agSelectCellEditor',
+                    cellEditorParams: 
+                    {
+                        values: ['','√'],
+                    },
+                },
+                {
+                    field:'条件1',
+                    cellEditor: 'agSelectCellEditor',
+                    cellEditorParams: 
+                    {
+                        values: ['','大于','等于','小于','大于等于','小于等于','不等于','包含','不包含'],
+                    },
+                },
+                {field:'参数1', width:'180px', cellEditorSelector:cellEditorSelector},
+                {
+                    field:'条件关系', 
+                    cellEditor: 'agSelectCellEditor',
+                    cellEditorParams: 
+                    {
+                        values: ['', '并且', '或者'],
+                    },
+                },
+                {
+                    field:'条件2',
+                    cellEditor: 'agSelectCellEditor',
+                    cellEditorParams: 
+                    {
+                        values: ['','大于','等于','小于','大于等于','小于等于','不等于','包含','不包含'],
+                    },
+                },
+                {field:'参数2', width:'180px', cellEditorSelector:cellEditorSelector}
+            ],
+            defaultColDef: 
+            {
+                width: 100,
+                editable: true,
+                resizable: true
+            },
+            singleClickEdit: true,
+            rowData: cond_grid_obj,
+
+            components:
+            {
+                datePicker: get_date_picker(),
+            }
+        };
+
+        new agGrid.Grid($$('cond_grid'), cond_grid_options);
+
         // 工具栏点击
         data_tb.events.on('click', function(id, e) 
         {
@@ -127,7 +225,10 @@
                 case '刷新':
                     window.location.reload();
                     break;
-                case '分页':
+                case '设置条件':
+                    $$('databox').style.display = 'none';
+                    $$('updatebox').style.display = 'none';
+                    $$('conditionbox').style.display = 'block';
                     break;
                 case '修改':
                     var rows = data_grid_options.api.getSelectedRows();
@@ -147,6 +248,7 @@
                     update_flag = 'modify';
                     $$('databox').style.display = 'none';
                     $$('updatebox').style.display = 'block';
+                    $$('conditionbox').style.display = 'none';
                     break;
                 case '新增':
                     if (update_flag != 'add')
@@ -159,6 +261,7 @@
                     update_flag = 'add';
                     $$('databox').style.display = 'none';
                     $$('updatebox').style.display = 'block';
+                    $$('conditionbox').style.display = 'none';
                     break;
                 case '导出':
                     var href = '<?php base_url(); ?>/Frame/export/<?php echo $func_id; ?>';
@@ -174,20 +277,152 @@
             switch (id)
             {
                 case '返回':
+                    console.log('返回');
                     $$('databox').style.display = 'block';
                     $$('updatebox').style.display = 'none';
+                    $$('conditionbox').style.display = 'none';
                     break;
                 case '清空':
                     update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
                     update_grid_options.api.setRowData(update_grid_obj);
                     break;
                 case '提交':
-                    tb_submit_click(id);
+                    update_submit(id);
+                    break;
+                case '条件窗返回':
+                    $$('databox').style.display = 'block';
+                    $$('updatebox').style.display = 'none';
                     break;
             }
         });
 
-        function tb_submit_click(id)
+        // 条件栏点击
+        cond_tb.events.on('click', function(id, e) 
+        {
+            switch (id)
+            {
+                case '返回':
+                    $$('databox').style.display = 'block';
+                    $$('updatebox').style.display = 'none';
+                    $$('conditionbox').style.display = 'none';
+                    break;
+                case '清空':
+                    cond_grid_obj = JSON.parse('<?php echo $cond_value_json; ?>');
+                    cond_grid_options.api.setRowData(cond_grid_obj);
+                    break;
+                case '提交':
+                    condition_submit(id);
+                    break;
+            }
+        });
+
+        function condition_submit(id)
+        {
+            var cond_arr = [];
+            var group_flag = false;
+            var average_flag = false;
+
+            var cond_str = '';
+            var group_str = '';
+            var average_str = '';
+
+            cond_grid_options.api.stopEditing();
+            cond_grid_options.api.forEachNode((rowNode, index) => 
+            {
+                var ajax = false;
+                var cond = new CondInfo();
+                cond.col_name = rowNode.data['字段名'];
+                cond.fld_name = rowNode.data['字段名'];
+                cond.type = rowNode.data['列类型'];
+
+                if (rowNode.data['汇总'] != '')
+                {
+                    cond.group = '1';
+                    group_flag = true;
+                }
+                if (rowNode.data['平均'] != '')
+                {
+                    cond.average = '1';
+                    average_flag = true;
+                }
+
+                cond.cond_1 = rowNode.data['条件1'];
+                cond.arg_1 = rowNode.data['参数1'];
+                cond.and_or = rowNode.data['条件关系'];
+                cond.cond_2 = rowNode.data['条件2'];
+                cond.arg_2 = rowNode.data['参数2'];
+
+                if (cond.average!='' && rowNode.data['列类型']!='数值')
+                {
+                    alert("'" + cond.col_name + "'" + '类型不是数组,无法平均,错误');
+                    return;
+                }
+
+                if (cond.cond_1!='' && cond.arg_1=='')
+                {
+                    alert("'" + cond.col_name + "'" + '参数1,错误');
+                    return;
+                }
+                if (cond.cond_2!='' && cond.arg_2=='')
+                {
+                    alert("'" + cond.col_name + "'" + '参数2,错误');
+                    return;
+                }
+                if (cond.cond_1!='' && cond.arg_2!='' && cond.and_or=='')
+                {
+                    alert("'" + cond.col_name + "'" + '条件关系,错误');
+                    return;
+                }
+
+                if (cond.cond_1 !='')
+                {
+                    if (cond_str != '') cond_str = cond_str + ',';
+                    cond_str = cond_str + cond.col_name + cond.cond_1 + cond.arg_1;
+                    ajax = true;
+                }
+                if (cond.cond_2 != '')
+                {
+                    cond_str = cond_str + cond.and_or + cond.cond_2 + cond.arg_2;
+                }
+
+                if (cond.group != '')
+                {
+                    if (group_str != '') group_str = group_str + ',';
+                    group_str = group_str + cond.col_name;
+                    ajax = true;
+                }
+                if (cond.average != '')
+                {
+                    if (average_str != '') average_str = average_str + ',';
+                    average_str = average_str + cond.col_name;
+                }
+
+                if (ajax == true) cond_arr.push(cond);
+            });
+
+            if (average_flag==true && group_flag==false)
+            {
+                alert('计算平均值, 必须设置汇总字段');
+                return;
+            }
+
+            $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 平均:{' + average_str + '}</b>';
+
+            console.log('set cond');
+            dhx.ajax.post('<?php base_url(); ?>/Frame/set_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
+            {
+                data_grid_obj = JSON.parse(data);
+                data_grid_options.api.setRowData(data_grid_obj);
+
+                $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 平均:{' + average_str + '}</b>';
+                console.log('设置条件成功');
+            }).catch(function (err)
+            {
+                alert('设置条件错误, ' + " " + err.statusText);
+            });
+        }
+
+        function update_submit(id)
         {
             var update_arr = [];
             var add_arr = [];

@@ -1,5 +1,5 @@
 <?php
-/* v3.3.1.1.202201281010, from office */
+/* v3.3.2.1.202201291015, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -51,10 +51,10 @@ class Frame extends Controller
         $select_str = '';
         $primary_key = '';
         $data_col_arr = array();  // 客户端data_grid列信息
-        $grid_cond_arr = array();  // 条件设置信息
         $columns_arr = array();  // 列信息
 
         $update_value_arr = array();  // 客户端update_grid值信息
+        $cond_value_arr = array();  // 条件设置信息
 
         // 客户端data_grid列信息,手工增加选取列和序号列
         $data_col_arr['选取']['field'] = '选取';
@@ -140,6 +140,21 @@ class Frame extends Controller
             }
 
             array_push($update_value_arr, $value_arr);
+
+            // 客户端cond_grid信息
+            $cond = array();
+            $cond['列名'] = $row->列名;
+            $cond['字段名'] = $row->字段名;
+            $cond['列类型'] = $row->列类型;
+            $cond['汇总'] = '';
+            $cond['平均'] = '';
+            $cond['条件1'] = '';
+            $cond['参数1'] = '';
+            $cond['条件关系'] = '';
+            $cond['条件2'] = '';
+            $cond['参数2'] = '';
+
+            array_push($cond_value_arr, $cond);
         }
 
         // 取出查询模块对应的表配置
@@ -181,141 +196,8 @@ class Frame extends Controller
         $send['data_col_json'] = json_encode($data_col_arr);
         $send['data_value_json'] = json_encode($results);
         $send['update_value_json'] = json_encode($update_value_arr);
+        $send['cond_value_json'] = json_encode($cond_value_arr);
         $send['object_json'] = json_encode($object_arr);
-        $send['func_id'] = $menu_id;
-        $send['primary_key'] = $primary_key;
-
-        echo view('Vgrid_aggrid.php', $send);
-        return;
-
-        foreach ($results as $row)
-        {
-            // 客户端data_grid列信息
-            $grid_col_arr[$row->列名]['field'] = array();
-            $grid_col_arr[$row->列名]['sortable'] = array();
-
-            $grid_col_arr[$row->列名]['id'] = $row->列名;
-
-            $grid_col_arr[$row->列名]['header']['text'] = $row->列名;
-            $grid_col_arr[$row->列名]['header']['content'] = $row->可筛选;
-
-            switch ($row->列类型)
-            {
-                case '数字':
-                    $grid_col_arr[$row->列名]['type'] = 'number';
-                    break;
-                case '字符':
-                    $grid_col_arr[$row->列名]['type'] = 'string';
-                    break;
-                case '日期':
-                    $grid_col_arr[$row->列名]['type'] = 'date';
-                    break;
-            }
-
-            if ($row->类型 == '下拉')
-            {
-                $qry = $model->select(sprintf('select 对象值 from def_object where 对象名称="%s" order by 顺序',$row->对象));
-                $rslt = $qry->getResult();
-                foreach($rslt as $vv)
-                {
-                    array_push($grid_col_arr[$row->列名]['options'], $vv->对象值);
-                }
-            }
-
-            // 查询数据表对应的查询名
-            if ($select_str != '')
-            {
-                $select_str = $select_str . ',';
-            }
-            $select_str = $select_str . $row->查询名 . ' as ' . $row->列名;
-
-            // 设置条件使用
-            $cond = array();
-            $cond['列名'] = $row->列名;
-            $cond['类型'] = $row->列类型;
-            $cond['汇总'] = false;
-            $cond['平均'] = false;
-            $cond['条件1'] = '';
-            $cond['参数1'] = '';
-            $cond['条件关系'] = '';
-            $cond['条件2'] = '';
-            $cond['参数2'] = '';
-
-            array_push($grid_cond_arr, $cond);
-
-            // 新增记录使用
-            $arr = array();
-            $arr['列名'] = $row->列名;
-            $arr['类型'] = $row->列类型;
-            $arr['字段名'] = $row->字段名;
-
-            array_push($columns_arr, $arr);
-        }
-
-        // 取出查询模块对应的表配置
-        $table_name = '';
-
-        $sql = sprintf('
-            select 表名 
-            from view_function 
-            where 功能编码=%s
-            group by 功能编码', $menu_id);
-
-        $query = $model->select($sql);
-        $results = $query->getResult();
-        foreach ($results as $row)
-        {
-            $table_name = $row->表名;
-            break;
-        }
-
-        // 取出对象配置
-        // 下标列名, 取值保存为str, 在js转换
-        $objects_arr = array();  // 对象数据
-
-        $sql = sprintf('
-            select 列名,对象名称,对象值 
-            from view_function 
-            where 对象名称!="" and 功能编码=%s', $menu_id);
-
-        $query = $model->select($sql);
-        $results = $query->getResult();
-
-        $col_name = '';
-        foreach ($results as $row)
-        {
-            if ($col_name != $row->列名)
-            {
-                $objects_arr[$row->列名] = $row->对象值;
-                $col_name = $row->列名;
-            }
-            else
-            {
-                $objects_arr[$row->列名] = $objects_arr[$row->列名] . ',' . $row->对象值;
-            }
-        }
-
-        // 读出数据
-        $sql = sprintf('select (@i:=@i+1) as 序号,%s 
-            from %s,(select @i:=0) as xh', 
-            $select_str, $table_name);
-        $query = $model->select($sql);
-        $results = $query->getResult();
-
-        // 存入session
-        $session_arr = [];
-        $session_arr[$menu_id.'-select_str'] = $select_str;
-        $session_arr[$menu_id.'-query_str'] = $sql;
-        $session_arr[$menu_id.'-table_name'] = $table_name;
-        $session_arr[$menu_id.'-columns_arr'] = $columns_arr;
-
-        $session = \Config\Services::session();
-        $session->set($session_arr);
-
-        $send['col_json'] = json_encode($grid_col_arr);
-        $send['data_json'] = json_encode($results);
-        $send['cond_json'] = json_encode($grid_cond_arr);
-        $send['object_json'] = json_encode($objects_arr);
         $send['func_id'] = $menu_id;
         $send['primary_key'] = $primary_key;
 
@@ -328,81 +210,129 @@ class Frame extends Controller
     public function set_condition($menu_id='')
     {
         //$data = $this->request->getBody();
-        $grid_cond_arr = $this->request->getJSON(true);
+        $cond_arr = $this->request->getJSON(true);
 
         $where = '';
         $group = '';
         $average = '';
 
-        for ($ii=0; $ii<count($grid_cond_arr); $ii++)
+        foreach ($cond_arr as $cond)
         {
-            $cond = $grid_cond_arr[$ii];
             $cond_str = '';
+            $opt_1 = '';
+            $opt_2 = '';
             $cond_1 = '';
             $cond_2 = '';
-            if ($cond['条件1'] != '')
+
+            if ($cond['cond_1'] != '')
             {
-                switch ($cond['条件1'])
+                switch ($cond['cond_1'])
                 {
                     case '大于':
-                        $cond_1 = sprintf(' %s>%s ', $cond['列名'], $cond['参数1']);
+                        $opt_1 = '>';
                         break;
                     case '等于':
-                        $cond_1 = sprintf(' %s=%s ', $cond['列名'], $cond['参数1']);
+                        $opt_1 = '=';
                         break;
                     case '小于':
-                        $cond_1 = sprintf(' %s<%s ', $cond['列名'], $cond['参数1']);
+                        $opt_1 = '<';
                         break;
                     case '大于等于':
-                        $cond_1 = sprintf(' %s>=%s ', $cond['列名'], $cond['参数1']);
+                        $opt_1 = '>=';
                         break;
                     case '小于等于':
-                        $cond_1 = sprintf(' %s<=%s ', $cond['列名'], $cond['参数1']);
+                        $opt_1 = '<=';
                         break;
                     case '不等于':
-                        $cond_1 = sprintf(' %s!=%s ', $cond['列名'], $cond['参数1']);
+                        $opt_1 = '!=';
                         break;
                     case '包含':
-                        $cond_1 = sprintf(' %s in (%s) ', $cond['列名'], $cond['参数1']);
+                        $opt_1 = 'in';
                         break;
                     case '不包含':
-                        $cond_1 = sprintf(' %s not in (%s) ', $cond['列名'], $cond['参数1']);
+                        $opt_1 = 'not in';
                         break;
+                }
+
+                if ($cond['cond_1'] == '数值')
+                {
+                    if ($opt_1!='in' && $opt_1!='not in')
+                    {
+                        $cond_1 = sprintf(' %s%s%s ', $cond['fld_name'], $opt_1, $cond['arg_1']);
+                    }
+                    else
+                    {
+                        $cond_1 = sprintf(' %s %s (%s) ', $cond['fld_name'], $opt_1, $cond['arg_1']);
+                    }
+                }
+                else
+                {
+                    if ($opt_1!='in' && $opt_1!='not in')
+                    {
+                        $cond_1 = sprintf(' %s%s"%s" ', $cond['fld_name'], $opt_1, $cond['arg_1']);
+                    }
+                    else
+                    {
+                        $cond_1 = sprintf(' %s %s ("%s") ', $cond['fld_name'], $opt_1, $cond['arg_1']);
+                    }
                 }
             }
 
-            if ($cond['条件2'] != '')
+            if ($cond['cond_2'] != '')
             {
-                switch ($cond['条件2'])
+                switch ($cond['cond_2'])
                 {
                     case '大于':
-                        $cond_2 = sprintf(' %s>%s ', $cond['列名'], $cond['参数2']);
+                        $opt_2 = '>';
                         break;
                     case '等于':
-                        $cond_2 = sprintf(' %s=%s ', $cond['列名'], $cond['参数2']);
+                        $opt_2 = '=';
                         break;
                     case '小于':
-                        $cond_2 = sprintf(' %s<%s ', $cond['列名'], $cond['参数2']);
+                        $opt_2 = '<';
                         break;
                     case '大于等于':
-                        $cond_2 = sprintf(' %s>=%s ', $cond['列名'], $cond['参数2']);
+                        $opt_2 = '>=';
                         break;
                     case '小于等于':
-                        $cond_2 = sprintf(' %s<=%s ', $cond['列名'], $cond['参数2']);
+                        $opt_2 = '<=';
                         break;
                     case '不等于':
-                        $cond_2 = sprintf(' %s!=%s ', $cond['列名'], $cond['参数2']);
+                        $opt_2 = '!=';
                         break;
                     case '包含':
-                        $cond_2 = sprintf(' %s in (%s) ', $cond['列名'], $cond['参数2']);
+                        $opt_2 = ' in ';
                         break;
                     case '不包含':
-                        $cond_2 = sprintf(' %s not in (%s) ', $cond['列名'], $cond['参数2']);
+                        $opt_2 = ' not in ';
                         break;
+                }
+
+                if ($cond['cond_2'] == '数值')
+                {
+                    if ($opt_2!='in' && $opt_2!='not in')
+                    {
+                        $cond_2 = sprintf(' %s%s%s ', $cond['fld_name'], $opt_2, $cond['arg_2']);
+                    }
+                    else
+                    {
+                        $cond_2 = sprintf(' %s %s (%s) ', $cond['fld_name'], $opt_2, $cond['arg_2']);
+                    }
+                }
+                else
+                {
+                    if ($opt_2!='in' && $opt_2!='not in')
+                    {
+                        $cond_2 = sprintf(' %s%s"%s" ', $cond['fld_name'], $opt_2, $cond['arg_2']);
+                    }
+                    else
+                    {
+                        $cond_2 = sprintf(' %s %s ("%s") ', $cond['fld_name'], $opt_2, $cond['arg_2']);
+                    }
                 }
             }
 
-            switch ($cond['条件关系'])
+            switch ($cond['and_or'])
             {
                 case '并且':
                     $cond_str = sprintf('%s and %s', $cond_1, $cond_2);
@@ -414,10 +344,10 @@ class Frame extends Controller
                     $cond_str = $cond_1;
             }
 
-            if ($cond['汇总'] == true)
+            if ($cond['group'] == true)
             {
                 if ($group != '') $group = $group . ' , ';
-                $group = $group . $cond['列名'];
+                $group = $group . $cond['fld_name'];
             }
             if ($where != '') $where = $where . ' and ';
             $where = $where . $cond_str;
@@ -428,7 +358,11 @@ class Frame extends Controller
         $table_name = $session->get($menu_id.'-table_name');
         $select_str = $session->get($menu_id.'-select_str');
 
-        $sql = sprintf('select %s from %s', $select_str, $table_name);
+        // 读出数据
+        $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s from %s,(select @i:=0) as xh', 
+            $select_str, $table_name);
+
+        //$sql = sprintf('select %s from %s', $select_str, $table_name);
         if ($where != '')
         {
             $sql = $sql . ' where ' . $where;
@@ -437,12 +371,6 @@ class Frame extends Controller
         {
             $sql = $sql . ' group by ' . $group;
         }
-
-        // 存入session
-        $session_arr = [];
-        $session_arr[$menu_id.'-query_str'] = $sql;
-        $session = \Config\Services::session();
-        $session->set($session_arr);
 
         $model = new Mframe();
         $query = $model->select($sql);
