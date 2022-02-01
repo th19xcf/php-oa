@@ -1,5 +1,5 @@
 <?php
-/* v3.3.3.1.202202011835, from home */
+/* v3.3.3.1.202202012325, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -64,14 +64,14 @@ class Frame extends Controller
         $data_col_arr['选取']['checkboxSelection'] = true;
 
         $data_col_arr['序号']['field'] = '序号';
-        $data_col_arr['序号']['width'] = 100;
+        $data_col_arr['序号']['width'] = 90;
         $data_col_arr['序号']['resizable'] = true;
         $data_col_arr['序号']['sortable'] = true;
 
         $object_arr = array();  // 下拉选择的对象值
 
         $sql = sprintf(
-            'select 查询模块,列名,列类型,字段名,查询名,对象,可筛选,主键,赋值类型
+            'select 查询模块,列名,列类型,列宽度,字段名,查询名,对象,可筛选,主键,赋值类型
             from view_function 
             where 功能编码=%s and 列顺序>0
             group by 列名
@@ -105,6 +105,14 @@ class Frame extends Controller
             $data_col_arr[$row->列名]['sortable'] = true;
             $data_col_arr[$row->列名]['filter'] = true;
             $data_col_arr[$row->列名]['resizable'] = true;
+            if ($row->列宽度 == 0)
+            {
+                $data_col_arr[$row->列名]['width'] = strlen($row->列名)*4 + 60;
+            }
+            else
+            {
+                $data_col_arr[$row->列名]['width'] = $row->列宽度;
+            }
             if ($row->主键 != 0)
             {
                 $data_col_arr[$row->列名]['hide'] = true;
@@ -138,7 +146,6 @@ class Frame extends Controller
                 $rslt = $qry->getResult();
                 foreach($rslt as $vv)
                 {
-                    //array_push($value_arr['字段值'], $vv->对象值);
                     array_push($object_arr[$row->列名], $vv->对象值);
                 }
             }

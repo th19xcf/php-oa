@@ -1,4 +1,4 @@
-<!-- v3.3.4.0.202202011835, from home -->
+<!-- v3.3.5.1.202202012325, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -114,6 +114,11 @@
         const data_grid_options = 
         {
             columnDefs: data_columns_arr,
+            defaultColDef: 
+            {
+                width: 120,
+                resizable: true
+            },
             rowData: data_grid_obj,
             rowSelection: 'multiple',
             pagination: true,
@@ -121,6 +126,12 @@
         };
 
         new agGrid.Grid($$('data_grid'), data_grid_options);
+
+        data_grid_options.onGridReady = data_grid_ready;
+        function data_grid_ready(event)
+        {
+            console.log('datagrid ready');
+        }
 
         // 生成update_grid
         var columns_obj = JSON.parse('<?php echo $columns_json; ?>');
@@ -285,7 +296,6 @@
             switch (id)
             {
                 case '返回':
-                    console.log('返回');
                     $$('databox').style.display = 'block';
                     $$('updatebox').style.display = 'none';
                     $$('conditionbox').style.display = 'none';
@@ -328,27 +338,6 @@
         function tb_select_field()
         {
             var checkbox_arr = [];
-            var select_all = 0;
-            var unselect_all = 0;
-
-            var col = {};
-            col['type'] = 'checkbox';
-            col['text'] = '全选';
-            col['id'] = '全选';
-            checkbox_arr.push(col);
-
-            var col = {};
-            col['type'] = 'checkbox';
-            col['text'] = '全不选';
-            col['id'] = '全不选';
-            col['name'] = '全不选';
-            checkbox_arr.push(col);
-
-            var col = {};
-            col['type'] = 'spacer';
-            col['name'] = 'spacer';
-            checkbox_arr.push(col);
-
             var key = '<?php echo $primary_key; ?>';
             var columns_arr = data_grid_options.columnApi.getAllColumns();
 
@@ -362,29 +351,6 @@
                 col['id'] = columns_arr[ii]['colId'];
                 col['checked'] = columns_arr[ii]['visible'];
                 checkbox_arr.push(col);
-
-                if (col['checked'])
-                {
-                    select_all = select_all + 1;
-                }
-                else
-                {
-                    unselect_all = unselect_all + 1;
-                }
-            }
-
-            if (unselect_all == 0)
-            {
-                checkbox_arr[0]['checked'] = true;
-            }
-            else if (select_all == 0)
-            {
-                checkbox_arr[1]['checked'] = true;
-            }
-            else
-            {
-                checkbox_arr[0]['checked'] = false;
-                checkbox_arr[1]['checked'] = false;
             }
 
             var form = new dhx.Form('form_field_select', 
@@ -394,42 +360,8 @@
 
             form.events.on('change', function(value)
             {
-                val = form.getItem(value).getValue();
-                if (value == '全选')
-                {
-                    form.getItem('全选').setValue(true);
-                    form.getItem('全不选').setValue(false);
-
-                    for (var ii in columns_arr)
-                    {
-                        if (columns_arr[ii]['colId'] == key) continue;
-                        data_grid_options.columnApi.setColumnVisible(value, true);
-                        form.getItem(value).setValue(true);
-                    }
-                }
-                else if (value == '全不选')
-                {
-                    form.getItem('全选').setValue(false);
-                    form.getItem('全不选').setValue(true);
-
-                    for (var ii in columns_arr)
-                    {
-                        if (columns_arr[ii]['colId'] == key) continue;
-                        data_grid_options.columnApi.setColumnVisible(value, false);
-                        form.getItem(value).setValue(false);
-                    }
-                }
-
-                if (val == true)
-                {
-                    data_grid_options.columnApi.setColumnVisible(value, true);
-                    form.getItem('全不选').setValue(false);
-                }
-                else
-                {
-                    data_grid_options.columnApi.setColumnVisible(value, false);
-                    form.getItem('全选').setValue(false);
-                }
+                var checked = form.getItem(value).getValue();
+                data_grid_options.columnApi.setColumnVisible(value, checked);
             });
 
             var win = new dhx.Window(
@@ -540,7 +472,6 @@
 
             $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 平均:{' + average_str + '}</b>';
 
-            console.log('set cond');
             dhx.ajax.post('<?php base_url(); ?>/Frame/set_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
             {
                 data_grid_obj = JSON.parse(data);
@@ -551,7 +482,7 @@
                 $$('conditionbox').style.display = 'none';
                 $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 平均:{' + average_str + '}</b>';
 
-                console.log('设置条件成功');
+                alert('设置条件成功');
             }).catch(function (err)
             {
                 alert('设置条件错误, ' + " " + err.statusText);
@@ -584,10 +515,10 @@
             {
                 dhx.ajax.post('<?php base_url(); ?>/Frame/add_row/<?php echo $func_id; ?>', add_arr).then(function (data)
                 {
-                    console.log('新增记录成功');
+                    alert('新增记录成功');
                 }).catch(function (err)
                 {
-                    console.log('新增记录错误, ' + " " + err.statusText);
+                    alert('新增记录错误, ' + " " + err.statusText);
                 });
             }
 
@@ -642,14 +573,13 @@
                     alert('数据更新成功');
                 }).catch(function (err)
                 {
-                    console.log('status' + " " + err.statusText);
+                    alert('status' + " " + err.statusText);
                 });
             }
         }
 
         function cellEditorSelector(params)
         {
-            console.log('params', params);
             var col_name = params.data.列名;
 
             for (var ii in columns_obj)
