@@ -1,5 +1,5 @@
 <?php
-/* v3.3.2.1.202201291015, from office */
+/* v3.3.3.1.202202011835, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -109,6 +109,10 @@ class Frame extends Controller
             {
                 $data_col_arr[$row->列名]['hide'] = true;
             }
+            if ($row->列类型 == '数值')
+            {
+                $data_col_arr[$row->列名]['filter'] = 'agNumberColumnFilter';
+            }
 
             // 查询数据表对应的查询名
             if ($select_str != '')
@@ -176,7 +180,7 @@ class Frame extends Controller
 
         // 读出数据
         $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
-            from %s,(select @i:=0) as xh limit 240', 
+            from %s,(select @i:=0) as xh', 
             $select_str, $table_name);
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -447,7 +451,7 @@ class Frame extends Controller
                 case '日期':
                     $values_str = sprintf('%s"%s"', $values_str, $row['value']);
                     break;
-                case '数字':
+                case '数值':
                     $values_str = sprintf('%s%.2f', $values_str, $row['value']);
                     break;
             }

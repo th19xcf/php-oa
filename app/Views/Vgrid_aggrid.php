@@ -1,4 +1,4 @@
-<!-- v3.3.3.1.202201292250, from home -->
+<!-- v3.3.4.0.202202011835, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -15,7 +15,6 @@
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
 
     <script src='<?php base_url(); ?>/assets/js/datepicker_brower.js'></script>
-
 </head>
 
 <body>
@@ -58,6 +57,7 @@
             this.fld_name = '';
             this.type = '';
             this.value = '';
+            this.visible = true;
         }
 
         function CondInfo()
@@ -81,6 +81,7 @@
         //data_tb.data.add({id:'名称', type:'title', value:'主菜单-->'});
         data_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         data_tb.data.add({id:'分页', type:'button', value:'分页'});
+        data_tb.data.add({id:'字段选择', type:'button', value:'字段选择'});
         data_tb.data.add({id:'设置条件', type:'button', value:'设置条件'});
         data_tb.data.add({type:'separator'});
         data_tb.data.add({id:'修改', type:'button', value:'修改'});
@@ -132,11 +133,16 @@
         {
             columnDefs: 
             [
-                {field:'列名', width:'120px', resizable:true},
-                {field:'字段名', width:'120px', resizable:true, hide:true},
-                {field:'列类型', width:'100px', resizable:true},
-                {field:'取值', width:'300px', resizable:true, editable:true, cellEditorSelector:cellEditorSelector}
+                {field:'列名'},
+                {field:'字段名', hide:true},
+                {field:'列类型'},
+                {field:'取值', editable:true, cellEditorSelector:cellEditorSelector}
             ],
+            defaultColDef: 
+            {
+                width: 120,
+                resizable: true
+            },
             singleClickEdit: true,
             rowData: update_grid_obj,
 
@@ -148,15 +154,14 @@
 
         new agGrid.Grid($$('update_grid'), update_grid_options);
 
-
         // cond_grid
         var cond_grid_obj = JSON.parse('<?php echo $cond_value_json; ?>');
         const cond_grid_options = 
         {
             columnDefs: 
             [
-                {field:'列名', width:'120px', editable:false},
-                {field:'字段名', width:'120px', editable:false},
+                {field:'列名', width:120, editable:false},
+                {field:'字段名', width:120, editable:false},
                 {field:'列类型', editable:false},
                 {
                     field:'汇总',
@@ -182,7 +187,7 @@
                         values: ['','大于','等于','小于','大于等于','小于等于','不等于','包含','不包含'],
                     },
                 },
-                {field:'参数1', width:'180px', cellEditorSelector:cellEditorSelector},
+                {field:'参数1', width:180, cellEditorSelector:cellEditorSelector},
                 {
                     field:'条件关系', 
                     cellEditor: 'agSelectCellEditor',
@@ -199,7 +204,7 @@
                         values: ['','大于','等于','小于','大于等于','小于等于','不等于','包含','不包含'],
                     },
                 },
-                {field:'参数2', width:'180px', cellEditorSelector:cellEditorSelector}
+                {field:'参数2', width:180, cellEditorSelector:cellEditorSelector}
             ],
             defaultColDef: 
             {
@@ -226,6 +231,9 @@
                 case '刷新':
                     window.location.reload();
                     break;
+                    case '字段选择':
+                        tb_select_field();
+                        break;
                 case '设置条件':
                     $$('databox').style.display = 'none';
                     $$('updatebox').style.display = 'none';
@@ -238,7 +246,6 @@
                         alert('请先选择要修改的记录');
                         break;
                     }
-
                     if (update_flag != 'modify')
                     {
                         // 清空
@@ -316,6 +323,130 @@
                     break;
             }
         });
+
+        // 选择字段是否显示
+        function tb_select_field()
+        {
+            var checkbox_arr = [];
+            var select_all = 0;
+            var unselect_all = 0;
+
+            var col = {};
+            col['type'] = 'checkbox';
+            col['text'] = '全选';
+            col['id'] = '全选';
+            checkbox_arr.push(col);
+
+            var col = {};
+            col['type'] = 'checkbox';
+            col['text'] = '全不选';
+            col['id'] = '全不选';
+            col['name'] = '全不选';
+            checkbox_arr.push(col);
+
+            var col = {};
+            col['type'] = 'spacer';
+            col['name'] = 'spacer';
+            checkbox_arr.push(col);
+
+            var key = '<?php echo $primary_key; ?>';
+            var columns_arr = data_grid_options.columnApi.getAllColumns();
+
+            for (var ii in columns_arr)
+            {
+                if (columns_arr[ii]['colId'] == key) continue;
+
+                var col = {};
+                col['type'] = 'checkbox';
+                col['text'] = columns_arr[ii]['colId'];
+                col['id'] = columns_arr[ii]['colId'];
+                col['checked'] = columns_arr[ii]['visible'];
+                checkbox_arr.push(col);
+
+                if (col['checked'])
+                {
+                    select_all = select_all + 1;
+                }
+                else
+                {
+                    unselect_all = unselect_all + 1;
+                }
+            }
+
+            if (unselect_all == 0)
+            {
+                checkbox_arr[0]['checked'] = true;
+            }
+            else if (select_all == 0)
+            {
+                checkbox_arr[1]['checked'] = true;
+            }
+            else
+            {
+                checkbox_arr[0]['checked'] = false;
+                checkbox_arr[1]['checked'] = false;
+            }
+
+            var form = new dhx.Form('form_field_select', 
+            {
+                rows: checkbox_arr
+            });
+
+            form.events.on('change', function(value)
+            {
+                val = form.getItem(value).getValue();
+                if (value == '全选')
+                {
+                    form.getItem('全选').setValue(true);
+                    form.getItem('全不选').setValue(false);
+
+                    for (var ii in columns_arr)
+                    {
+                        if (columns_arr[ii]['colId'] == key) continue;
+                        data_grid_options.columnApi.setColumnVisible(value, true);
+                        form.getItem(value).setValue(true);
+                    }
+                }
+                else if (value == '全不选')
+                {
+                    form.getItem('全选').setValue(false);
+                    form.getItem('全不选').setValue(true);
+
+                    for (var ii in columns_arr)
+                    {
+                        if (columns_arr[ii]['colId'] == key) continue;
+                        data_grid_options.columnApi.setColumnVisible(value, false);
+                        form.getItem(value).setValue(false);
+                    }
+                }
+
+                if (val == true)
+                {
+                    data_grid_options.columnApi.setColumnVisible(value, true);
+                    form.getItem('全不选').setValue(false);
+                }
+                else
+                {
+                    data_grid_options.columnApi.setColumnVisible(value, false);
+                    form.getItem('全选').setValue(false);
+                }
+            });
+
+            var win = new dhx.Window(
+            {
+                title: '选择显示字段',
+                footer: true,
+                modal: true,
+                width: 350,
+                height: 500,
+                closable: true,
+                movable: true
+            });
+
+            win.attach(form);
+            win.show();
+        }
+
 
         function condition_submit(id)
         {
@@ -415,7 +546,11 @@
                 data_grid_obj = JSON.parse(data);
                 data_grid_options.api.setRowData(data_grid_obj);
 
+                $$('databox').style.display = 'block';
+                $$('updatebox').style.display = 'none';
+                $$('conditionbox').style.display = 'none';
                 $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 平均:{' + average_str + '}</b>';
+
                 console.log('设置条件成功');
             }).catch(function (err)
             {
