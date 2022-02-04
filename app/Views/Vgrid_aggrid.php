@@ -1,4 +1,4 @@
-<!-- v3.3.5.1.202202012325, from home -->
+<!-- v3.4.1.0.202202032330, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -83,6 +83,7 @@
         data_tb.data.add({id:'分页', type:'button', value:'分页'});
         data_tb.data.add({id:'字段选择', type:'button', value:'字段选择'});
         data_tb.data.add({id:'设置条件', type:'button', value:'设置条件'});
+        data_tb.data.add({id:'图形', type:'button', value:'图形'});
         data_tb.data.add({type:'separator'});
         data_tb.data.add({id:'修改', type:'button', value:'修改'});
         data_tb.data.add({id:'新增', type:'button', value:'新增'});
@@ -169,7 +170,7 @@
         var cond_grid_obj = JSON.parse('<?php echo $cond_value_json; ?>');
         const cond_grid_options = 
         {
-            columnDefs: 
+            columnDefs:
             [
                 {field:'列名', width:120, editable:false},
                 {field:'字段名', width:120, editable:false},
@@ -234,6 +235,65 @@
 
         new agGrid.Grid($$('cond_grid'), cond_grid_options);
 
+        // 图形设置
+        // 提前生成录入窗口,否则得不到modify_grid
+        var win_chart = new dhx.Window(
+        {
+            title: '图形参数设置窗口',
+            footer: true,
+            modal: true,
+            width: 700,
+            height: 500,
+            closable: true,
+            movable: true
+        });
+
+        win_chart.footer.data.add(
+        {
+            type: 'button',
+            id: '新增',
+            value: '新增',
+            view: 'flat',
+            size: 'medium',
+            color: 'primary',
+        });
+
+        win_chart.footer.data.add(
+        {
+            type: 'button',
+            id: '确定',
+            value: '确定',
+            view: 'flat',
+            size: 'medium',
+            color: 'primary',
+        });
+
+        var html = '<div id="chart_set_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
+        win_chart.attachHTML(html);
+        win_chart.hide();
+
+        const chart_grid_options = 
+        {
+            columnDefs:
+            [
+                {field:'坐标轴', width:120},
+                {field:'对应字段', width:120},
+                {field:'图形类型', width:120},
+            ],
+            defaultColDef: 
+            {
+                width: 120,
+                editable: true,
+                resizable: true
+            },
+            singleClickEdit: true,
+            rowData: 
+            [
+                {'坐标轴':'X轴', '对应字段':'', '图形类型':''},
+                {'坐标轴':'Y轴', '对应字段':'', '图形类型':''}
+            ]
+        };
+
         // 工具栏点击
         data_tb.events.on('click', function(id, e) 
         {
@@ -242,13 +302,16 @@
                 case '刷新':
                     window.location.reload();
                     break;
-                    case '字段选择':
-                        tb_select_field();
-                        break;
+                case '字段选择':
+                    tb_select_field();
+                    break;
                 case '设置条件':
                     $$('databox').style.display = 'none';
                     $$('updatebox').style.display = 'none';
                     $$('conditionbox').style.display = 'block';
+                    break;
+                case '图形':
+                    tb_chart();
                     break;
                 case '修改':
                     var rows = data_grid_options.api.getSelectedRows();
@@ -364,7 +427,7 @@
                 data_grid_options.columnApi.setColumnVisible(value, checked);
             });
 
-            var win = new dhx.Window(
+            var win_field = new dhx.Window(
             {
                 title: '选择显示字段',
                 footer: true,
@@ -375,10 +438,15 @@
                 movable: true
             });
 
-            win.attach(form);
-            win.show();
+            win_field.attach(form);
+            win_field.show();
         }
 
+        function tb_chart()
+        {
+            win_chart.show();
+            new agGrid.Grid($$('chart_set_grid'), chart_grid_options);
+        }
 
         function condition_submit(id)
         {

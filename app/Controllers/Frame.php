@@ -1,5 +1,5 @@
 <?php
-/* v3.3.3.1.202202012325, from home */
+/* v3.4.1.1.202202032330, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -18,14 +18,32 @@ class Frame extends Controller
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 生成页面菜单树
-	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function get_menu()
     {
-        $model = new Mframe();
-        $results = $model->get_menu('lizheng', 'bj27');
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_role = $session->get('user_role');
 
+        $sql = sprintf(
+            'select *
+            from def_role as t1
+            left join
+            (
+                select *
+                from def_function
+                where 菜单顺序>0
+            ) as t2 on t1.功能赋权=t2.功能编码
+            where t1.角色编号="%s"
+            order by t2.菜单顺序', $user_role);
+
+        $model = new Mframe();
+        $query = $model->select($sql);
+        $results = $query->getResult();
+    
         $json = array();
 
+        $authz = [];
         foreach ($results as $row)
         {
             #附加功能编码回传使用
@@ -38,7 +56,15 @@ class Frame extends Controller
             $json[$row->一级菜单]['text'] = $row->一级菜单;
             $json[$row->一级菜单]['expanded'] = false;
             $json[$row->一级菜单]['children'][] = $children;
+
+            $authz[$row->功能赋权] = $row->部门赋权;
         }
+
+        // 存入session
+        $session_arr = [];
+        $session_arr['user_authz'] = $authz;
+        $session = \Config\Services::session();
+        $session->set($session_arr);
 
         echo json_encode($json, 320);  //256+64,不转义中文+反斜杠
     }
