@@ -1,5 +1,5 @@
 <?php
-/* v3.4.1.1.202202032330, from home */
+/* v3.4.2.1.202202180920, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -69,9 +69,9 @@ class Frame extends Controller
         echo json_encode($json, 320);  //256+64,不转义中文+反斜杠
     }
 
-	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 通用条件查询模块
-	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function get_condition($menu_id='')
     {
         $select_str = '';
@@ -416,9 +416,9 @@ class Frame extends Controller
         exit(json_encode($results));
     }
 
-	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 更新行记录
-	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function update_row($menu_id='')
     {
         $row_arr = $this->request->getJSON(true);
@@ -457,9 +457,9 @@ class Frame extends Controller
         exit($num);
     }
 
-	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 增加新行
-	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function add_row($menu_id='')
     {
         $row_arr = $this->request->getJSON(true);
