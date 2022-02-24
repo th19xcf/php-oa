@@ -1,6 +1,6 @@
 <?php
 
-/* v1.1.1.1.202202032330, from home */
+/* v1.1.2.1.202202241335, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -33,7 +33,7 @@ class Login extends Controller
         $sql = sprintf(
             'select 员工编号,姓名,身份证号,角色
             from def_user
-            where 工号=%s and 密码=%s ', $user_id, $pswd);
+            where 工号="%s" and 密码="%s" ', $user_id, $pswd);
 
         $model = new Mframe();
         $query = $model->select($sql);

@@ -1,4 +1,4 @@
-<!-- v3.4.1.0.202202032330, from home -->
+<!-- v3.4.2.1.202202241335, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -74,6 +74,9 @@
             this.arg_2 = '';
         }
 
+        // 字段信息
+        var tb_obj = JSON.parse('<?php echo $toolbar_json; ?>');
+
         var update_flag = '';  // modify或add
 
         // 生成主菜单栏
@@ -85,8 +88,14 @@
         data_tb.data.add({id:'设置条件', type:'button', value:'设置条件'});
         data_tb.data.add({id:'图形', type:'button', value:'图形'});
         data_tb.data.add({type:'separator'});
-        data_tb.data.add({id:'修改', type:'button', value:'修改'});
-        data_tb.data.add({id:'新增', type:'button', value:'新增'});
+        if (tb_obj['修改授权'] == true)
+        {
+            data_tb.data.add({id:'修改', type:'button', value:'修改'});
+        }
+        if (tb_obj['新增授权'] == true)
+        {
+            data_tb.data.add({id:'新增', type:'button', value:'新增'});
+        }
         data_tb.data.add({type:'spacer'});
         data_tb.data.add({id:'导出', type:'button', value:'导出'});
 
@@ -138,7 +147,6 @@
         var columns_obj = JSON.parse('<?php echo $columns_json; ?>');
         var columns_arr = Object.values(columns_obj);
         var update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
-
         var object_obj = JSON.parse('<?php echo $object_json; ?>');
 
         const update_grid_options = 

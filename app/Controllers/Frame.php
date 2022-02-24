@@ -1,5 +1,5 @@
 <?php
-/* v3.4.2.1.202202180920, from office */
+/* v3.4.2.1.202202241335, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -26,11 +26,14 @@ class Frame extends Controller
         $user_role = $session->get('user_role');
 
         $sql = sprintf(
-            'select *
+            'select 角色编号,角色名称,功能赋权,部门赋权,
+                功能编码,一级菜单,二级菜单,功能模块,查询模块,
+                菜单顺序,新增授权,修改授权,部门授权
             from def_role as t1
             left join
             (
-                select *
+                select 功能编码,一级菜单,二级菜单,功能模块,查询模块,
+                    菜单顺序,新增授权,修改授权,部门授权
                 from def_function
                 where 菜单顺序>0
             ) as t2 on t1.功能赋权=t2.功能编码
@@ -57,7 +60,11 @@ class Frame extends Controller
             $json[$row->一级菜单]['expanded'] = false;
             $json[$row->一级菜单]['children'][] = $children;
 
-            $authz[$row->功能赋权] = $row->部门赋权;
+            $authz[$row->功能赋权] = $row->功能赋权;
+            $authz[$row->部门赋权] = $row->部门赋权;
+            $authz[$row->新增授权] = $row->新增授权;
+            $authz[$row->修改授权] = $row->修改授权;
+            $authz[$row->部门授权] = $row->部门授权;
         }
 
         // 存入session
@@ -76,10 +83,13 @@ class Frame extends Controller
     {
         $select_str = '';
         $primary_key = '';
-        $data_col_arr = array();  // 客户端data_grid列信息
-        $columns_arr = array();  // 列信息
 
-        $update_value_arr = array();  // 客户端update_grid值信息
+        $data_col_arr = array();  // 客户端data_grid列信息,用于显示
+        $columns_arr = array();  // 列信息
+        $tb_arr = array();  // 控制菜单栏
+        
+
+        $update_value_arr = array();  // 客户端update_grid值信息,用于显示
         $cond_value_arr = array();  // 条件设置信息
 
         // 客户端data_grid列信息,手工增加选取列和序号列
@@ -96,8 +106,10 @@ class Frame extends Controller
 
         $object_arr = array();  // 下拉选择的对象值
 
-        $sql = sprintf(
-            'select 查询模块,列名,列类型,列宽度,字段名,查询名,对象,可筛选,主键,赋值类型
+        $sql = sprintf('
+            select 查询模块,列名,列类型,列宽度,字段名,查询名,对象,
+                可修改,可筛选,主键,赋值类型,
+                新增授权,修改授权,部门授权
             from view_function 
             where 功能编码=%s and 列顺序>0
             group by 列名
@@ -114,6 +126,9 @@ class Frame extends Controller
                 $primary_key = $row->列名;
             }
 
+            $tb_arr['新增授权'] = ($row->新增授权=='1') ? true : false ;
+            $tb_arr['修改授权'] = ($row->修改授权=='1') ? true : false ;
+
             // 列信息
             $arr = array();
 
@@ -123,10 +138,11 @@ class Frame extends Controller
             $arr['主键'] = $row->主键;
             $arr['赋值类型'] = $row->赋值类型;
             $arr['对象'] = $row->对象;
+            $arr['可修改'] = $row->可修改;
 
             array_push($columns_arr, $arr);
 
-            // 客户端data_grid列信息
+            // 客户端data_grid列信息,用于显示
             $data_col_arr[$row->列名]['field'] = $row->列名;
             $data_col_arr[$row->列名]['sortable'] = true;
             $data_col_arr[$row->列名]['filter'] = true;
@@ -229,6 +245,7 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $session->set($session_arr);
 
+        $send['toolbar_json'] = json_encode($tb_arr);
         $send['columns_json'] = json_encode($columns_arr);
         $send['data_col_json'] = json_encode($data_col_arr);
         $send['data_value_json'] = json_encode($results);
