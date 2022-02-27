@@ -1,5 +1,5 @@
 <?php
-/* v3.4.2.1.202202241335, from office */
+/* v3.4.3.1.202202271105, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -81,7 +81,6 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function get_condition($menu_id='')
     {
-        $select_str = '';
         $primary_key = '';
 
         $data_col_arr = array();  // 客户端data_grid列信息,用于显示
@@ -135,6 +134,7 @@ class Frame extends Controller
             $arr['列名'] = $row->列名;
             $arr['类型'] = $row->列类型;
             $arr['字段名'] = $row->字段名;
+            $arr['查询名'] = $row->查询名;
             $arr['主键'] = $row->主键;
             $arr['赋值类型'] = $row->赋值类型;
             $arr['对象'] = $row->对象;
@@ -163,13 +163,6 @@ class Frame extends Controller
             {
                 $data_col_arr[$row->列名]['filter'] = 'agNumberColumnFilter';
             }
-
-            // 查询数据表对应的查询名
-            if ($select_str != '')
-            {
-                $select_str = $select_str . ',';
-            }
-            $select_str = $select_str . $row->查询名 . ' as ' . $row->列名;
 
             // 客户端update_grid值
             if ($row->主键 != 0) continue;
@@ -206,6 +199,7 @@ class Frame extends Controller
             $cond['条件关系'] = '';
             $cond['条件2'] = '';
             $cond['参数2'] = '';
+            $cond['计算方式'] = '';
 
             array_push($cond_value_arr, $cond);
         }
@@ -225,6 +219,17 @@ class Frame extends Controller
         {
             $table_name = $row->表名;
             break;
+        }
+
+        // 拼出查询语句
+        $select_str = '';
+        foreach ($columns_arr as $column) 
+        {
+            if ($select_str != '')
+            {
+                $select_str = $select_str . ',';
+            }
+            $select_str = $select_str . $column['查询名'] . ' as ' . $column['列名'];
         }
 
         // 读出数据
@@ -263,12 +268,12 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function set_condition($menu_id='')
     {
-        //$data = $this->request->getBody();
         $cond_arr = $this->request->getJSON(true);
 
         $where = '';
         $group = '';
-        $average = '';
+        $sum_str = '';
+        $avg_str = '';
 
         foreach ($cond_arr as $cond)
         {
@@ -405,18 +410,68 @@ class Frame extends Controller
             }
             if ($where != '') $where = $where . ' and ';
             $where = $where . $cond_str;
+
+            if ($cond['sum_avg'] == '求和')
+            {
+                if ($sum_str != '') $sum_str = $sum_str . ' , ';
+                $sum_str = $sum_str . $cond['fld_name'];
+            }
+
+            if ($cond['sum_avg'] == '平均')
+            {
+                if ($avg_str != '') $avg_str = $avg_str . ' , ';
+                $avg_str = $avg_str . $cond['fld_name'];
+            }
         }
 
         // 从session中取出数据
         $session = \Config\Services::session();
         $table_name = $session->get($menu_id.'-table_name');
+        $columns_arr = $session->get($menu_id.'-columns_arr');
         $select_str = $session->get($menu_id.'-select_str');
+
+        // 拼出查询语句
+        $select_str = '';
+        foreach ($columns_arr as $column) 
+        {
+            if ($select_str != '')
+            {
+                $select_str = $select_str . ',';
+            }
+
+            $sum_avg_str = '';
+            foreach ($cond_arr as $cond)
+            {
+                if ($cond['sum_avg'] == '')
+                {
+                    continue;
+                }
+                if ($column['列名']==$cond['col_name'] && $cond['sum_avg']=='求和')
+                {
+                    $sum_avg_str = sprintf('sum(%s)', $column['查询名']);
+                    break;
+                }
+                if ($column['列名']==$cond['col_name'] && $cond['sum_avg']=='平均')
+                {
+                    $sum_avg_str = sprintf('round(avg(%s),2)', $column['查询名']);
+                    break;
+                }
+            }
+
+            if ($sum_avg_str != '')
+            {
+                $select_str = $select_str . $sum_avg_str . ' as ' . $column['列名'];
+            }
+            else
+            {
+                $select_str = $select_str . $column['查询名'] . ' as ' . $column['列名'];
+            }
+        }
 
         // 读出数据
         $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s from %s,(select @i:=0) as xh', 
             $select_str, $table_name);
 
-        //$sql = sprintf('select %s from %s', $select_str, $table_name);
         if ($where != '')
         {
             $sql = $sql . ' where ' . $where;

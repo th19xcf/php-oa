@@ -1,4 +1,4 @@
-<!-- v3.4.2.1.202202241335, from office -->
+<!-- v3.4.3.1.202202271105, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -66,12 +66,12 @@
             this.fld_name = '';
             this.type = '';
             this.group = '';
-            this.average = '';
             this.cond_1 = '';
             this.arg_1 = '';
             this.and_or = '';
             this.cond_2 = '';
             this.arg_2 = '';
+            this.sum_avg = '';
         }
 
         // 字段信息
@@ -192,14 +192,6 @@
                     },
                 },
                 {
-                    field:'平均',
-                    cellEditor: 'agSelectCellEditor',
-                    cellEditorParams: 
-                    {
-                        values: ['','√'],
-                    },
-                },
-                {
                     field:'条件1',
                     cellEditor: 'agSelectCellEditor',
                     cellEditorParams: 
@@ -224,7 +216,15 @@
                         values: ['','大于','等于','小于','大于等于','小于等于','不等于','包含','不包含'],
                     },
                 },
-                {field:'参数2', width:180, cellEditorSelector:cellEditorSelector}
+                {field:'参数2', width:180, cellEditorSelector:cellEditorSelector},
+                {
+                    field:'计算方式',
+                    cellEditor: 'agSelectCellEditor',
+                    cellEditorParams: 
+                    {
+                        values: ['','求和','平均'],
+                    },
+                },
             ],
             defaultColDef: 
             {
@@ -460,61 +460,67 @@
         {
             var cond_arr = [];
             var group_flag = false;
+            var sum_flag = false;
             var average_flag = false;
 
             var cond_str = '';
             var group_str = '';
+            var sum_str = '';
             var average_str = '';
 
             cond_grid_options.api.stopEditing();
             cond_grid_options.api.forEachNode((rowNode, index) => 
             {
+                if (rowNode.data['计算方式']=='求和' && rowNode.data['列类型']!='数值')
+                {
+                    alert("'" + rowNode.data['字段名'] + "'" + '类型不是数值,无法求和,请重新设置');
+                    return;
+                }
+                if (rowNode.data['计算方式']=='平均' && rowNode.data['列类型']!='数值')
+                {
+                    alert("'" + rowNode.data['字段名'] + "'" + '类型不是数值,无法平均,请重新设置');
+                    return;
+                }
+                if (rowNode.data['条件1']!='' && rowNode.data['参数1']=='')
+                {
+                    alert("'" + rowNode.data['字段名'] + "'" + '参数1,错误');
+                    return;
+                }
+                if (rowNode.data['条件2']!='' && rowNode.data['参数2']=='')
+                {
+                    alert("'" + rowNode.data['字段名'] + "'" + '参数2,错误');
+                    return;
+                }
+                if (rowNode.data['条件1']!='' && rowNode.data['条件2']!='' && rowNode.data['条件关系']=='')
+                {
+                    alert("'" + rowNode.data['字段名'] + "'" + '条件关系,错误');
+                    return;
+                }
+
                 var ajax = false;
                 var cond = new CondInfo();
                 cond.col_name = rowNode.data['字段名'];
                 cond.fld_name = rowNode.data['字段名'];
                 cond.type = rowNode.data['列类型'];
-
-                if (rowNode.data['汇总'] != '')
-                {
-                    cond.group = '1';
-                    group_flag = true;
-                }
-                if (rowNode.data['平均'] != '')
-                {
-                    cond.average = '1';
-                    average_flag = true;
-                }
-
                 cond.cond_1 = rowNode.data['条件1'];
                 cond.arg_1 = rowNode.data['参数1'];
                 cond.and_or = rowNode.data['条件关系'];
                 cond.cond_2 = rowNode.data['条件2'];
                 cond.arg_2 = rowNode.data['参数2'];
+                cond.sum_avg = rowNode.data['计算方式'];
 
-                if (cond.average!='' && rowNode.data['列类型']!='数值')
+                if (rowNode.data['汇总'] != '')
                 {
-                    alert("'" + cond.col_name + "'" + '类型不是数组,无法平均,错误');
-                    return;
+                    cond.group = '1';
+                    group_flag = true;
+                    ajax = true;
                 }
-
-                if (cond.cond_1!='' && cond.arg_1=='')
+                if (rowNode.data['计算方式'] != '')
                 {
-                    alert("'" + cond.col_name + "'" + '参数1,错误');
-                    return;
+                    cond.sum_avg = rowNode.data['计算方式'];
+                    ajax = true;
                 }
-                if (cond.cond_2!='' && cond.arg_2=='')
-                {
-                    alert("'" + cond.col_name + "'" + '参数2,错误');
-                    return;
-                }
-                if (cond.cond_1!='' && cond.arg_2!='' && cond.and_or=='')
-                {
-                    alert("'" + cond.col_name + "'" + '条件关系,错误');
-                    return;
-                }
-
-                if (cond.cond_1 !='')
+                if (cond.cond_1 != '')
                 {
                     if (cond_str != '') cond_str = cond_str + ',';
                     cond_str = cond_str + cond.col_name + cond.cond_1 + cond.arg_1;
@@ -531,7 +537,12 @@
                     group_str = group_str + cond.col_name;
                     ajax = true;
                 }
-                if (cond.average != '')
+                if (cond.sum_avg == '求和')
+                {
+                    if (sum_str != '') sum_str = sum_str + ',';
+                    sum_str = sum_str + cond.col_name;
+                }
+                else if (cond.sum_avg == '平均')
                 {
                     if (average_str != '') average_str = average_str + ',';
                     average_str = average_str + cond.col_name;
@@ -539,6 +550,12 @@
 
                 if (ajax == true) cond_arr.push(cond);
             });
+
+            if (sum_flag==true && group_flag==false)
+            {
+                alert('计算合计值, 必须设置汇总字段');
+                return;
+            }
 
             if (average_flag==true && group_flag==false)
             {
@@ -558,7 +575,7 @@
                 $$('conditionbox').style.display = 'none';
                 $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 平均:{' + average_str + '}</b>';
 
-                alert('设置条件成功');
+                //alert('设置条件成功');
             }).catch(function (err)
             {
                 alert('设置条件错误, ' + " " + err.statusText);
