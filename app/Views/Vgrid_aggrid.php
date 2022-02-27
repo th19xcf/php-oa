@@ -1,4 +1,4 @@
-<!-- v3.4.3.1.202202271105, from home -->
+<!-- v3.4.4.0.202202272310, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -149,6 +149,16 @@
         var update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
         var object_obj = JSON.parse('<?php echo $object_json; ?>');
 
+        var column_name_arr = [];
+        for (var ii in columns_arr)
+        {
+            column_name_arr.push(columns_arr[ii]['列名']);
+        }
+
+        console.log('cols_obj', columns_obj);
+        console.log('cols_arr', columns_arr);
+        console.log('col_name_arr', column_name_arr);
+
         const update_grid_options = 
         {
             columnDefs: 
@@ -244,7 +254,6 @@
         new agGrid.Grid($$('cond_grid'), cond_grid_options);
 
         // 图形设置
-        // 提前生成录入窗口,否则得不到modify_grid
         var win_chart = new dhx.Window(
         {
             title: '图形参数设置窗口',
@@ -269,6 +278,16 @@
         win_chart.footer.data.add(
         {
             type: 'button',
+            id: '删除',
+            value: '删除',
+            view: 'flat',
+            size: 'medium',
+            color: 'primary',
+        });
+
+        win_chart.footer.data.add(
+        {
+            type: 'button',
             id: '确定',
             value: '确定',
             view: 'flat',
@@ -280,30 +299,62 @@
         win_chart.attachHTML(html);
         win_chart.hide();
 
+        var chart_grid_new = false;
         const chart_grid_options = 
         {
             columnDefs:
             [
-                {field:'坐标轴', width:120},
-                {field:'对应字段', width:120},
-                {field:'图形类型', width:120},
+                {
+                    field: '行选择',
+                    width: 100,
+                    checkboxSelection: true,
+                },
+                {
+                    field: '选择字段',
+                    width: 150,
+                    cellEditor: 'agSelectCellEditor',
+                    cellEditorParams: 
+                    {
+                        values: column_name_arr,
+                    },
+                },
+                {
+                    field: '坐标轴',
+                    width: 120,
+                    cellEditor: 'agSelectCellEditor',
+                    cellEditorParams: 
+                    {
+                        values: ['X轴','Y轴 (左侧)','Y轴 (右侧)'],
+                    },
+                },
+                {
+                    field: '图形类型',
+                    width: 120,
+                    cellEditor: 'agSelectCellEditor',
+                    cellEditorParams:
+                    {
+                        values: ['饼图','折线图','柱图','雷达图'],
+                    },
+                },
             ],
-            defaultColDef: 
+            defaultColDef:
             {
                 width: 120,
                 editable: true,
                 resizable: true
             },
             singleClickEdit: true,
-            rowData: 
+            /*
+            rowData:
             [
-                {'坐标轴':'X轴', '对应字段':'', '图形类型':''},
-                {'坐标轴':'Y轴', '对应字段':'', '图形类型':''}
+                {'行选择':'', '选择字段':'', '坐标轴':'', '图形类型':''},
+                {'行选择':'', '选择字段':'', '坐标轴':'', '图形类型':''}
             ]
+            */
         };
 
         // 工具栏点击
-        data_tb.events.on('click', function(id, e) 
+        data_tb.events.on('click', function(id, e)
         {
             switch (id)
             {
@@ -453,7 +504,11 @@
         function tb_chart()
         {
             win_chart.show();
-            new agGrid.Grid($$('chart_set_grid'), chart_grid_options);
+            if (chart_grid_new == false)
+            {
+                new agGrid.Grid($$('chart_set_grid'), chart_grid_options);
+                chart_grid_new = true;
+            }
         }
 
         function condition_submit(id)
@@ -690,11 +745,6 @@
                     case '日期':
                         return {
                             component: 'datePicker',
-                            /*
-                            params: {
-                                values: object_obj[params.data.列名]
-                            },
-                            */
                         };
                 }
                 break;
