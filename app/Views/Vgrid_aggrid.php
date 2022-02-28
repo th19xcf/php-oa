@@ -1,4 +1,4 @@
-<!-- v3.4.4.0.202202272310, from home -->
+<!-- v3.4.5.1.202202281655, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -254,6 +254,7 @@
         new agGrid.Grid($$('cond_grid'), cond_grid_options);
 
         // 图形设置
+        var chart_grid_obj = [];
         var win_chart = new dhx.Window(
         {
             title: '图形参数设置窗口',
@@ -751,6 +752,33 @@
             }
         }
 
+        // 图形窗口按钮
+        win_chart.footer.events.on('click', function (id)
+        {
+            if (id == '新增')
+            {
+                var row = {'行选择':'', '选择字段':'', '坐标轴':'', '图形类型':''};
+                chart_grid_obj.push(row);
+                chart_grid_options.api.setRowData(chart_grid_obj);
+            }
+            else if (id == '删除')
+            {
+                var pos = -1;
+                chart_grid_options.api.forEachNode((rowNode, index) => 
+                {
+                    pos = pos + 1;
+                    if (rowNode.isSelected() == true)
+                    {
+                        chart_grid_obj.splice(pos, 1);
+                        chart_grid_options.api.setRowData(chart_grid_obj);
+                        //chart_grid_options.api.updateRowData({remove: row});
+                    }
+                });
+            }
+            else if (id == '提交')
+            {
+            }
+        });
     </script>
 
 </body>
