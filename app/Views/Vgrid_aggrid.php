@@ -1,4 +1,4 @@
-<!-- v3.4.5.1.202202281655, from office -->
+<!-- v3.4.6.0.202203202100, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -15,6 +15,7 @@
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
 
     <script src='<?php base_url(); ?>/assets/js/datepicker_brower.js'></script>
+    <script src='<?php base_url(); ?>/echarts/echarts.js'></script>
 </head>
 
 <body>
@@ -30,6 +31,10 @@
         <div id='cond_tb'></div>
         <div id='cond_grid' class='ag-theme-alpine' style='width:100%; height:92%; background-color:lightblue;'></div>
     </div>
+    <div id='chartbox' style='width:100%;'>
+        <div id='chart_tb'></div>
+        <div id='chart_draw' style='width:100%; height:92%;'></div>
+    </div>
     <div id='footbox' style='width:100%; height:10px; margin-top:5px; background-color: lightblue;'></div>
     <a id='exp2xls'></a>
 
@@ -42,11 +47,13 @@
         $$('databox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
         $$('updatebox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
         $$('conditionbox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
+        $$('chartbox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
         $$('footbox').style.height = document.documentElement.clientHeight * 0.033 + 'px';
 
         $$('databox').style.display = 'block';
         $$('updatebox').style.display = 'none';
         $$('conditionbox').style.display = 'none';
+        $$('chartbox').style.display = 'none';
         $$('footbox').style.display = 'block';
 
         $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{} , 汇总:{} , 平均:{}</b>';
@@ -73,6 +80,21 @@
             this.arg_2 = '';
             this.sum_avg = '';
         }
+
+        function Chart()
+        {
+            this.type = '';
+            this.dataset = [];
+            this.x1_name = '';
+            this.x2_name = '';
+            this.y1_name = '';
+            this.y2_name = '';
+            this.x1_data = [];
+            this.y1_data = [];
+            this.y2_data = [];
+        }
+
+        var chart = new Chart();
 
         // 字段信息
         var tb_obj = JSON.parse('<?php echo $toolbar_json; ?>');
@@ -112,6 +134,11 @@
         cond_tb.data.add({type:'separator'});
         cond_tb.data.add({id:'清空', type:'button', value:'清空'});
         cond_tb.data.add({id:'提交', type:'button', value:'提交'});
+
+        // 生成图形用菜单栏
+        var chart_tb = new dhx.Toolbar('chart_tb', {css:'toobar-class'});
+        chart_tb.data.add({id:'返回', type:'button', value:'返回'});
+        chart_tb.data.add({id:'设置', type:'button', value:'设置'});
 
         // 生成data_grid
         var data_columns_obj = JSON.parse('<?php echo $data_col_json; ?>');
@@ -255,7 +282,7 @@
 
         // 图形设置
         var chart_grid_obj = [];
-        var win_chart = new dhx.Window(
+        var win_chart_set = new dhx.Window(
         {
             title: '图形参数设置窗口',
             footer: true,
@@ -266,7 +293,7 @@
             movable: true
         });
 
-        win_chart.footer.data.add(
+        win_chart_set.footer.data.add(
         {
             type: 'button',
             id: '新增',
@@ -276,7 +303,7 @@
             color: 'primary',
         });
 
-        win_chart.footer.data.add(
+        win_chart_set.footer.data.add(
         {
             type: 'button',
             id: '删除',
@@ -286,7 +313,7 @@
             color: 'primary',
         });
 
-        win_chart.footer.data.add(
+        win_chart_set.footer.data.add(
         {
             type: 'button',
             id: '确定',
@@ -297,8 +324,8 @@
         });
 
         var html = '<div id="chart_set_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
-        win_chart.attachHTML(html);
-        win_chart.hide();
+        win_chart_set.attachHTML(html);
+        win_chart_set.hide();
 
         var chart_grid_new = false;
         const chart_grid_options = 
@@ -311,7 +338,7 @@
                     checkboxSelection: true,
                 },
                 {
-                    field: '选择字段',
+                    field: '字段名称',
                     width: 150,
                     cellEditor: 'agSelectCellEditor',
                     cellEditorParams: 
@@ -325,7 +352,7 @@
                     cellEditor: 'agSelectCellEditor',
                     cellEditorParams: 
                     {
-                        values: ['X轴','Y轴 (左侧)','Y轴 (右侧)'],
+                        values: ['X轴 (下方)','X轴 (上方)','Y轴 (左侧)','Y轴 (右侧)'],
                     },
                 },
                 {
@@ -334,7 +361,7 @@
                     cellEditor: 'agSelectCellEditor',
                     cellEditorParams:
                     {
-                        values: ['饼图','折线图','柱图','雷达图'],
+                        values: ['饼图','折线图','柱图', '散点图', '雷达图'],
                     },
                 },
             ],
@@ -369,8 +396,14 @@
                     $$('databox').style.display = 'none';
                     $$('updatebox').style.display = 'none';
                     $$('conditionbox').style.display = 'block';
+                    $$('chartbox').style.display = 'none';
                     break;
                 case '图形':
+                    $$('databox').style.display = 'none';
+                    $$('updatebox').style.display = 'none';
+                    $$('conditionbox').style.display = 'none';
+                    $$('chartbox').style.display = 'block';
+
                     tb_chart();
                     break;
                 case '修改':
@@ -457,6 +490,23 @@
             }
         });
 
+        // 图形工具栏点击
+        chart_tb.events.on('click', function(id, e) 
+        {
+            switch (id)
+            {
+                case '返回':
+                    $$('databox').style.display = 'block';
+                    $$('updatebox').style.display = 'none';
+                    $$('conditionbox').style.display = 'none';
+                    $$('chartbox').style.display = 'none';
+                    break;
+                case '设置':
+                    tb_chart();
+                    break;
+            }
+        });
+
         // 选择字段是否显示
         function tb_select_field()
         {
@@ -504,7 +554,7 @@
 
         function tb_chart()
         {
-            win_chart.show();
+            win_chart_set.show();
             if (chart_grid_new == false)
             {
                 new agGrid.Grid($$('chart_set_grid'), chart_grid_options);
@@ -753,11 +803,11 @@
         }
 
         // 图形窗口按钮
-        win_chart.footer.events.on('click', function (id)
+        win_chart_set.footer.events.on('click', function (id)
         {
             if (id == '新增')
             {
-                var row = {'行选择':'', '选择字段':'', '坐标轴':'', '图形类型':''};
+                var row = {'行选择':'', '字段名称':'', '坐标轴':'', '图形类型':''};
                 chart_grid_obj.push(row);
                 chart_grid_options.api.setRowData(chart_grid_obj);
             }
@@ -775,10 +825,119 @@
                     }
                 });
             }
-            else if (id == '提交')
+            else if (id == '确定')
             {
+                win_chart_set.hide();
+
+                chart.dataset[0] = [];
+                chart_grid_options.api.forEachNode((rowNode, index) => 
+                {
+                    switch (rowNode.data['图形类型'])
+                    {
+                        case '饼图':
+                            chart.type = 'pie';
+                            break;
+                        case '折线图':
+                            chart.type = 'line';
+                            break;
+                        case '柱图':
+                            chart.type = 'bar';
+                            break;
+                        case '散点图':
+                            chart.type = 'scatter';
+                            break;
+                        case '雷达图':
+                            break;
+                    }
+
+                    console.log('坐标轴', rowNode.data['坐标轴']);
+
+                    switch (rowNode.data['坐标轴'])
+                    {
+                        case 'X轴 (下方)':
+                            chart.x1_name = rowNode.data['字段名称'];
+                            break;
+                        case 'X轴 (上方)':
+                            chart.x2_name = rowNode.data['字段名称'];
+                            break;
+                        case 'Y轴 (左侧)':
+                            chart.y1_name = rowNode.data['字段名称'];
+                            break;
+                        case 'Y轴 (右侧)':
+                            chart.y2_name = rowNode.data['字段名称'];
+                            break;
+                    }
+
+                    chart.dataset[0].push(rowNode.data['字段名称']);
+                });
+
+                var pos = 1;
+                for (var ii in data_grid_obj)
+                {
+                    chart.dataset[pos] = [];
+
+                    for (var jj in chart.dataset[0])
+                    {
+                        var fld_name = chart.dataset[0][jj];
+                        chart.dataset[pos].push(data_grid_obj[ii][fld_name]);
+                    }
+
+                    pos = pos + 1;
+
+                    chart.x1_data.push(data_grid_obj[ii][chart.x1_name])
+                    chart.y1_data.push(data_grid_obj[ii][chart.y1_name])
+                }
+
+                console.log('x1_data', chart.x1_name, chart.x1_data);
+                console.log('y1_data', chart.y1_name, chart.y1_data);
+                console.log('dataset', chart.dataset);
+
+                chart_draw();
             }
         });
+
+        function chart_draw()
+        {
+            var chart_win = echarts.init($$('chart_draw'));
+            var data_source = [];
+            for (var ii in chart.dataset)
+            {
+                data_source.push(chart.dataset[ii]);
+            }
+
+            console.log('data_source', data_source);
+
+            var chart_option =
+            {
+                toolbox:
+                {
+                    show: true,
+                    magicType: { type: ['line', 'bar'] },
+                    restore: {},
+                    saveAsImage: {}
+                },
+                tooltip:
+                {
+                    trigger: 'axis',
+                    axisPointer: { type:'cross' }
+                },
+                dataset:
+                {
+                    source: data_source
+                },
+                xAxis:
+                {
+                    name: chart.x1_name,
+                    type: 'category',
+                    //data: 
+                },
+                yAxis: {},
+                series: [{type:'bar'}]
+            };
+
+            chart_win.setOption(chart_option);
+        }
+
     </script>
 
 </body>
