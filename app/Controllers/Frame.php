@@ -1,5 +1,5 @@
 <?php
-/* v3.4.3.1.202202271105, from home */
+/* v3.4.4.1.202203282045, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -26,14 +26,14 @@ class Frame extends Controller
         $user_role = $session->get('user_role');
 
         $sql = sprintf(
-            'select 角色编号,角色名称,功能赋权,部门赋权,
+            'select 角色编号,角色名称,功能赋权,部门赋权,部门字段,
                 功能编码,一级菜单,二级菜单,功能模块,查询模块,
-                菜单顺序,新增授权,修改授权,部门授权
+                菜单顺序,新增授权,修改授权
             from def_role as t1
             left join
             (
                 select 功能编码,一级菜单,二级菜单,功能模块,查询模块,
-                    菜单顺序,新增授权,修改授权,部门授权
+                    菜单顺序,新增授权,修改授权,部门字段
                 from def_function
                 where 菜单顺序>0
             ) as t2 on t1.功能赋权=t2.功能编码
@@ -60,18 +60,34 @@ class Frame extends Controller
             $json[$row->一级菜单]['expanded'] = false;
             $json[$row->一级菜单]['children'][] = $children;
 
-            $authz[$row->功能赋权] = $row->功能赋权;
-            $authz[$row->部门赋权] = $row->部门赋权;
-            $authz[$row->新增授权] = $row->新增授权;
-            $authz[$row->修改授权] = $row->修改授权;
-            $authz[$row->部门授权] = $row->部门授权;
-        }
+            // 部门访问权限设置
+            $dept_str = $row->部门赋权;
+            $dept_fld = $row->部门字段;
+            str_replace(' ', '' , $dept_str);
+            str_replace('，', ',' , $dept_str);
+            $dept_arr = explode(',', $dept_str);
 
-        // 存入session
-        $session_arr = [];
-        $session_arr['user_authz'] = $authz;
-        $session = \Config\Services::session();
-        $session->set($session_arr);
+            $dept_cond = '';
+            foreach ($dept_arr as $dept)
+            {
+                if ($dept_cond == '')
+                {
+                    $dept_cond = sprintf('instr(%s,"%s")', $dept_fld, $dept);
+                }
+                else
+                {
+                    $dept_cond = sprintf('%s or instr(%s,"%s")', $dept_cond, $dept_fld, $dept);
+                }
+            }
+
+            // 存入session
+            $session_arr = [];
+            $session_arr[$row->功能赋权.'-dept_authz'] = $row->部门赋权;
+            $session_arr[$row->功能赋权.'-dept_fld'] = $row->部门字段;
+            $session_arr[$row->功能赋权.'-dept_cond'] = $dept_cond;
+            $session = \Config\Services::session();
+            $session->set($session_arr);
+        }
 
         echo json_encode($json, 320);  //256+64,不转义中文+反斜杠
     }
@@ -106,9 +122,9 @@ class Frame extends Controller
         $object_arr = array();  // 下拉选择的对象值
 
         $sql = sprintf('
-            select 查询模块,列名,列类型,列宽度,字段名,查询名,对象,
+            select 查询模块,部门字段,列名,列类型,列宽度,字段名,查询名,对象,
                 可修改,可筛选,主键,赋值类型,
-                新增授权,修改授权,部门授权
+                新增授权,修改授权
             from view_function 
             where 功能编码=%s and 列顺序>0
             group by 列名
@@ -232,10 +248,22 @@ class Frame extends Controller
             $select_str = $select_str . $column['查询名'] . ' as ' . $column['列名'];
         }
 
-        // 读出数据
         $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
             from %s,(select @i:=0) as xh', 
             $select_str, $table_name);
+
+        // 部门授权条件
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $dept_cond = $session->get($menu_id.'-dept_cond');
+
+        // 条件语句加上部门授权
+        if ($dept_cond != '')
+        {
+            $sql = sprintf('%s where ( %s )', $sql, $dept_cond);
+        }
+
+        // 读出数据
         $query = $model->select($sql);
         $results = $query->getResult();
 
@@ -250,6 +278,7 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $session->set($session_arr);
 
+        //返回页面
         $send['toolbar_json'] = json_encode($tb_arr);
         $send['columns_json'] = json_encode($columns_arr);
         $send['data_col_json'] = json_encode($data_col_arr);
@@ -429,6 +458,7 @@ class Frame extends Controller
         $table_name = $session->get($menu_id.'-table_name');
         $columns_arr = $session->get($menu_id.'-columns_arr');
         $select_str = $session->get($menu_id.'-select_str');
+        $dept_cond = $session->get($menu_id.'-dept_cond');
 
         // 拼出查询语句
         $select_str = '';
@@ -468,7 +498,6 @@ class Frame extends Controller
             }
         }
 
-        // 读出数据
         $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s from %s,(select @i:=0) as xh', 
             $select_str, $table_name);
 
@@ -476,11 +505,16 @@ class Frame extends Controller
         {
             $sql = $sql . ' where ' . $where;
         }
+        if ($dept_cond != '')
+        {
+            $sql = sprintf('%s and (%s)', $sql, $dept_cond);
+        }
         if ($group != '')
         {
             $sql = $sql . ' group by ' . $group;
         }
 
+        // 读出数据
         $model = new Mframe();
         $query = $model->select($sql);
         $results = $query->getResult();
