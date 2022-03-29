@@ -1,5 +1,5 @@
 <?php
-/* v3.4.4.1.202203282045, from home */
+/* v3.4.5.1.202203291600, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -355,13 +355,17 @@ class Frame extends Controller
                 }
                 else
                 {
-                    if ($opt_1!='in' && $opt_1!='not in')
+                    if ($opt_1 == 'in')
                     {
-                        $cond_1 = sprintf(' %s%s"%s" ', $cond['fld_name'], $opt_1, $cond['arg_1']);
+                        $cond_1 = sprintf(' instr(%s,"%s") ', $cond['fld_name'], $cond['arg_1']);
+                    }
+                    else if ($opt_1 == 'not in')
+                    {
+                        $cond_1 = sprintf(' instr(%s,"%s")=0 ', $cond['fld_name'], $cond['arg_1']);
                     }
                     else
                     {
-                        $cond_1 = sprintf(' %s %s ("%s") ', $cond['fld_name'], $opt_1, $cond['arg_1']);
+                        $cond_1 = sprintf(' %s%s"%s" ', $cond['fld_name'], $opt_1, $cond['arg_1']);
                     }
                 }
             }
@@ -409,13 +413,17 @@ class Frame extends Controller
                 }
                 else
                 {
-                    if ($opt_2!='in' && $opt_2!='not in')
+                    if ($opt_2 == 'in')
                     {
-                        $cond_2 = sprintf(' %s%s"%s" ', $cond['fld_name'], $opt_2, $cond['arg_2']);
+                        $cond_2 = sprintf(' instr(%s,"%s") ', $cond['fld_name'], $cond['arg_2']);
+                    }
+                    else if ($opt_2 == 'not in')
+                    {
+                        $cond_2 = sprintf(' instr(%s,"%s")=0 ', $cond['fld_name'], $cond['arg_2']);
                     }
                     else
                     {
-                        $cond_2 = sprintf(' %s %s ("%s") ', $cond['fld_name'], $opt_2, $cond['arg_2']);
+                        $cond_2 = sprintf(' %s%s"%s" ', $cond['fld_name'], $opt_2, $cond['arg_2']);
                     }
                 }
             }
