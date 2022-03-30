@@ -1,5 +1,5 @@
 <?php
-/* v3.4.5.1.202203291600, from office */
+/* v3.5.1.1.202203301730, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -93,9 +93,9 @@ class Frame extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 通用条件查询模块
+    // 通用初始查询模块
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function get_condition($menu_id='')
+    public function init($menu_id='')
     {
         $primary_key = '';
 
@@ -293,7 +293,7 @@ class Frame extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 通用条件设置模块
+    // 通用条件查询模块
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function set_condition($menu_id='')
     {
