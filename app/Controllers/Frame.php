@@ -1,5 +1,5 @@
 <?php
-/* v3.5.1.1.202203301730, from office */
+/* v3.6.1.1.202204031820, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -25,6 +25,23 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $user_role = $session->get('user_role');
 
+        str_replace(' ', '' , $user_role);
+        str_replace('，', ',' , $user_role);
+        $role_arr = explode(',', $user_role);
+
+        $role_str = '';
+        foreach ($role_arr as $role)
+        {
+            if ($role_str == '')
+            {
+                $role_str = sprintf('"%s"', $role);
+            }
+            else
+            {
+                $role_str = sprintf('%s,"%s"', $role_str ,$role);
+            }
+        }
+
         $sql = sprintf(
             'select 角色编号,角色名称,功能赋权,部门赋权,部门字段,
                 功能编码,一级菜单,二级菜单,功能模块,查询模块,
@@ -37,8 +54,8 @@ class Frame extends Controller
                 from def_function
                 where 菜单顺序>0
             ) as t2 on t1.功能赋权=t2.功能编码
-            where t1.角色编号="%s"
-            order by t2.菜单顺序', $user_role);
+            where t1.角色编号 in (%s)
+            order by t2.菜单顺序', $role_str);
 
         $model = new Mframe();
         $query = $model->select($sql);
