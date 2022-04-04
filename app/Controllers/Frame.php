@@ -1,5 +1,5 @@
 <?php
-/* v3.6.1.1.202204031820, from home */
+/* v3.6.2.1.202204042210, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -43,14 +43,15 @@ class Frame extends Controller
         }
 
         $sql = sprintf(
-            'select 角色编号,角色名称,功能赋权,部门赋权,部门字段,
-                功能编码,一级菜单,二级菜单,功能模块,查询模块,
-                菜单顺序,新增授权,修改授权
+            'select t1.角色编号,t1.角色名称,t1.功能赋权,t1.部门赋权,
+                t2.部门字段,t2.功能编码,
+                t2.一级菜单,t2.二级菜单,t2.功能模块,t2.查询模块,
+                t2.菜单顺序,t2.新增授权,t2.修改授权
             from def_role as t1
             left join
             (
                 select 功能编码,一级菜单,二级菜单,功能模块,查询模块,
-                    菜单顺序,新增授权,修改授权,部门字段
+                    部门字段,菜单顺序,新增授权,修改授权
                 from def_function
                 where 菜单顺序>0
             ) as t2 on t1.功能赋权=t2.功能编码
@@ -273,9 +274,10 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $dept_cond = $session->get($menu_id.'-dept_cond');
+        $dept_fld = $session->get($menu_id.'-dept_fld');
 
         // 条件语句加上部门授权
-        if ($dept_cond != '')
+        if ($dept_cond != '' && $dept_fld != '')
         {
             $sql = sprintf('%s where ( %s )', $sql, $dept_cond);
         }
@@ -484,6 +486,7 @@ class Frame extends Controller
         $columns_arr = $session->get($menu_id.'-columns_arr');
         $select_str = $session->get($menu_id.'-select_str');
         $dept_cond = $session->get($menu_id.'-dept_cond');
+        $dept_fld = $session->get($menu_id.'-dept_fld');
 
         // 拼出查询语句
         $select_str = '';
@@ -530,7 +533,7 @@ class Frame extends Controller
         {
             $sql = $sql . ' where ' . $where;
         }
-        if ($dept_cond != '')
+        if ($dept_cond != '' && $dept_fld != '')
         {
             $sql = sprintf('%s and (%s)', $sql, $dept_cond);
         }
