@@ -1,5 +1,5 @@
 <?php
-/* v3.6.2.1.202204042210, from home */
+/* v3.6.3.1.202204051935, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -240,9 +240,10 @@ class Frame extends Controller
 
         // 取出查询模块对应的表配置
         $table_name = '';
+        $init_where = '';
 
         $sql = sprintf('
-            select 表名 
+            select 表名,初始条件 
             from view_function 
             where 功能编码=%s
             group by 功能编码', $menu_id);
@@ -252,6 +253,7 @@ class Frame extends Controller
         foreach ($results as $row)
         {
             $table_name = $row->表名;
+            $init_where = $row->初始条件;
             break;
         }
 
@@ -280,6 +282,12 @@ class Frame extends Controller
         if ($dept_cond != '' && $dept_fld != '')
         {
             $sql = sprintf('%s where ( %s )', $sql, $dept_cond);
+        }
+
+        // 加上初始条件
+        if ($init_where != '')
+        {
+            $sql = sprintf('%s %s', $sql, $init_where);
         }
 
         // 读出数据
@@ -459,13 +467,17 @@ class Frame extends Controller
                     $cond_str = $cond_1;
             }
 
+            if ($cond_str != '')
+            {
+                if ($where != '') $where = $where . ' and ';
+                $where = $where . $cond_str;    
+            }
+
             if ($cond['group'] == true)
             {
                 if ($group != '') $group = $group . ' , ';
                 $group = $group . $cond['fld_name'];
             }
-            if ($where != '') $where = $where . ' and ';
-            $where = $where . $cond_str;
 
             if ($cond['sum_avg'] == '求和')
             {
