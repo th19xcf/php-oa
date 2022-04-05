@@ -1,4 +1,4 @@
-<!-- v3.4.6.0.202203202100, from home -->
+<!-- v3.4.7.1.202204052330, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -105,11 +105,19 @@
         var data_tb = new dhx.Toolbar('data_tb', {css:'toobar-class'});
         //data_tb.data.add({id:'名称', type:'title', value:'主菜单-->'});
         data_tb.data.add({id:'刷新', type:'button', value:'刷新'});
-        data_tb.data.add({id:'分页', type:'button', value:'分页'});
         data_tb.data.add({id:'字段选择', type:'button', value:'字段选择'});
         data_tb.data.add({id:'设置条件', type:'button', value:'设置条件'});
         data_tb.data.add({id:'图形', type:'button', value:'图形'});
         data_tb.data.add({type:'separator'});
+        data_tb.data.add({id:'title', type:'title', value:'分页'});
+        data_tb.data.add(
+        {
+            id: '分页',
+            type: 'selectButton',
+            value: '100',
+            items: [{id:'100',value:'100'},{id:'500',value:'500'},{id:'1000',value:'1000'}]
+        });
+
         if (tb_obj['修改授权'] == true)
         {
             data_tb.data.add({id:'修改', type:'button', value:'修改'});
@@ -141,6 +149,7 @@
         chart_tb.data.add({id:'设置', type:'button', value:'设置'});
 
         // 生成data_grid
+        var data_page = 100;
         var data_columns_obj = JSON.parse('<?php echo $data_col_json; ?>');
 
         var data_columns_arr = []; // 数据表使用
@@ -182,9 +191,9 @@
             column_name_arr.push(columns_arr[ii]['列名']);
         }
 
-        console.log('cols_obj', columns_obj);
-        console.log('cols_arr', columns_arr);
-        console.log('col_name_arr', column_name_arr);
+        //console.log('cols_obj', columns_obj);
+        //console.log('cols_arr', columns_arr);
+        //console.log('col_name_arr', column_name_arr);
 
         const update_grid_options = 
         {
@@ -443,6 +452,15 @@
                     $$('exp2xls').href = href;
                     $$('exp2xls').click();
                     break;
+            }
+        });
+
+        data_tb.events.on('change', function(id,status,updatedItem)
+        {
+            if (id == '分页' && data_page != updatedItem['value'])
+            {
+                data_page =  updatedItem['value'];
+                data_grid_options.api.paginationSetPageSize(Number(data_page));
             }
         });
 
