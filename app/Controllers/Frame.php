@@ -1,5 +1,5 @@
 <?php
-/* v3.6.3.1.202204051935, from home */
+/* v3.6.4.1.202204260925, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -51,7 +51,7 @@ class Frame extends Controller
             left join
             (
                 select 功能编码,一级菜单,二级菜单,功能模块,查询模块,
-                    部门字段,菜单顺序,新增授权,修改授权
+                    部门字段,菜单顺序,新增授权,修改授权,导入模块
                 from def_function
                 where 菜单顺序>0
             ) as t2 on t1.功能赋权=t2.功能编码
@@ -61,7 +61,7 @@ class Frame extends Controller
         $model = new Mframe();
         $query = $model->select($sql);
         $results = $query->getResult();
-    
+
         $json = array();
 
         $authz = [];
@@ -85,9 +85,13 @@ class Frame extends Controller
             str_replace('，', ',' , $dept_str);
             $dept_arr = explode(',', $dept_str);
 
-            $dept_cond = '';
+            $dept_cond = $session->get($row->功能赋权.'-dept_cond'); //多个角色部门权限合并
             foreach ($dept_arr as $dept)
             {
+                if ($dept == '')
+                {
+                    break;
+                }
                 if ($dept_cond == '')
                 {
                     $dept_cond = sprintf('instr(%s,"%s")', $dept_fld, $dept);
@@ -103,6 +107,8 @@ class Frame extends Controller
             $session_arr[$row->功能赋权.'-dept_authz'] = $row->部门赋权;
             $session_arr[$row->功能赋权.'-dept_fld'] = $row->部门字段;
             $session_arr[$row->功能赋权.'-dept_cond'] = $dept_cond;
+            $session_arr[$row->功能赋权.'-menu_1'] = $row->一级菜单;
+            $session_arr[$row->功能赋权.'-menu_2'] = $row->二级菜单;
             $session = \Config\Services::session();
             $session->set($session_arr);
         }
@@ -195,6 +201,7 @@ class Frame extends Controller
             }
             if ($row->列类型 == '数值')
             {
+                $data_col_arr[$row->列名]['type'] = 'numericColumn';
                 $data_col_arr[$row->列名]['filter'] = 'agNumberColumnFilter';
             }
 

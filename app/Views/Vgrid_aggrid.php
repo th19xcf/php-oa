@@ -1,4 +1,4 @@
-<!-- v3.4.8.1.202204091830, from home -->
+<!-- v3.4.7.1.202204052330, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -96,8 +96,10 @@
 
         var chart = new Chart();
 
-        // 工具栏信息
+        // 字段信息
         var tb_obj = JSON.parse('<?php echo $toolbar_json; ?>');
+
+        var update_flag = '';  // modify或add
 
         // 生成主菜单栏
         var data_tb = new dhx.Toolbar('data_tb', {css:'toobar-class'});
@@ -153,15 +155,6 @@
         var data_columns_arr = []; // 数据表使用
         data_columns_arr = Object.values(data_columns_obj);
 
-        for (var ii in data_columns_arr)
-        {
-            // 用于数字排序
-            if (data_columns_arr[ii].type == 'numericColumn')
-            {
-                data_columns_arr[ii].comparator = value_compare;
-            }
-        }
-
         var data_grid_obj = JSON.parse('<?php echo $data_value_json; ?>');
 
         const data_grid_options = 
@@ -169,7 +162,6 @@
             columnDefs: data_columns_arr,
             defaultColDef: 
             {
-                //comparator: value_compare,
                 width: 120,
                 resizable: true
             },
@@ -187,8 +179,6 @@
             console.log('datagrid ready');
         }
 
-        var update_flag = '';  // modify或add
-
         // 生成update_grid
         var columns_obj = JSON.parse('<?php echo $columns_json; ?>');
         var columns_arr = Object.values(columns_obj);
@@ -200,6 +190,10 @@
         {
             column_name_arr.push(columns_arr[ii]['列名']);
         }
+
+        //console.log('cols_obj', columns_obj);
+        //console.log('cols_arr', columns_arr);
+        //console.log('col_name_arr', column_name_arr);
 
         const update_grid_options = 
         {
@@ -799,11 +793,6 @@
                     alert('status' + " " + err.statusText);
                 });
             }
-        }
-
-        function value_compare(val1, val2, nodeA, nodeB, inverse)
-        {
-            return val1 - val2;
         }
 
         function cellEditorSelector(params)
