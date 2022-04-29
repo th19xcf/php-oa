@@ -1,8 +1,9 @@
 <?php
-/* v1.1.2.1.202204212230, from office */
+/* v1.1.3.1.202204291510, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
+use App\Models\Mcommon;
 
 require '..\vendor\autoload.php';
 
@@ -49,6 +50,7 @@ class Upload extends Controller
         $user_workid = $session->get('user_workid');
         $menu_1 = $session->get($menu_id.'-menu_1');
         $menu_2 = $session->get($menu_id.'-menu_2');
+        $import = $session->get($menu_id.'-import');
 
         $file_name = $file['name'];
         $ext = substr($file_name, strrpos($file_name, '.'));
@@ -76,7 +78,7 @@ class Upload extends Controller
         $spreadsheet = $reader->load($new_file_name); //载入excel表格
 
         $sheet_count = $spreadsheet->getSheetCount();
-        $sheet = $spreadsheet->getSheet(1); // 只处理第一张sheet
+        $sheet = $spreadsheet->getSheet(0); // 只处理第一张sheet
         //$sheet = $spreadsheet->getActiveSheet();
         $highestRow = $sheet->getHighestRow(); // 总行数
         $highestColumn = $sheet->getHighestColumn(); // 总列数
@@ -84,6 +86,36 @@ class Upload extends Controller
         $sheet_data = $sheet->toArray(true, true, true, true, true);
 
         //数据库操作
+        $sql = sprintf(
+                'select 列名,字段名,字段类型,字段长度,
+                    赋值类型,对象,导入类型,系统变量
+                from def_import_column
+                where 导入模块="%s" and 系统变量=""', $import);
+
+        $model = new Mcommon();
+        $query = $model->select($sql);
+        $results = $query->getResult();
+
+        $table_name = sprintf('tmp_%s_%s_%s_%s', $menu_id, $menu_1, $menu_2, $user_workid);
+        $fld_arr = [];
+        $fld_ceate_str = '';
+
+        foreach ($results as $row)
+        {
+            array_push($fld_arr, $row->字段名);
+
+            if ($fld_ceate_str != '') $fld_ceate_str = $fld_ceate_str . ',';
+            $fld_ceate_str = sprintf('%s %s varchar(%s) not null default ""', $fld_ceate_str, $row->字段名, $row->字段长度);
+        }
+
+        $sql = sprintf('drop table if exists %s;', $table_name);
+        $rc = $model->exec($sql);
+
+        $sql = sprintf('create table %s (%s);', 
+            $table_name, $fld_ceate_str);
+        $rc = $model->exec($sql);
+
+        $model->add($table_name, $sheet_data, $fld_arr);
 
         $this->json_data(200, '导入成功', 0);
     }

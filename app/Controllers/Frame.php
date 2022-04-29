@@ -1,5 +1,5 @@
 <?php
-/* v3.6.4.1.202204260925, from office */
+/* v3.6.5.1.202204291510, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -46,7 +46,7 @@ class Frame extends Controller
             'select t1.角色编号,t1.角色名称,t1.功能赋权,t1.部门赋权,
                 t2.部门字段,t2.功能编码,
                 t2.一级菜单,t2.二级菜单,t2.功能模块,t2.查询模块,
-                t2.菜单顺序,t2.新增授权,t2.修改授权
+                t2.菜单顺序,t2.新增授权,t2.修改授权,t2.导入模块
             from def_role as t1
             left join
             (
@@ -109,6 +109,7 @@ class Frame extends Controller
             $session_arr[$row->功能赋权.'-dept_cond'] = $dept_cond;
             $session_arr[$row->功能赋权.'-menu_1'] = $row->一级菜单;
             $session_arr[$row->功能赋权.'-menu_2'] = $row->二级菜单;
+            $session_arr[$row->功能赋权.'-import'] = $row->导入模块;
             $session = \Config\Services::session();
             $session->set($session_arr);
         }
