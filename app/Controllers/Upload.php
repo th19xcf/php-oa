@@ -1,5 +1,5 @@
 <?php
-/* v1.1.4.1.202204292330, from home */
+/* v1.1.5.1.202204302115, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -25,7 +25,6 @@ class Upload extends Controller
         $path = APPPATH;
         $path = ROOTPATH;
         $path = WRITEPATH;
-        //$spreadsheet = new Spreadsheet();
 
         $send['func_id'] = $menu_id;
         $send['import_page'] = base_url('upload/import/'.$menu_id);
@@ -90,7 +89,7 @@ class Upload extends Controller
 
         $sql = sprintf(
                 'select 列名,字段名,字段类型,字段长度,
-                    赋值类型,对象,导入类型,系统变量
+                    校验类型,对象,导入类型,系统变量
                 from def_import_column
                 where 导入模块="%s" and 系统变量=""', $import);
 
@@ -116,9 +115,54 @@ class Upload extends Controller
             $tmp_table_name, $fld_ceate_str);
         $rc = $model->exec($sql);
 
-        $model->add($tmp_table_name, $sheet_data, $fld_arr);
+        $rc = $model->add_by_trans($tmp_table_name, $sheet_data, $fld_arr);
+        if ($rc == -1)
+        {
+            $this->json_data(400, '导入失败,请重试！', 0);
+            return;
+        }
 
         //数据校验
+        foreach ($results as $row)
+        {
+            switch ($row->校验类型)
+            {
+                case '固定值':
+                    $sql = sprintf('
+                        select t1.%s as 变量值,t2.对象值 as 对象值
+                        from
+                        (
+                            select %s 
+                            from %s
+                            group by %s
+                        ) as t1
+                        left join
+                        (
+                            select 对象名称,对象值
+                            from def_object
+                            where 对象名称="%s"
+                        ) as t2 on t1.%s=t2.对象值
+                        where t2.对象值 is null',
+                        $row->字段名, $row->字段名, $tmp_table_name, $row->字段名,
+                        $row->对象, $row->字段名);
+
+                    $errs = $model->select($sql)->getResult();
+
+                    if (count($errs) != 0)
+                    {
+                        $err_arr = [];
+                        foreach ($errs as $err)
+                        {
+                            array_push($err_arr, $err->变量值);
+                        }
+                        $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录 [%s]',$row->字段名, implode(',', $err_arr)), 0);
+                        return;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
 
         // 插入正式表
         $sql = sprintf('select 表名 from def_import_config
