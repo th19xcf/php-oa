@@ -1,4 +1,4 @@
-<!-- v1.1.1.1.202204141310, from office -->
+<!-- v1.1.2.1.202205051020, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -12,19 +12,43 @@
 
 <body>
     <br/>
+    <h3>模板下载</h3>
     <a href='<?php base_url(); ?>/Template/学校信息表.xlsx'><u>下载模板</u></a>
     <br/>
+    <div id='month_div'>
+        <h3>输入工作月份</h3>
+        <input type='text' id='work_month' />(格式:2022-04)
+    </div>
+    <div id='date_div'>
+        <h3>输入工作日期</h3>
+        <input type='date' id='work_date' />
+    </div>
+    <h3>上传文件</h3>
     <div id='uploader' class='easy-upload' style='margin-top:30px;'></div>
 
     <script type='text/javascript' charset='utf-8'>
+        function $$(id)
+        {
+            return document.getElementById(id);
+        }
 
-        var url = '<?php echo $import_page; ?>';
+        var month_block = '<?php echo $work_month; ?>';
+        var date_block = '<?php echo $work_date; ?>';
+
+        if (month_block == '')
+        {
+            $$('month_div').style.display = 'none';
+        }
+        if (date_block == '')
+        {
+            $$('date_div').style.display = 'none';
+        }
 
         var uploader = easyUploader(
         {
             id: 'uploader',
             accept: '.xlsx,.xls',
-            action: url,
+            action: '<?php echo $import_page; ?>',
             dataFormat: 'formData',
             maxCount: 1,
             maxSize: 100,
@@ -37,11 +61,20 @@
                 data.append('token', '387126b0-7b3e-4a2a-86ad-ae5c5edd0ae6TT');
                 data.append('otherKey', 'otherValue');
                 data.append('func_id', '<?php echo $func_id; ?>');
-                console.log('data', data);
+                data.append('work_date', $$('work_month').value);
+                data.append('work_date', $$('work_date').value);
             },
             onChange: function(fileList)
             {
                 /* input选中时触发 */
+                if (month_block != '' && $$('work_month').value =='')
+                {
+                    alert('请输入工作月份');
+                }
+                if (date_block != '' && $$('work_date').value =='')
+                {
+                    alert('请输入工作日期');
+                }
             },
             onRemove: function(removedFiles, files)
             {

@@ -1,5 +1,5 @@
 <?php
-/* v1.1.5.1.202204302115, from home */
+/* v1.1.5.1.202205051045, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -22,9 +22,24 @@ class Upload extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function init($menu_id='')
     {
-        $path = APPPATH;
-        $path = ROOTPATH;
-        $path = WRITEPATH;
+        $send = [];
+
+        $session = \Config\Services::session();
+        $import = $session->get($menu_id.'-import');
+
+        $sql = sprintf('select 表名,表单变量
+            from def_import_config
+            where 导入模块="%s"', $import);
+
+        $model = new Mcommon();
+        $query = $model->select($sql);
+        $results = $query->getResult();
+
+        foreach ($results as $row)
+        {
+            $send['work_month'] = strpos($row->表单变量,'$工作月份');
+            $send['work_date'] = strpos($row->表单变量,'$工作日期');
+        }
 
         $send['func_id'] = $menu_id;
         $send['import_page'] = base_url('upload/import/'.$menu_id);
@@ -38,7 +53,10 @@ class Upload extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function import($menu_id='')
     {
-        $file =  isset($_FILES['upfiles']) ? $_FILES['upfiles'] : '';
+        $work_month = $this->request->getPost('work_month');
+        $work_date = $this->request->getPost('work_date');
+
+        $file = isset($_FILES['upfiles']) ? $_FILES['upfiles'] : '';
         if (empty($file))
         {
             $this->json_data(204, '上传文件为空！', 0);
@@ -72,7 +90,15 @@ class Upload extends Controller
             $this->json_data(204, '复制文件失败', 0);
         }
 
-        $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
+        if ($ext == '.xls')
+        {
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xls');
+        }
+        else if ($ext == '.xlsx')
+        {
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
+        }
+
         $reader->setReadDataOnly(TRUE);
         $spreadsheet = $reader->load($new_file_name); //载入excel表格
 
@@ -165,7 +191,8 @@ class Upload extends Controller
         }
 
         // 插入正式表
-        $sql = sprintf('select 表名 from def_import_config
+        $sql = sprintf('select 表名,表单变量
+            from def_import_config
             where 导入模块="%s"', $import);
 
         $query = $model->select($sql);
@@ -182,6 +209,7 @@ class Upload extends Controller
             'select 列名,字段名,字段类型,字段长度,
                 赋值类型,对象,导入类型,
                 replace(系统变量," ","") as 系统变量
+                replace(表单变量," ","") as 表单变量
             from def_import_column
             where 导入模块="%s"', $import);
 
@@ -209,6 +237,21 @@ class Upload extends Controller
                     array_push($tmp_fld_arr, sprintf('"%s" as %s', $row->系统变量, $row->字段名));
                     break;
             }
+            switch ($row->表单变量)
+            {
+                case '':
+                    array_push($tmp_fld_arr, $row->字段名);
+                    break;
+                case '$工作月份':
+                    array_push($tmp_fld_arr, sprintf('"%s" as %s', $work_month, $row->字段名));
+                    break;
+                case '$工作日期':
+                    array_push($tmp_fld_arr, sprintf('"%s" as %s', $work_date, $row->字段名));
+                    break;
+                default:
+                    array_push($tmp_fld_arr, sprintf('"%s" as %s', $row->系统变量, $row->字段名));
+                    break;
+            }
         }
 
         $tmp_fld_str = implode(',', $tmp_fld_arr);
@@ -230,6 +273,7 @@ class Upload extends Controller
             'number'=>$count,
             'data'=>$data
         ];
+
         echo json_encode($res);
         die;
     }
