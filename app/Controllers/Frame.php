@@ -1,5 +1,5 @@
 <?php
-/* v3.6.5.1.202204291510, from office */
+/* v3.6.6.1.202205092030, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -338,6 +338,8 @@ class Frame extends Controller
         $group = '';
         $sum_str = '';
         $avg_str = '';
+        $max_str = '';
+        $min_str = '';
 
         foreach ($cond_arr as $cond)
         {
@@ -487,16 +489,28 @@ class Frame extends Controller
                 $group = $group . $cond['fld_name'];
             }
 
-            if ($cond['sum_avg'] == '求和')
+            if ($cond['sum_avg'] == '合计')
             {
                 if ($sum_str != '') $sum_str = $sum_str . ' , ';
                 $sum_str = $sum_str . $cond['fld_name'];
             }
 
-            if ($cond['sum_avg'] == '平均')
+            else if ($cond['sum_avg'] == '平均')
             {
                 if ($avg_str != '') $avg_str = $avg_str . ' , ';
                 $avg_str = $avg_str . $cond['fld_name'];
+            }
+
+            else if ($cond['sum_avg'] == '最大')
+            {
+                if ($max_str != '') $max_str = $max_str . ' , ';
+                $max_str = $max_str . $cond['fld_name'];
+            }
+
+            else if ($cond['sum_avg'] == '平均')
+            {
+                if ($min_str != '') $min_str = $min_str . ' , ';
+                $min_str = $min_str . $cond['fld_name'];
             }
         }
 
@@ -524,7 +538,7 @@ class Frame extends Controller
                 {
                     continue;
                 }
-                if ($column['列名']==$cond['col_name'] && $cond['sum_avg']=='求和')
+                if ($column['列名']==$cond['col_name'] && $cond['sum_avg']=='合计')
                 {
                     $sum_avg_str = sprintf('sum(%s)', $column['查询名']);
                     break;
@@ -532,6 +546,16 @@ class Frame extends Controller
                 if ($column['列名']==$cond['col_name'] && $cond['sum_avg']=='平均')
                 {
                     $sum_avg_str = sprintf('round(avg(%s),2)', $column['查询名']);
+                    break;
+                }
+                if ($column['列名']==$cond['col_name'] && $cond['sum_avg']=='最大')
+                {
+                    $sum_avg_str = sprintf('max(%s)', $column['查询名']);
+                    break;
+                }
+                if ($column['列名']==$cond['col_name'] && $cond['sum_avg']=='最小')
+                {
+                    $sum_avg_str = sprintf('min(%s)', $column['查询名']);
                     break;
                 }
             }

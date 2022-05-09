@@ -1,4 +1,4 @@
-<!-- v3.4.7.1.202204052330, from home -->
+<!-- v3.4.8.1.202205292030, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -56,7 +56,7 @@
         $$('chartbox').style.display = 'none';
         $$('footbox').style.display = 'block';
 
-        $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{} , 汇总:{} , 平均:{}</b>';
+        $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{}, 汇总:{}, 合计:{}, 平均:{}, 最大:{}, 最小:{}</b>';
 
         function ColumnInfo()
         {
@@ -268,7 +268,7 @@
                     cellEditor: 'agSelectCellEditor',
                     cellEditorParams: 
                     {
-                        values: ['','求和','平均'],
+                        values: ['', '合计', '平均', '最大', '最小'],
                     },
                 },
             ],
@@ -591,13 +591,15 @@
             var group_str = '';
             var sum_str = '';
             var average_str = '';
+            var max_str = '';
+            var min_str = '';
 
             cond_grid_options.api.stopEditing();
             cond_grid_options.api.forEachNode((rowNode, index) => 
             {
-                if (rowNode.data['计算方式']=='求和' && rowNode.data['列类型']!='数值')
+                if (rowNode.data['计算方式']=='合计' && rowNode.data['列类型']!='数值')
                 {
-                    alert("'" + rowNode.data['字段名'] + "'" + '类型不是数值,无法求和,请重新设置');
+                    alert("'" + rowNode.data['字段名'] + "'" + '类型不是数值,无法合计,请重新设置');
                     return;
                 }
                 if (rowNode.data['计算方式']=='平均' && rowNode.data['列类型']!='数值')
@@ -661,7 +663,7 @@
                     group_str = group_str + cond.col_name;
                     ajax = true;
                 }
-                if (cond.sum_avg == '求和')
+                if (cond.sum_avg == '合计')
                 {
                     if (sum_str != '') sum_str = sum_str + ',';
                     sum_str = sum_str + cond.col_name;
@@ -670,6 +672,16 @@
                 {
                     if (average_str != '') average_str = average_str + ',';
                     average_str = average_str + cond.col_name;
+                }
+                else if (cond.sum_avg == '最大')
+                {
+                    if (max_str != '') max_str = max_str + ',';
+                    max_str = max_str + cond.col_name;
+                }
+                else if (cond.sum_avg == '最小')
+                {
+                    if (min_str != '') min_str = min_str + ',';
+                    min_str = min_str + cond.col_name;
                 }
 
                 if (ajax == true) cond_arr.push(cond);
@@ -687,7 +699,7 @@
                 return;
             }
 
-            $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 平均:{' + average_str + '}</b>';
+            $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}</b>';
 
             dhx.ajax.post('<?php base_url(); ?>/Frame/set_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
             {
@@ -697,9 +709,7 @@
                 $$('databox').style.display = 'block';
                 $$('updatebox').style.display = 'none';
                 $$('conditionbox').style.display = 'none';
-                $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 平均:{' + average_str + '}</b>';
-
-                //alert('设置条件成功');
+                $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '}, 汇总:{' + group_str + '}, 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}</b>';
             }).catch(function (err)
             {
                 alert('设置条件错误, ' + " " + err.statusText);
