@@ -1,5 +1,5 @@
 <?php
-/* v3.7.1.1.202205201650, from home */
+/* v3.7.2.1.202205202335, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -160,7 +160,7 @@ class Frame extends Controller
 
         foreach ($results as $row)
         {
-            if ($row->主键 != 0)
+            if ($row->主键 == 1)
             {
                 $primary_key = $row->列名;
             }
@@ -195,7 +195,7 @@ class Frame extends Controller
             {
                 $data_col_arr[$row->列名]['width'] = $row->列宽度;
             }
-            if ($row->主键 != 0)
+            if ($row->主键 == 1)
             {
                 $data_col_arr[$row->列名]['hide'] = true;
             }
