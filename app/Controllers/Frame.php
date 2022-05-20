@@ -1,5 +1,5 @@
 <?php
-/* v3.6.6.1.202205092030, from home */
+/* v3.7.1.1.202205201650, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -127,7 +127,6 @@ class Frame extends Controller
         $data_col_arr = array();  // 客户端data_grid列信息,用于显示
         $columns_arr = array();  // 列信息
         $tb_arr = array();  // 控制菜单栏
-        
 
         $update_value_arr = array();  // 客户端update_grid值信息,用于显示
         $cond_value_arr = array();  // 条件设置信息
@@ -234,7 +233,7 @@ class Frame extends Controller
             $cond['列名'] = $row->列名;
             $cond['字段名'] = $row->字段名;
             $cond['列类型'] = $row->列类型;
-            $cond['汇总'] = '';
+            $cond['汇总条件'] = '';
             $cond['平均'] = '';
             $cond['条件1'] = '';
             $cond['参数1'] = '';
@@ -247,11 +246,15 @@ class Frame extends Controller
         }
 
         // 取出查询模块对应的表配置
+        $where = '';
+        $group = '';
         $table_name = '';
-        $init_where = '';
+        $query_where = '';
+        $query_group = '';
+        $result_count = '';
 
         $sql = sprintf('
-            select 表名,初始条件 
+            select 表名,查询条件,汇总条件,初始条数
             from view_function 
             where 功能编码=%s
             group by 功能编码', $menu_id);
@@ -261,7 +264,9 @@ class Frame extends Controller
         foreach ($results as $row)
         {
             $table_name = $row->表名;
-            $init_where = $row->初始条件;
+            $result_count = $row->初始条数;
+            $query_where = $row->查询条件;
+            $query_group = $row->汇总条件;
             break;
         }
 
@@ -286,16 +291,24 @@ class Frame extends Controller
         $dept_cond = $session->get($menu_id.'-dept_cond');
         $dept_fld = $session->get($menu_id.'-dept_fld');
 
+        // 加上查询条件
+        if ($query_where != '')
+        {
+            $where = $query_where;
+        }
+
         // 条件语句加上部门授权
         if ($dept_cond != '' && $dept_fld != '')
         {
-            $sql = sprintf('%s where ( %s )', $sql, $dept_cond);
+            $where = ($where == '') ? $dept_cond : $where . ' and ' . $dept_cond;
         }
 
-        // 加上初始条件
-        if ($init_where != '')
+        $sql = sprintf('%s where %s', $sql, $where);
+
+        // 加上初始结果条数
+        if ($result_count > 0)
         {
-            $sql = sprintf('%s %s', $sql, $init_where);
+            $sql = sprintf('%s limit %d', $sql, $result_count);
         }
 
         // 读出数据
@@ -309,6 +322,8 @@ class Frame extends Controller
         $session_arr[$menu_id.'-table_name'] = $table_name;
         $session_arr[$menu_id.'-columns_arr'] = $columns_arr;
         $session_arr[$menu_id.'-primary_key'] = $primary_key;
+        $session_arr[$menu_id.'-back_where'] = $where;
+        $session_arr[$menu_id.'-back_group'] = $group;
 
         $session = \Config\Services::session();
         $session->set($session_arr);
@@ -323,6 +338,8 @@ class Frame extends Controller
         $send['object_json'] = json_encode($object_arr);
         $send['func_id'] = $menu_id;
         $send['primary_key'] = $primary_key;
+        $send['back_where'] = $where;
+        $send['back_group'] = $group;
 
         echo view('Vgrid_aggrid.php', $send);
     }
@@ -336,6 +353,10 @@ class Frame extends Controller
 
         $where = '';
         $group = '';
+
+        $front_where = '';
+        $front_group = '';
+
         $sum_str = '';
         $avg_str = '';
         $max_str = '';
@@ -479,14 +500,14 @@ class Frame extends Controller
 
             if ($cond_str != '')
             {
-                if ($where != '') $where = $where . ' and ';
-                $where = $where . $cond_str;    
+                if ($front_where != '') $front_where = $front_where . ' and ';
+                $front_where = $front_where . $cond_str;    
             }
 
             if ($cond['group'] == true)
             {
-                if ($group != '') $group = $group . ' , ';
-                $group = $group . $cond['fld_name'];
+                if ($front_group != '') $front_group = $front_group . ' , ';
+                $front_group = $front_group . $cond['fld_name'];
             }
 
             if ($cond['sum_avg'] == '合计')
@@ -521,6 +542,8 @@ class Frame extends Controller
         $select_str = $session->get($menu_id.'-select_str');
         $dept_cond = $session->get($menu_id.'-dept_cond');
         $dept_fld = $session->get($menu_id.'-dept_fld');
+        $where = $session->get($menu_id.'-back_where');
+        $group = $session->get($menu_id.'-back_group');
 
         // 拼出查询语句
         $select_str = '';
@@ -573,14 +596,25 @@ class Frame extends Controller
         $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s from %s,(select @i:=0) as xh', 
             $select_str, $table_name);
 
+        // 拼出查询条件
+        if ($front_where != '')
+        {
+            if ($where != '') $where = $where . ' and ';
+            $where = $where . $front_where;
+        }
+
         if ($where != '')
         {
             $sql = $sql . ' where ' . $where;
         }
-        if ($dept_cond != '' && $dept_fld != '')
+
+        // 拼出汇总条件
+        if ($front_group != '')
         {
-            $sql = sprintf('%s and (%s)', $sql, $dept_cond);
+            if ($group != '') $group = $group . ',';
+            $group = $group . $front_group;
         }
+
         if ($group != '')
         {
             $sql = $sql . ' group by ' . $group;

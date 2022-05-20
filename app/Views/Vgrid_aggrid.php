@@ -1,4 +1,4 @@
-<!-- v3.4.8.1.202205292030, from home -->
+<!-- v3.5.1.1.202205202130, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -95,6 +95,12 @@
         }
 
         var chart = new Chart();
+
+        // footbox显示
+        var back_where = "<?php echo $back_where; ?>";
+        var back_group = "<?php echo $back_group; ?>";
+
+        $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + back_where + '}, 汇总:{' + back_group + '}, 合计:{}, 平均:{}, 最大:{}, 最小:{}</b>';
 
         // 字段信息
         var tb_obj = JSON.parse('<?php echo $toolbar_json; ?>');
@@ -635,7 +641,7 @@
                 cond.arg_2 = rowNode.data['参数2'];
                 cond.sum_avg = rowNode.data['计算方式'];
 
-                if (rowNode.data['汇总'] != '')
+                if (rowNode.data['汇总'] == '√')
                 {
                     cond.group = '1';
                     group_flag = true;
@@ -699,8 +705,6 @@
                 return;
             }
 
-            $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '} , 汇总:{' + group_str + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}</b>';
-
             dhx.ajax.post('<?php base_url(); ?>/Frame/set_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
             {
                 data_grid_obj = JSON.parse(data);
@@ -709,7 +713,30 @@
                 $$('databox').style.display = 'block';
                 $$('updatebox').style.display = 'none';
                 $$('conditionbox').style.display = 'none';
-                $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + cond_str + '}, 汇总:{' + group_str + '}, 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}</b>';
+
+                var disp_where = '';
+                if (back_where != '')
+                {
+                    disp_where = back_where;
+                    if (cond_str != '') disp_where = back_where + '&' + cond_str;
+                }
+                else
+                {
+                    if (cond_str != '') disp_where = cond_str;
+                }
+
+                var disp_group = '';
+                if (back_group != '')
+                {
+                    disp_group = back_group;
+                    if (group_str != '') disp_group = back_group + '&' + group_str;
+                }
+                else
+                {
+                    if (group_str != '') disp_group = group_str;
+                }
+
+                $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + disp_where + '} , 汇总:{' + disp_group + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}</b>';
             }).catch(function (err)
             {
                 alert('设置条件错误, ' + " " + err.statusText);
