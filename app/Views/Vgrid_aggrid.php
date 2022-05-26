@@ -1,4 +1,4 @@
-<!-- v3.5.1.1.202205202130, from home -->
+<!-- v3.6.1.1.202205232100, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -44,19 +44,26 @@
             return document.getElementById(id);
         }
 
+        function div_block(id)
+        {
+            $$('databox').style.display = 'none';
+            $$('updatebox').style.display = 'none';
+            $$('conditionbox').style.display = 'none';
+            $$('chartbox').style.display = 'none';
+
+            $$(id).style.display = 'block';
+        }
+
         $$('databox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
         $$('updatebox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
         $$('conditionbox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
         $$('chartbox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
         $$('footbox').style.height = document.documentElement.clientHeight * 0.033 + 'px';
 
-        $$('databox').style.display = 'block';
-        $$('updatebox').style.display = 'none';
-        $$('conditionbox').style.display = 'none';
-        $$('chartbox').style.display = 'none';
+        div_block('databox');
         $$('footbox').style.display = 'block';
 
-        $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{}, 汇总:{}, 合计:{}, 平均:{}, 最大:{}, 最小:{}</b>';
+        $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{}, 汇总:{}, 合计:{}, 平均:{}, 最大:{}, 最小:{}, 计数:{}</b>';
 
         function ColumnInfo()
         {
@@ -114,6 +121,19 @@
         data_tb.data.add({id:'字段选择', type:'button', value:'字段选择'});
         data_tb.data.add({id:'设置条件', type:'button', value:'设置条件'});
         data_tb.data.add({id:'图形', type:'button', value:'图形'});
+        if (tb_obj['修改授权'] == true)
+        {
+            data_tb.data.add({id:'修改', type:'button', value:'修改'});
+        }
+        if (tb_obj['新增授权'] == true)
+        {
+            data_tb.data.add({id:'新增', type:'button', value:'新增'});
+        }
+        data_tb.data.add({type:'separator'});
+        if (tb_obj['钻取授权'] == true)
+        {
+            data_tb.data.add({id:'数据钻取', type:'button', value:'数据钻取'});
+        }
         data_tb.data.add({type:'separator'});
         data_tb.data.add({id:'title', type:'title', value:'分页'});
         data_tb.data.add(
@@ -123,15 +143,6 @@
             value: '100',
             items: [{id:'100',value:'100'},{id:'500',value:'500'},{id:'1000',value:'1000'}]
         });
-
-        if (tb_obj['修改授权'] == true)
-        {
-            data_tb.data.add({id:'修改', type:'button', value:'修改'});
-        }
-        if (tb_obj['新增授权'] == true)
-        {
-            data_tb.data.add({id:'新增', type:'button', value:'新增'});
-        }
         data_tb.data.add({type:'spacer'});
         data_tb.data.add({id:'导出', type:'button', value:'导出'});
 
@@ -274,7 +285,7 @@
                     cellEditor: 'agSelectCellEditor',
                     cellEditorParams: 
                     {
-                        values: ['', '合计', '平均', '最大', '最小'],
+                        values: ['', '合计', '平均', '最大', '最小', '计数'],
                     },
                 },
             ],
@@ -408,17 +419,10 @@
                     tb_select_field();
                     break;
                 case '设置条件':
-                    $$('databox').style.display = 'none';
-                    $$('updatebox').style.display = 'none';
-                    $$('conditionbox').style.display = 'block';
-                    $$('chartbox').style.display = 'none';
+                    div_block('conditionbox');
                     break;
                 case '图形':
-                    $$('databox').style.display = 'none';
-                    $$('updatebox').style.display = 'none';
-                    $$('conditionbox').style.display = 'none';
-                    $$('chartbox').style.display = 'block';
-
+                    div_block('chartbox');
                     tb_chart();
                     break;
                 case '修改':
@@ -436,9 +440,7 @@
                     }
 
                     update_flag = 'modify';
-                    $$('databox').style.display = 'none';
-                    $$('updatebox').style.display = 'block';
-                    $$('conditionbox').style.display = 'none';
+                    div_block('updatebox');
                     break;
                 case '新增':
                     if (update_flag != 'add')
@@ -449,9 +451,36 @@
                     }
 
                     update_flag = 'add';
-                    $$('databox').style.display = 'none';
-                    $$('updatebox').style.display = 'block';
-                    $$('conditionbox').style.display = 'none';
+                    div_block('updatebox');
+                    break;
+                case '数据钻取':
+                    var rows = data_grid_options.api.getSelectedRows();
+                    if (rows.length == 0)
+                    {
+                        alert('请先选择要修改的记录');
+                        break;
+                    }
+                    if (rows.length > 1)
+                    {
+                        alert('只能选择1条记录');
+                        break;
+                    }
+
+                    var nl_str = '<?php echo $next_func_condition; ?>';
+                    var nl_arr = nl_str.split(',');
+                    var send_obj = {};
+
+                    console.log('rows=', rows);
+
+                    for (var ii in nl_arr)
+                    {
+                        send_obj[nl_arr[ii]] = rows[0][nl_arr[ii]];
+                    }
+
+                    send_str = JSON.stringify(send_obj);
+                    //console.log('send=', send_obj, send_str);
+
+                    parent.window.goto('<?php echo $next_func_id; ?>','钻取-'+'<?php echo $next_func_name; ?>','Frame/init/<?php echo $next_func_id; ?>/'+send_str);
                     break;
                 case '导出':
                     var href = '<?php base_url(); ?>/Frame/export/<?php echo $func_id; ?>';
@@ -476,9 +505,7 @@
             switch (id)
             {
                 case '返回':
-                    $$('databox').style.display = 'block';
-                    $$('updatebox').style.display = 'none';
-                    $$('conditionbox').style.display = 'none';
+                    div_block('databox');
                     break;
                 case '清空':
                     update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
@@ -486,10 +513,6 @@
                     break;
                 case '提交':
                     update_submit(id);
-                    break;
-                case '条件窗返回':
-                    $$('databox').style.display = 'block';
-                    $$('updatebox').style.display = 'none';
                     break;
             }
         });
@@ -500,9 +523,7 @@
             switch (id)
             {
                 case '返回':
-                    $$('databox').style.display = 'block';
-                    $$('updatebox').style.display = 'none';
-                    $$('conditionbox').style.display = 'none';
+                    div_block('databox');
                     break;
                 case '清空':
                     cond_grid_obj = JSON.parse('<?php echo $cond_value_json; ?>');
@@ -520,10 +541,7 @@
             switch (id)
             {
                 case '返回':
-                    $$('databox').style.display = 'block';
-                    $$('updatebox').style.display = 'none';
-                    $$('conditionbox').style.display = 'none';
-                    $$('chartbox').style.display = 'none';
+                    div_block('databox');
                     break;
                 case '设置':
                     tb_chart();
@@ -599,6 +617,7 @@
             var average_str = '';
             var max_str = '';
             var min_str = '';
+            var count_str = '';
 
             cond_grid_options.api.stopEditing();
             cond_grid_options.api.forEachNode((rowNode, index) => 
@@ -669,25 +688,29 @@
                     group_str = group_str + cond.col_name;
                     ajax = true;
                 }
-                if (cond.sum_avg == '合计')
+
+                switch (cond.sum_avg)
                 {
-                    if (sum_str != '') sum_str = sum_str + ',';
-                    sum_str = sum_str + cond.col_name;
-                }
-                else if (cond.sum_avg == '平均')
-                {
-                    if (average_str != '') average_str = average_str + ',';
-                    average_str = average_str + cond.col_name;
-                }
-                else if (cond.sum_avg == '最大')
-                {
-                    if (max_str != '') max_str = max_str + ',';
-                    max_str = max_str + cond.col_name;
-                }
-                else if (cond.sum_avg == '最小')
-                {
-                    if (min_str != '') min_str = min_str + ',';
-                    min_str = min_str + cond.col_name;
+                    case '合计':
+                        if (sum_str != '') sum_str = sum_str + ',';
+                        sum_str = sum_str + cond.col_name;
+                        break;
+                    case '平均':
+                        if (average_str != '') average_str = average_str + ',';
+                        average_str = average_str + cond.col_name;
+                        break;
+                    case '最大':
+                        if (max_str != '') max_str = max_str + ',';
+                        max_str = max_str + cond.col_name;
+                        break;
+                    case '最小':
+                        if (min_str != '') min_str = min_str + ',';
+                        min_str = min_str + cond.col_name;
+                        break;
+                    case '计数':
+                        if (count_str != '') count_str = count_str + ',';
+                        count_str = count_str + cond.col_name;
+                        break;
                 }
 
                 if (ajax == true) cond_arr.push(cond);
@@ -710,9 +733,7 @@
                 data_grid_obj = JSON.parse(data);
                 data_grid_options.api.setRowData(data_grid_obj);
 
-                $$('databox').style.display = 'block';
-                $$('updatebox').style.display = 'none';
-                $$('conditionbox').style.display = 'none';
+                div_block('databox');
 
                 var disp_where = '';
                 if (back_where != '')
@@ -736,7 +757,7 @@
                     if (group_str != '') disp_group = group_str;
                 }
 
-                $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + disp_where + '} , 汇总:{' + disp_group + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}</b>';
+                $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + disp_where + '} , 汇总:{' + disp_group + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}, 计数:{' + count_str + '}</b>';
             }).catch(function (err)
             {
                 alert('设置条件错误, ' + " " + err.statusText);

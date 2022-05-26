@@ -1,5 +1,5 @@
 <?php
-/* v3.7.2.1.202205202335, from home */
+/* v3.8.1.1.202205232100, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mframe;
@@ -120,8 +120,10 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 通用初始查询模块
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function init($menu_id='')
+    public function init($menu_id='', $front_where='')
     {
+        $front_where = json_decode($front_where);
+
         $primary_key = '';
 
         $data_col_arr = array();  // 客户端data_grid列信息,用于显示
@@ -146,7 +148,8 @@ class Frame extends Controller
         $object_arr = array();  // 下拉选择的对象值
 
         $sql = sprintf('
-            select 查询模块,部门字段,列名,列类型,列宽度,字段名,查询名,对象,
+            select 功能编码,查询模块,字段模块,部门字段,
+                列名,列类型,列宽度,字段名,查询名,对象,
                 可修改,可筛选,主键,赋值类型,
                 新增授权,修改授权
             from view_function 
@@ -205,8 +208,10 @@ class Frame extends Controller
                 $data_col_arr[$row->列名]['filter'] = 'agNumberColumnFilter';
             }
 
+            // 主键不能更改
+            if ($row->主键 == 1) continue;
+
             // 客户端update_grid值
-            if ($row->主键 != 0) continue;
             $value_arr = array();
             $value_arr['列名'] = $row->列名;
             $value_arr['字段名'] = $row->字段名;
@@ -243,6 +248,24 @@ class Frame extends Controller
             $cond['计算方式'] = '';
 
             array_push($cond_value_arr, $cond);
+
+            // 匹配front_where
+            if ($front_where == '') continue;
+            foreach ($front_where as $key => $value)
+            {
+                if ($key != $row->列名) continue;
+
+                switch ($row->列类型)
+                {
+                    case '字符':
+                    case '日期':
+                        $front_where->$key = sprintf('%s="%s"', $row->查询名, $value);
+                        break;
+                    case '数值':
+                        $front_where->$key = sprintf('%s=%s', $row->查询名, $value);
+                        break;
+                }
+            }
         }
 
         // 取出查询模块对应的表配置
@@ -251,13 +274,24 @@ class Frame extends Controller
         $table_name = '';
         $query_where = '';
         $query_group = '';
+        $next_func_id = '';
+        $next_func_name = '';
+        $next_func_condition = '';
         $result_count = '';
 
         $sql = sprintf('
-            select 表名,查询条件,汇总条件,初始条数
-            from view_function 
-            where 功能编码=%s
-            group by 功能编码', $menu_id);
+            select t1.功能编码,表名,查询条件,汇总条件,初始条数,
+                钻取模块,钻取条件,
+                ifnull(t2.钻取名称,"") as 钻取名称
+            from view_function as t1
+            left join 
+            (
+                select 功能编码,二级菜单 as 钻取名称
+                from view_function
+                group by 功能编码
+            ) as t2 on t1.钻取模块=t2.功能编码
+            where t1.功能编码=%s
+            group by t1.功能编码', $menu_id);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -267,8 +301,17 @@ class Frame extends Controller
             $result_count = $row->初始条数;
             $query_where = $row->查询条件;
             $query_group = $row->汇总条件;
+
+            $next_func_id = $row->钻取模块;
+            $next_func_name = $row->钻取名称;
+            $next_func_condition = $row->钻取条件;
+
+            str_replace(' ', '' , $next_func_id);
+            str_replace('，', ',' , $next_func_id);
             break;
         }
+
+        $tb_arr['钻取授权'] = ($next_func_id!='') ? true : false;
 
         // 拼出查询语句
         $select_str = '';
@@ -291,7 +334,7 @@ class Frame extends Controller
         $dept_cond = $session->get($menu_id.'-dept_cond');
         $dept_fld = $session->get($menu_id.'-dept_fld');
 
-        // 加上查询条件
+        // 加上初始查询条件
         if ($query_where != '')
         {
             $where = $query_where;
@@ -301,6 +344,15 @@ class Frame extends Controller
         if ($dept_cond != '' && $dept_fld != '')
         {
             $where = ($where == '') ? $dept_cond : $where . ' and ' . $dept_cond;
+        }
+
+        // 数据钻取,条件语句加上前端选定的条件
+        if ($front_where != '')
+        {
+            foreach ($front_where as $key => $value)
+            {
+                $where = ($where == '') ? $value : sprintf('%s and %s',$where,$value);
+            }
         }
 
         $sql = sprintf('%s where %s', $sql, $where);
@@ -324,6 +376,9 @@ class Frame extends Controller
         $session_arr[$menu_id.'-primary_key'] = $primary_key;
         $session_arr[$menu_id.'-back_where'] = $where;
         $session_arr[$menu_id.'-back_group'] = $group;
+        $session_arr[$menu_id.'-next_func_id'] = $next_func_id;
+        $session_arr[$menu_id.'-next_func_name'] = $next_func_name;
+        $session_arr[$menu_id.'-next_func_condition'] = $next_func_condition;
 
         $session = \Config\Services::session();
         $session->set($session_arr);
@@ -338,8 +393,11 @@ class Frame extends Controller
         $send['object_json'] = json_encode($object_arr);
         $send['func_id'] = $menu_id;
         $send['primary_key'] = $primary_key;
-        $send['back_where'] = $where;
+        $send['back_where'] = strtr($where, '"', "'");
         $send['back_group'] = $group;
+        $send['next_func_id'] = $next_func_id;
+        $send['next_func_name'] = $next_func_name;
+        $send['next_func_condition'] = $next_func_condition;
 
         echo view('Vgrid_aggrid.php', $send);
     }
@@ -579,6 +637,11 @@ class Frame extends Controller
                 if ($column['列名']==$cond['col_name'] && $cond['sum_avg']=='最小')
                 {
                     $sum_avg_str = sprintf('min(%s)', $column['查询名']);
+                    break;
+                }
+                if ($column['列名']==$cond['col_name'] && $cond['sum_avg']=='计数')
+                {
+                    $sum_avg_str = sprintf('count(distinct(%s))', $column['查询名']);
                     break;
                 }
             }
