@@ -1,8 +1,8 @@
 <?php
-/* v3.8.1.1.202205232100, from home */
+/* v4.0.0.1.202205281340, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
-use App\Models\Mframe;
+use App\Models\Mcommon;
 
 class Frame extends Controller
 {
@@ -43,22 +43,24 @@ class Frame extends Controller
         }
 
         $sql = sprintf(
-            'select t1.角色编号,t1.角色名称,t1.功能赋权,t1.部门赋权,
+            'select 
+                t1.角色编号,t1.角色名称,t1.功能赋权,t1.部门赋权,
+                t1.新增授权,t1.修改授权,
                 t2.部门字段,t2.功能编码,
                 t2.一级菜单,t2.二级菜单,t2.功能模块,t2.查询模块,
-                t2.菜单顺序,t2.新增授权,t2.修改授权,t2.导入模块
+                t2.菜单顺序,t2.导入模块
             from def_role as t1
             left join
             (
                 select 功能编码,一级菜单,二级菜单,功能模块,查询模块,
-                    部门字段,菜单顺序,新增授权,修改授权,导入模块
+                    部门字段,菜单顺序,导入模块
                 from def_function
                 where 菜单顺序>0
             ) as t2 on t1.功能赋权=t2.功能编码
             where t1.角色编号 in (%s)
             order by t2.菜单顺序', $role_str);
 
-        $model = new Mframe();
+        $model = new Mcommon();
         $query = $model->select($sql);
         $results = $query->getResult();
 
@@ -109,6 +111,8 @@ class Frame extends Controller
             $session_arr[$row->功能赋权.'-dept_cond'] = $dept_cond;
             $session_arr[$row->功能赋权.'-menu_1'] = $row->一级菜单;
             $session_arr[$row->功能赋权.'-menu_2'] = $row->二级菜单;
+            $session_arr[$row->功能赋权.'-add_authz'] = $row->新增授权;
+            $session_arr[$row->功能赋权.'-modify_authz'] = $row->修改授权;
             $session_arr[$row->功能赋权.'-import'] = $row->导入模块;
             $session = \Config\Services::session();
             $session->set($session_arr);
@@ -126,14 +130,14 @@ class Frame extends Controller
 
         $primary_key = '';
 
-        $data_col_arr = array();  // 客户端data_grid列信息,用于显示
+        $data_col_arr = array();  // 前端data_grid列信息,用于显示
         $columns_arr = array();  // 列信息
         $tb_arr = array();  // 控制菜单栏
 
-        $update_value_arr = array();  // 客户端update_grid值信息,用于显示
+        $update_value_arr = array();  // 前端update_grid值信息,用于显示
         $cond_value_arr = array();  // 条件设置信息
 
-        // 客户端data_grid列信息,手工增加选取列和序号列
+        // 前端data_grid列信息,手工增加选取列和序号列
         $data_col_arr['选取']['field'] = '选取';
         $data_col_arr['选取']['width'] = 100;
         $data_col_arr['选取']['resizable'] = true;
@@ -147,17 +151,17 @@ class Frame extends Controller
 
         $object_arr = array();  // 下拉选择的对象值
 
+        // 读出列配置信息
         $sql = sprintf('
             select 功能编码,查询模块,字段模块,部门字段,
                 列名,列类型,列宽度,字段名,查询名,对象,
-                可修改,可筛选,主键,赋值类型,
-                新增授权,修改授权
-            from view_function 
+                可修改,可筛选,主键,赋值类型,列顺序
+            from view_function
             where 功能编码=%s and 列顺序>0
             group by 列名
             order by 列顺序', $menu_id);
 
-        $model = new Mframe();
+        $model = new Mcommon();
         $query = $model->select($sql);
         $results = $query->getResult();
 
@@ -167,9 +171,6 @@ class Frame extends Controller
             {
                 $primary_key = $row->列名;
             }
-
-            $tb_arr['新增授权'] = ($row->新增授权=='1') ? true : false ;
-            $tb_arr['修改授权'] = ($row->修改授权=='1') ? true : false ;
 
             // 列信息
             $arr = array();
@@ -185,7 +186,7 @@ class Frame extends Controller
 
             array_push($columns_arr, $arr);
 
-            // 客户端data_grid列信息,用于显示
+            // 前端data_grid列信息,用于显示
             $data_col_arr[$row->列名]['field'] = $row->列名;
             $data_col_arr[$row->列名]['sortable'] = true;
             $data_col_arr[$row->列名]['filter'] = true;
@@ -211,7 +212,7 @@ class Frame extends Controller
             // 主键不能更改
             if ($row->主键 == 1) continue;
 
-            // 客户端update_grid值
+            // 前端update_grid值
             $value_arr = array();
             $value_arr['列名'] = $row->列名;
             $value_arr['字段名'] = $row->字段名;
@@ -233,7 +234,7 @@ class Frame extends Controller
 
             array_push($update_value_arr, $value_arr);
 
-            // 客户端cond_grid信息
+            // 前端cond_grid信息
             $cond = array();
             $cond['列名'] = $row->列名;
             $cond['字段名'] = $row->字段名;
@@ -271,18 +272,20 @@ class Frame extends Controller
         // 取出查询模块对应的表配置
         $where = '';
         $group = '';
-        $table_name = '';
+        $query_table = '';
         $query_where = '';
         $query_group = '';
         $next_func_id = '';
         $next_func_name = '';
         $next_func_condition = '';
         $result_count = '';
+        $update_table = '';
 
         $sql = sprintf('
-            select t1.功能编码,表名,查询条件,汇总条件,初始条数,
+            select t1.功能编码,查询表名,查询条件,汇总条件,初始条数,
                 钻取模块,钻取条件,
-                ifnull(t2.钻取名称,"") as 钻取名称
+                ifnull(t2.钻取名称,"") as 钻取名称,
+                更新表名
             from view_function as t1
             left join 
             (
@@ -297,7 +300,7 @@ class Frame extends Controller
         $results = $query->getResult();
         foreach ($results as $row)
         {
-            $table_name = $row->表名;
+            $query_table = $row->查询表名;
             $result_count = $row->初始条数;
             $query_where = $row->查询条件;
             $query_group = $row->汇总条件;
@@ -305,9 +308,10 @@ class Frame extends Controller
             $next_func_id = $row->钻取模块;
             $next_func_name = $row->钻取名称;
             $next_func_condition = $row->钻取条件;
-
             str_replace(' ', '' , $next_func_id);
             str_replace('，', ',' , $next_func_id);
+
+            $update_table = $row->更新表名;
             break;
         }
 
@@ -326,13 +330,15 @@ class Frame extends Controller
 
         $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
             from %s,(select @i:=0) as xh', 
-            $select_str, $table_name);
+            $select_str, $query_table);
 
         // 部门授权条件
         // 从session中取出数据
         $session = \Config\Services::session();
         $dept_cond = $session->get($menu_id.'-dept_cond');
         $dept_fld = $session->get($menu_id.'-dept_fld');
+        $add_authz = $session->get($menu_id.'-add_authz');
+        $modify_authz = $session->get($menu_id.'-modify_authz');
 
         // 加上初始查询条件
         if ($query_where != '')
@@ -371,7 +377,7 @@ class Frame extends Controller
         $session_arr = [];
         $session_arr[$menu_id.'-select_str'] = $select_str;
         $session_arr[$menu_id.'-query_str'] = $sql;
-        $session_arr[$menu_id.'-table_name'] = $table_name;
+        $session_arr[$menu_id.'-query_table'] = $query_table;
         $session_arr[$menu_id.'-columns_arr'] = $columns_arr;
         $session_arr[$menu_id.'-primary_key'] = $primary_key;
         $session_arr[$menu_id.'-back_where'] = $where;
@@ -379,9 +385,13 @@ class Frame extends Controller
         $session_arr[$menu_id.'-next_func_id'] = $next_func_id;
         $session_arr[$menu_id.'-next_func_name'] = $next_func_name;
         $session_arr[$menu_id.'-next_func_condition'] = $next_func_condition;
+        $session_arr[$menu_id.'-update_table'] = $update_table;
 
         $session = \Config\Services::session();
         $session->set($session_arr);
+
+        $tb_arr['新增授权'] = ($add_authz=='1') ? true : false ;
+        $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
 
         //返回页面
         $send['toolbar_json'] = json_encode($tb_arr);
@@ -595,7 +605,7 @@ class Frame extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $table_name = $session->get($menu_id.'-table_name');
+        $query_table = $session->get($menu_id.'-query_table');
         $columns_arr = $session->get($menu_id.'-columns_arr');
         $select_str = $session->get($menu_id.'-select_str');
         $dept_cond = $session->get($menu_id.'-dept_cond');
@@ -657,7 +667,7 @@ class Frame extends Controller
         }
 
         $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s from %s,(select @i:=0) as xh', 
-            $select_str, $table_name);
+            $select_str, $query_table);
 
         // 拼出查询条件
         if ($front_where != '')
@@ -684,7 +694,7 @@ class Frame extends Controller
         }
 
         // 读出数据
-        $model = new Mframe();
+        $model = new Mcommon();
         $query = $model->select($sql);
         $results = $query->getResult();
 
@@ -700,8 +710,10 @@ class Frame extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $table_name = $session->get($menu_id.'-table_name');
+        $update_table = $session->get($menu_id.'-update_table');
         $primary_key = $session->get($menu_id.'-primary_key');
+
+        //$update_set_arr = [];
 
         $set = '';
         $where = '';
@@ -724,9 +736,9 @@ class Frame extends Controller
             }
         }
 
-        $sql = sprintf('update %s set %s where %s', $table_name, $set, $where);
+        $sql = sprintf('update %s set %s where %s', $update_table, $set, $where);
 
-        $model = new Mframe();
+        $model = new Mcommon();
         $num = $model->modify($sql);
 
         exit($num);
@@ -741,7 +753,7 @@ class Frame extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $table_name = $session->get($menu_id.'-table_name');
+        $query_table = $session->get($menu_id.'-query_table');
 
         $flds_str = '';
         $values_str = '';
@@ -765,9 +777,9 @@ class Frame extends Controller
             }
         }
 
-        $sql = sprintf('insert into %s (%s) values (%s)', $table_name, $flds_str, $values_str);
+        $sql = sprintf('insert into %s (%s) values (%s)', $query_table, $flds_str, $values_str);
 
-        $model = new Mframe();
+        $model = new Mcommon();
         $num = $model->add($sql);
 
         exit($num);
@@ -784,7 +796,7 @@ class Frame extends Controller
 
         $table = new \CodeIgniter\View\Table();
 
-        $model = new Mframe();
+        $model = new Mcommon();
         $query = $model->select($query_str);
 
         header('content-type:application/vnd.ms-excel; charset=gbk');

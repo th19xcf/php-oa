@@ -1,4 +1,4 @@
-<!-- v3.6.1.1.202205232100, from home -->
+<!-- v3.7.1.1.202205281340, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -116,7 +116,6 @@
 
         // 生成主菜单栏
         var data_tb = new dhx.Toolbar('data_tb', {css:'toobar-class'});
-        //data_tb.data.add({id:'名称', type:'title', value:'主菜单-->'});
         data_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         data_tb.data.add({id:'字段选择', type:'button', value:'字段选择'});
         data_tb.data.add({id:'设置条件', type:'button', value:'设置条件'});
@@ -208,7 +207,7 @@
             column_name_arr.push(columns_arr[ii]['列名']);
         }
 
-        //console.log('cols_obj', columns_obj);
+        //console.log('columns_obj', columns_obj);
         //console.log('cols_arr', columns_arr);
         //console.log('col_name_arr', column_name_arr);
 
@@ -219,12 +218,25 @@
                 {field:'列名'},
                 {field:'字段名', hide:true},
                 {field:'列类型'},
-                {field:'取值', editable:true, cellEditorSelector:cellEditorSelector}
+                {field:'取值', width:200, cellEditorSelector:cellEditorSelector}
             ],
             defaultColDef: 
             {
                 width: 120,
-                resizable: true
+                resizable: true,
+                editable: (params) =>
+                {
+                    // 根据配置判断是否可以修改
+                    var col_name = params.data.列名;
+
+                    for (var ii in columns_obj)
+                    {
+                        if (columns_obj[ii].列名 != col_name) continue;
+                        return (columns_obj[ii].可修改 == '1' && columns_obj[ii].对应表名 != '') ? true : false;
+                    }
+
+                    return false;
+                }
             },
             singleClickEdit: true,
             rowData: update_grid_obj,
@@ -773,7 +785,7 @@
             update_grid_options.api.forEachNode((rowNode, index) => 
             {
                 var col = new ColumnInfo();
-                col.col_name = rowNode.data['字段名'];
+                col.col_name = rowNode.data['列名'];
                 col.fld_name = rowNode.data['字段名'];
                 col.type = rowNode.data['列类型'];
                 col.value = rowNode.data['取值'];
