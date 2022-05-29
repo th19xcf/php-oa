@@ -1,5 +1,5 @@
 <?php
-/* v4.0.0.1.202205281340, from home */
+/* v4.1.1.1.202205282355, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -48,12 +48,12 @@ class Frame extends Controller
                 t1.新增授权,t1.修改授权,
                 t2.部门字段,t2.功能编码,
                 t2.一级菜单,t2.二级菜单,t2.功能模块,t2.查询模块,
-                t2.菜单顺序,t2.导入模块
+                t2.菜单顺序
             from def_role as t1
             left join
             (
                 select 功能编码,一级菜单,二级菜单,功能模块,查询模块,
-                    部门字段,菜单顺序,导入模块
+                    部门字段,菜单顺序
                 from def_function
                 where 菜单顺序>0
             ) as t2 on t1.功能赋权=t2.功能编码
@@ -113,7 +113,6 @@ class Frame extends Controller
             $session_arr[$row->功能赋权.'-menu_2'] = $row->二级菜单;
             $session_arr[$row->功能赋权.'-add_authz'] = $row->新增授权;
             $session_arr[$row->功能赋权.'-modify_authz'] = $row->修改授权;
-            $session_arr[$row->功能赋权.'-import'] = $row->导入模块;
             $session = \Config\Services::session();
             $session->set($session_arr);
         }
@@ -282,10 +281,12 @@ class Frame extends Controller
         $update_table = '';
 
         $sql = sprintf('
-            select t1.功能编码,查询表名,查询条件,汇总条件,初始条数,
+            select t1.功能编码,查询表名,更新表名,
+                查询条件,汇总条件,初始条数,
                 钻取模块,钻取条件,
                 ifnull(t2.钻取名称,"") as 钻取名称,
-                更新表名
+                导入模块,
+                ifnull(t3.导入名称,"") as 导入名称
             from view_function as t1
             left join 
             (
@@ -293,6 +294,12 @@ class Frame extends Controller
                 from view_function
                 group by 功能编码
             ) as t2 on t1.钻取模块=t2.功能编码
+            left join 
+            (
+                select 功能编码,二级菜单 as 导入名称
+                from view_function
+                group by 功能编码
+            ) as t3 on t1.导入模块=t3.功能编码
             where t1.功能编码=%s
             group by t1.功能编码', $menu_id);
 
@@ -308,14 +315,18 @@ class Frame extends Controller
             $next_func_id = $row->钻取模块;
             $next_func_name = $row->钻取名称;
             $next_func_condition = $row->钻取条件;
-            str_replace(' ', '' , $next_func_id);
-            str_replace('，', ',' , $next_func_id);
+            str_replace(' ', '' , $next_func_condition);
+            str_replace('，', ',' , $next_func_condition);
+
+            $import_func_id = $row->导入模块;
+            $import_func_name = $row->导入名称;
 
             $update_table = $row->更新表名;
             break;
         }
 
         $tb_arr['钻取授权'] = ($next_func_id!='') ? true : false;
+        $tb_arr['导入授权'] = ($import_func_id!='') ? true : false;
 
         // 拼出查询语句
         $select_str = '';
@@ -361,7 +372,10 @@ class Frame extends Controller
             }
         }
 
-        $sql = sprintf('%s where %s', $sql, $where);
+        if ($where != '')
+        {
+            $sql = sprintf('%s where %s', $sql, $where);
+        }
 
         // 加上初始结果条数
         if ($result_count > 0)
@@ -385,6 +399,8 @@ class Frame extends Controller
         $session_arr[$menu_id.'-next_func_id'] = $next_func_id;
         $session_arr[$menu_id.'-next_func_name'] = $next_func_name;
         $session_arr[$menu_id.'-next_func_condition'] = $next_func_condition;
+        $session_arr[$menu_id.'-import_func_id'] = $import_func_id;
+        $session_arr[$menu_id.'-import_func_name'] = $import_func_name;
         $session_arr[$menu_id.'-update_table'] = $update_table;
 
         $session = \Config\Services::session();
@@ -408,6 +424,8 @@ class Frame extends Controller
         $send['next_func_id'] = $next_func_id;
         $send['next_func_name'] = $next_func_name;
         $send['next_func_condition'] = $next_func_condition;
+        $send['import_func_id'] = $import_func_id;
+        $send['import_func_name'] = $import_func_name;
 
         echo view('Vgrid_aggrid.php', $send);
     }

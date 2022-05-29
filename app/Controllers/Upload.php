@@ -1,5 +1,5 @@
 <?php
-/* v1.1.5.1.202205051045, from office */
+/* v1.2.1.1.202205282355, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -24,12 +24,12 @@ class Upload extends Controller
     {
         $send = [];
 
-        $session = \Config\Services::session();
-        $import = $session->get($menu_id.'-import');
-
-        $sql = sprintf('select 表名,表单变量
-            from def_import_config
-            where 导入模块="%s"', $import);
+        $sql = sprintf('
+            select 功能编码,导入模块,表单变量
+            from def_function as t1
+            left join def_import_config as t2
+            on t1.查询模块=t2.导入模块
+            where 功能编码="%s"', $menu_id);
 
         $model = new Mcommon();
         $query = $model->select($sql);

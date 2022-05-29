@@ -1,4 +1,4 @@
-<!-- v3.7.1.1.202205281340, from home -->
+<!-- v3.8.1.1.202205282355, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -119,7 +119,12 @@
         data_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         data_tb.data.add({id:'字段选择', type:'button', value:'字段选择'});
         data_tb.data.add({id:'设置条件', type:'button', value:'设置条件'});
+        if (tb_obj['钻取授权'] == true)
+        {
+            data_tb.data.add({id:'数据钻取', type:'button', value:'数据钻取'});
+        }
         data_tb.data.add({id:'图形', type:'button', value:'图形'});
+        data_tb.data.add({type:'separator'});
         if (tb_obj['修改授权'] == true)
         {
             data_tb.data.add({id:'修改', type:'button', value:'修改'});
@@ -127,11 +132,6 @@
         if (tb_obj['新增授权'] == true)
         {
             data_tb.data.add({id:'新增', type:'button', value:'新增'});
-        }
-        data_tb.data.add({type:'separator'});
-        if (tb_obj['钻取授权'] == true)
-        {
-            data_tb.data.add({id:'数据钻取', type:'button', value:'数据钻取'});
         }
         data_tb.data.add({type:'separator'});
         data_tb.data.add({id:'title', type:'title', value:'分页'});
@@ -143,6 +143,10 @@
             items: [{id:'100',value:'100'},{id:'500',value:'500'},{id:'1000',value:'1000'}]
         });
         data_tb.data.add({type:'spacer'});
+        if (tb_obj['导入授权'] == true)
+        {
+            data_tb.data.add({id:'导入', type:'button', value:'导入'});
+        }
         data_tb.data.add({id:'导出', type:'button', value:'导出'});
 
         // 生成修改新增用菜单栏
@@ -493,6 +497,9 @@
                     //console.log('send=', send_obj, send_str);
 
                     parent.window.goto('<?php echo $next_func_id; ?>','钻取-'+'<?php echo $next_func_name; ?>','Frame/init/<?php echo $next_func_id; ?>/'+send_str);
+                    break;
+                case '导入':
+                    parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','Upload/init/<?php echo $import_func_id; ?>');
                     break;
                 case '导出':
                     var href = '<?php base_url(); ?>/Frame/export/<?php echo $func_id; ?>';
