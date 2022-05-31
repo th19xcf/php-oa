@@ -1,10 +1,10 @@
 <?php
 
-/* v1.1.3.1.202204260925, from office */
+/* v1.2.1.1.202205262340, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
-use App\Models\Mframe;
+use App\Models\Mcommon;
 
 class Login extends Controller
 {
@@ -39,7 +39,7 @@ class Login extends Controller
             from def_user
             where 工号="%s" and 密码="%s" ', $user_workid, $pswd);
 
-        $model = new Mframe();
+        $model = new Mcommon();
         $query = $model->select($sql);
         $results = $query->getResult();
 
