@@ -1,5 +1,5 @@
 <?php
-/* v4.1.1.1.202205282355, from home */
+/* v4.2.1.1.202206021225, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -45,7 +45,7 @@ class Frame extends Controller
         $sql = sprintf(
             'select 
                 t1.角色编号,t1.角色名称,t1.功能赋权,t1.部门赋权,
-                t1.新增授权,t1.修改授权,
+                t1.新增授权,t1.修改授权,t1.删除授权,
                 t2.部门字段,t2.功能编码,
                 t2.一级菜单,t2.二级菜单,t2.功能模块,t2.查询模块,
                 t2.菜单顺序
@@ -113,6 +113,7 @@ class Frame extends Controller
             $session_arr[$row->功能赋权.'-menu_2'] = $row->二级菜单;
             $session_arr[$row->功能赋权.'-add_authz'] = $row->新增授权;
             $session_arr[$row->功能赋权.'-modify_authz'] = $row->修改授权;
+            $session_arr[$row->功能赋权.'-delete_authz'] = $row->删除授权;
             $session = \Config\Services::session();
             $session->set($session_arr);
         }
@@ -125,6 +126,8 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function init($menu_id='', $front_where='')
     {
+        $model = new Mcommon();
+
         $front_where = json_decode($front_where);
 
         $primary_key = '';
@@ -160,7 +163,6 @@ class Frame extends Controller
             group by 列名
             order by 列顺序', $menu_id);
 
-        $model = new Mcommon();
         $query = $model->select($sql);
         $results = $query->getResult();
 
@@ -350,6 +352,7 @@ class Frame extends Controller
         $dept_fld = $session->get($menu_id.'-dept_fld');
         $add_authz = $session->get($menu_id.'-add_authz');
         $modify_authz = $session->get($menu_id.'-modify_authz');
+        $delete_authz = $session->get($menu_id.'-delete_authz');
 
         // 加上初始查询条件
         if ($query_where != '')
@@ -383,6 +386,9 @@ class Frame extends Controller
             $sql = sprintf('%s limit %d', $sql, $result_count);
         }
 
+        // 写日志
+        $model->sql_log('查询',$menu_id,sprintf('表名=%s,条件=%s',$query_table,$where));
+
         // 读出数据
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -408,6 +414,7 @@ class Frame extends Controller
 
         $tb_arr['新增授权'] = ($add_authz=='1') ? true : false ;
         $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
+        $tb_arr['删除授权'] = ($delete_authz=='1') ? true : false ;
 
         //返回页面
         $send['toolbar_json'] = json_encode($tb_arr);
@@ -435,6 +442,8 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function set_condition($menu_id='')
     {
+        $model = new Mcommon();
+
         $cond_arr = $this->request->getJSON(true);
 
         $where = '';
@@ -711,8 +720,10 @@ class Frame extends Controller
             $sql = $sql . ' group by ' . $group;
         }
 
+        // 写日志
+        $model->sql_log('条件查询',$menu_id,sprintf('表=%s,条件=%s',$query_table, $where));
+
         // 读出数据
-        $model = new Mcommon();
         $query = $model->select($sql);
         $results = $query->getResult();
 
@@ -731,8 +742,6 @@ class Frame extends Controller
         $update_table = $session->get($menu_id.'-update_table');
         $primary_key = $session->get($menu_id.'-primary_key');
 
-        //$update_set_arr = [];
-
         $set = '';
         $where = '';
         foreach ($row_arr as $row)
@@ -745,7 +754,7 @@ class Frame extends Controller
             {
                 if ($set == '')
                 {
-                    $set = sprintf('%s="%s"', $row['fld_name'], $row['value']);
+                    $set = sprintf('%s=\'%s\'', $row['fld_name'], $row['value']);
                 }
                 else
                 {
@@ -757,6 +766,10 @@ class Frame extends Controller
         $sql = sprintf('update %s set %s where %s', $update_table, $set, $where);
 
         $model = new Mcommon();
+
+        // 写日志
+        $model->sql_log('更新', $menu_id,sprintf('sql=%s',$sql));
+
         $num = $model->modify($sql);
 
         exit($num);
@@ -798,7 +811,11 @@ class Frame extends Controller
         $sql = sprintf('insert into %s (%s) values (%s)', $query_table, $flds_str, $values_str);
 
         $model = new Mcommon();
-        $num = $model->add($sql);
+
+        // 写日志
+        $model->sql_log('新增',$menu_id,sprintf('sql=%s',$sql));
+
+        $num = $model->exec($sql);
 
         exit($num);
     }
@@ -815,6 +832,10 @@ class Frame extends Controller
         $table = new \CodeIgniter\View\Table();
 
         $model = new Mcommon();
+
+        // 写日志
+        $model->sql_log('导出',$menu_id,'');
+
         $query = $model->select($query_str);
 
         header('content-type:application/vnd.ms-excel; charset=gbk');

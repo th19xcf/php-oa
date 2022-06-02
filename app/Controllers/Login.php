@@ -1,6 +1,6 @@
 <?php
 
-/* v1.2.1.1.202205262340, from home */
+/* v1.3.1.1.202206021225, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -45,6 +45,8 @@ class Login extends Controller
 
         if ($results == null)
         {
+            $model->sql_log('登录失败');
+
             $Arg['msg'] = '工号或密码错误, 请重新输入！';
             exit('2');
         }
@@ -60,6 +62,8 @@ class Login extends Controller
 
             $session = \Config\Services::session();
             $session->set($session_arr);
+
+            $model->sql_log('登录成功','',sprintf('角色=%s',$row->角色));
 
             exit('1');
         }

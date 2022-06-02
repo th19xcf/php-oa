@@ -1,5 +1,5 @@
 <?php
-/* v1.2.1.1.202205282355, from home */
+/* v1.3.1.1.202206021225, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -258,6 +258,9 @@ class Upload extends Controller
         $dest_fld_str = implode(',', $dest_fld_arr);
         $sql_insert = sprintf('insert into %s (%s) select %s from %s', $dest_table_name, $dest_fld_str, $tmp_fld_str, $tmp_table_name);
         $rc = $model->exec($sql_insert);
+
+        // 写日志
+        $model->sql_log('导入成功',$menu_id,'');
 
         $this->json_data(200, '导入成功', 0);
     }

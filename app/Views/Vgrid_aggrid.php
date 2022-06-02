@@ -1,4 +1,4 @@
-<!-- v3.8.1.1.202205282355, from home -->
+<!-- v3.8.2.1.202205282355, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -132,6 +132,10 @@
         if (tb_obj['新增授权'] == true)
         {
             data_tb.data.add({id:'新增', type:'button', value:'新增'});
+        }
+        if (tb_obj['删除授权'] == true)
+        {
+            data_tb.data.add({id:'删除', type:'button', value:'删除'});
         }
         data_tb.data.add({type:'separator'});
         data_tb.data.add({id:'title', type:'title', value:'分页'});
@@ -469,6 +473,14 @@
                     update_flag = 'add';
                     div_block('updatebox');
                     break;
+                case '删除':
+                    var rows = data_grid_options.api.getSelectedRows();
+                    if (rows.length == 0)
+                    {
+                        alert('请先选择要删除的记录');
+                        break;
+                    }
+                    break;
                 case '数据钻取':
                     var rows = data_grid_options.api.getSelectedRows();
                     if (rows.length == 0)
@@ -747,6 +759,7 @@
                 return;
             }
 
+            console.log('cond=', cond_arr);
             dhx.ajax.post('<?php base_url(); ?>/Frame/set_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
             {
                 data_grid_obj = JSON.parse(data);

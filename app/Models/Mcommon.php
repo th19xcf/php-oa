@@ -1,6 +1,6 @@
 <?php
 
-/* v1.1.2.1.202204302115, from home */
+/* v1.2.2.1.202206021225, from home */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -93,6 +93,31 @@ class Mcommon extends Model
         $db = db_connect('btdc');
 
         $db->query($sql);
+        $num = $db->affectedRows();
+
+        $db->close();
+
+        return $num;
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 通用日志sql
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function sql_log($option, $func_id='', $info='')
+    {
+        $session = \Config\Services::session();
+        $user_name = $session->get('user_name');
+        $user_workid = $session->get('user_workid');
+
+        $db = db_connect('btdc');
+
+        $insert = sprintf('
+            insert into sys_sql_log
+            (姓名,用户名,动作,功能编码,信息)
+            values ("%s","%s","%s","%s","%s")',
+            $user_name, $user_workid, $option, $func_id, $info);
+
+        $db->query($insert);
         $num = $db->affectedRows();
 
         $db->close();
