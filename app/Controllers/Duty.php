@@ -1,5 +1,5 @@
 <?php
-/* v1.2.1.1.202206021225, from home */
+/* v1.2.2.1.202206021225, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -19,7 +19,7 @@ class Duty extends Controller
     {
         $model = new Mcommon();
 
-        $sql = sprintf('select 业务,班组,姓名,工号 from view_排班人员');
+        $sql = sprintf('select 业务,班组,姓名,工号 from view_排班人员_202206');
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -40,8 +40,8 @@ class Duty extends Controller
 
             if ($team_last == '')
             {
-                $team_last = $row->班组;
-                $team_arr['id'] = '2级^' . $row->班组;
+                $team_last = sprintf('%s^%s', $row->业务, $row->班组);
+                $team_arr['id'] = sprintf('2级^%s^%s', $row->业务, $row->班组);
                 $team_arr['value'] = $row->班组;
                 $team_arr['items'] = [];
 
@@ -60,7 +60,7 @@ class Duty extends Controller
                 array_push($team_arr['items'], $ee_arr);
                 $team_ee_num ++;
             }
-            if ($team_last != $row->班组 && $ii < (count($results)-1))
+            if ($team_last != sprintf('%s^%s', $row->业务, $row->班组) && $ii < (count($results)-1))
             {
                 // 新班组,老班组信息保存
                 $team_arr['value'] = sprintf('%s  (%d人)', $team_arr['value'], $team_ee_num);
@@ -86,8 +86,8 @@ class Duty extends Controller
                 }
 
                 // team信息初始化
-                $team_last = $row->班组;
-                $team_arr['id'] = '2级^' . $row->班组;
+                $team_last = sprintf('%s^%s', $row->业务, $row->班组);
+                $team_arr['id'] = sprintf('2级^%s^%s', $row->业务, $row->班组);
                 $team_arr['value'] = $row->班组;
                 $team_arr['items'] = [];
 
@@ -95,7 +95,7 @@ class Duty extends Controller
                 $team_ee_num ++;
             }
 
-            if ($team_last == $row->班组 && $ii == (count($results)-1))
+            if ($team_last == sprintf('%s^%s', $row->业务, $row->班组) && $ii == (count($results)-1))
             {
                 // 二级
                 array_push($team_arr['items'], $ee_arr);
@@ -113,7 +113,7 @@ class Duty extends Controller
                 array_push($csr_arr, $biz_arr);
             }
 
-            if ($team_last != $row->班组 && $ii == (count($results)-1))
+            if ($team_last != sprintf('%s^%s', $row->业务, $row->班组) && $ii == (count($results)-1))
             {
             }
         }
@@ -170,6 +170,7 @@ class Duty extends Controller
         $sql = sprintf('
             select 业务,班务编码,班务名称,班务时段,班务小时数 
             from biz_duty_rule
+            where 月份="2022-06"
             group by 业务,班务编码');
 
         $query = $model->select($sql);
@@ -247,7 +248,7 @@ class Duty extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('排班录入',$menu_id,'');
+        $model->sql_log('排班录入', $menu_id, '');
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -319,7 +320,7 @@ class Duty extends Controller
     {
         $model = new Mcommon();
 
-        $sql = sprintf('select 业务,班组,姓名,工号 from view_排班人员');
+        $sql = sprintf('select 业务,班组,姓名,工号 from view_排班人员_202206');
 
         $query = $model->select($sql);
         $results = $query->getResult();

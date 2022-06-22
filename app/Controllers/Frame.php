@@ -58,6 +58,7 @@ class Frame extends Controller
                 where 菜单顺序>0
             ) as t2 on t1.功能赋权=t2.功能编码
             where t1.角色编号 in (%s)
+            group by t1.功能赋权
             order by t2.菜单顺序', $role_str);
 
         $model = new Mcommon();
@@ -273,9 +274,11 @@ class Frame extends Controller
         // 取出查询模块对应的表配置
         $where = '';
         $group = '';
+        $order = '';
         $query_table = '';
         $query_where = '';
         $query_group = '';
+        $query_order = '';
         $next_func_id = '';
         $next_func_name = '';
         $next_func_condition = '';
@@ -284,7 +287,7 @@ class Frame extends Controller
 
         $sql = sprintf('
             select t1.功能编码,查询表名,更新表名,
-                查询条件,汇总条件,初始条数,
+                查询条件,汇总条件,排序条件,初始条数,
                 钻取模块,钻取条件,
                 ifnull(t2.钻取名称,"") as 钻取名称,
                 导入模块,
@@ -313,6 +316,7 @@ class Frame extends Controller
             $result_count = $row->初始条数;
             $query_where = $row->查询条件;
             $query_group = $row->汇总条件;
+            $query_order = $row->排序条件;
 
             $next_func_id = $row->钻取模块;
             $next_func_name = $row->钻取名称;
@@ -338,7 +342,7 @@ class Frame extends Controller
             {
                 $select_str = $select_str . ',';
             }
-            $select_str = $select_str . $column['查询名'] . ' as ' . $column['列名'];
+            $select_str = sprintf('%s %s as `%s`', $select_str, $column['查询名'], $column['列名']);
         }
 
         $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
@@ -380,6 +384,20 @@ class Frame extends Controller
             $sql = sprintf('%s where %s', $sql, $where);
         }
 
+        // 加上group by 条件
+        if ($query_group != '')
+        {
+            $group = $query_group;
+            $sql = sprintf('%s group by %s', $sql, $group);
+        }
+
+        // 加上order by
+        if ($query_order != '')
+        {
+            $order = $query_order;
+            $sql = sprintf('%s order by %s', $sql, $order);
+        }
+
         // 加上初始结果条数
         if ($result_count > 0)
         {
@@ -387,7 +405,8 @@ class Frame extends Controller
         }
 
         // 写日志
-        $model->sql_log('查询',$menu_id,sprintf('表名=%s,条件=%s',$query_table,$where));
+        $model->sql_log('查询',$menu_id,sprintf('表名=%s,条件=`%s`',$query_table,$where));
+        //$model->sql_log('查询',$menu_id,sprintf('表名=%s,条件=%s',$query_table,''));
 
         // 读出数据
         $query = $model->select($sql);
@@ -402,6 +421,7 @@ class Frame extends Controller
         $session_arr[$menu_id.'-primary_key'] = $primary_key;
         $session_arr[$menu_id.'-back_where'] = $where;
         $session_arr[$menu_id.'-back_group'] = $group;
+        $session_arr[$menu_id.'-back_order'] = $order;
         $session_arr[$menu_id.'-next_func_id'] = $next_func_id;
         $session_arr[$menu_id.'-next_func_name'] = $next_func_name;
         $session_arr[$menu_id.'-next_func_condition'] = $next_func_condition;
@@ -448,6 +468,7 @@ class Frame extends Controller
 
         $where = '';
         $group = '';
+        $order = '';
 
         $front_where = '';
         $front_group = '';
@@ -639,6 +660,7 @@ class Frame extends Controller
         $dept_fld = $session->get($menu_id.'-dept_fld');
         $where = $session->get($menu_id.'-back_where');
         $group = $session->get($menu_id.'-back_group');
+        $order = $session->get($menu_id.'-back_order');
 
         // 拼出查询语句
         $select_str = '';
@@ -685,11 +707,11 @@ class Frame extends Controller
 
             if ($sum_avg_str != '')
             {
-                $select_str = $select_str . $sum_avg_str . ' as ' . $column['列名'];
+                $select_str = sprintf('%s%s as `%s`',$select_str, $sum_avg_str, $column['列名']);
             }
             else
             {
-                $select_str = $select_str . $column['查询名'] . ' as ' . $column['列名'];
+                $select_str = sprintf('%s%s as `%s`', $select_str, $column['查询名'], $column['列名']);
             }
         }
 
@@ -718,6 +740,11 @@ class Frame extends Controller
         if ($group != '')
         {
             $sql = $sql . ' group by ' . $group;
+        }
+
+        if ($order != '')
+        {
+            $sql = $sql . ' order by ' . $order;
         }
 
         // 写日志

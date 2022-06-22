@@ -143,8 +143,8 @@
         {
             id: '分页',
             type: 'selectButton',
-            value: '100',
-            items: [{id:'100',value:'100'},{id:'500',value:'500'},{id:'1000',value:'1000'}]
+            value: '500',
+            items: [{id:'500',value:'500'},{id:'1000',value:'1000'},{id:'2000',value:'2000'}]
         });
         data_tb.data.add({type:'spacer'});
         if (tb_obj['导入授权'] == true)
@@ -187,7 +187,8 @@
             defaultColDef: 
             {
                 width: 120,
-                resizable: true
+                resizable: true,
+                //comparator: cellSort
             },
             rowData: data_grid_obj,
             rowSelection: 'multiple',
@@ -200,6 +201,7 @@
         data_grid_options.onGridReady = data_grid_ready;
         function data_grid_ready(event)
         {
+            data_grid_options.api.paginationSetPageSize(Number(500));
             console.log('datagrid ready');
         }
 
@@ -883,6 +885,11 @@
                     alert('status' + " " + err.statusText);
                 });
             }
+        }
+
+        function cellSort(valueA, valueB, nodeA, nodeB, isInverted)
+        {
+            console.log('nodeA', nodeA);
         }
 
         function cellEditorSelector(params)
