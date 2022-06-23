@@ -1,5 +1,5 @@
 <?php
-/* v4.2.1.1.202206021225, from home */
+/* v4.3.1.1.202206222255, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -135,6 +135,7 @@ class Frame extends Controller
 
         $data_col_arr = array();  // 前端data_grid列信息,用于显示
         $columns_arr = array();  // 列信息
+        $send_columns_arr = array(); // 传递到前端的列信息,查询名为公式,前端报错
         $tb_arr = array();  // 控制菜单栏
 
         $update_value_arr = array();  // 前端update_grid值信息,用于显示
@@ -187,6 +188,9 @@ class Frame extends Controller
             $arr['可修改'] = $row->可修改;
 
             array_push($columns_arr, $arr);
+
+            $arr['查询名'] = '';
+            array_push($send_columns_arr, $arr);
 
             // 前端data_grid列信息,用于显示
             $data_col_arr[$row->列名]['field'] = $row->列名;
@@ -438,7 +442,7 @@ class Frame extends Controller
 
         //返回页面
         $send['toolbar_json'] = json_encode($tb_arr);
-        $send['columns_json'] = json_encode($columns_arr);
+        $send['columns_json'] = json_encode($send_columns_arr);
         $send['data_col_json'] = json_encode($data_col_arr);
         $send['data_value_json'] = json_encode($results);
         $send['update_value_json'] = json_encode($update_value_arr);
