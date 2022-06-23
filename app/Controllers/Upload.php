@@ -1,5 +1,5 @@
 <?php
-/* v1.3.1.1.202206021225, from home */
+/* v1.4.1.1.202206231525, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -25,7 +25,7 @@ class Upload extends Controller
         $send = [];
 
         $sql = sprintf('
-            select 功能编码,导入模块,表单变量
+            select 功能编码,导入模块,表单变量,模板文件
             from def_function as t1
             left join def_import_config as t2
             on t1.查询模块=t2.导入模块
@@ -37,9 +37,17 @@ class Upload extends Controller
 
         foreach ($results as $row)
         {
-            $send['work_month'] = strpos($row->表单变量,'$工作月份');
-            $send['work_date'] = strpos($row->表单变量,'$工作日期');
+            $send['work_month'] = strpos($row->表单变量, '$工作月份');
+            $send['work_date'] = strpos($row->表单变量, '$工作日期');
+            $send['tmpl_file'] = $row->模板文件;
         }
+
+        // 存入session
+        $session_arr = [];
+        $session_arr[$menu_id.'-import'] = $row->导入模块;
+
+        $session = \Config\Services::session();
+        $session->set($session_arr);
 
         $send['func_id'] = $menu_id;
         $send['import_page'] = base_url('upload/import/'.$menu_id);
@@ -207,8 +215,8 @@ class Upload extends Controller
 
         $sql = sprintf(
             'select 列名,字段名,字段类型,字段长度,
-                赋值类型,对象,导入类型,
-                replace(系统变量," ","") as 系统变量
+                校验类型,对象,导入类型,
+                replace(系统变量," ","") as 系统变量,
                 replace(表单变量," ","") as 表单变量
             from def_import_column
             where 导入模块="%s"', $import);
@@ -222,10 +230,15 @@ class Upload extends Controller
         foreach ($results as $row)
         {
             array_push($dest_fld_arr, $row->字段名);
+
+            if ($row->系统变量=='' &&  $row->表单变量=='')
+            {
+                array_push($tmp_fld_arr, $row->字段名);
+                continue;
+            }
             switch ($row->系统变量)
             {
                 case '':
-                    array_push($tmp_fld_arr, $row->字段名);
                     break;
                 case '$工号':
                     array_push($tmp_fld_arr, sprintf('"%s" as %s', $user_workid, $row->字段名));
@@ -240,7 +253,6 @@ class Upload extends Controller
             switch ($row->表单变量)
             {
                 case '':
-                    array_push($tmp_fld_arr, $row->字段名);
                     break;
                 case '$工作月份':
                     array_push($tmp_fld_arr, sprintf('"%s" as %s', $work_month, $row->字段名));

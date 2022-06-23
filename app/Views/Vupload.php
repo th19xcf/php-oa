@@ -1,4 +1,4 @@
-<!-- v1.1.2.1.202205051020, from office -->
+<!-- v1.2.1.1.202206231525, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -13,7 +13,7 @@
 <body>
     <br/>
     <h3>模板下载</h3>
-    <a href='<?php base_url(); ?>/Template/学校信息表.xlsx'><u>下载模板</u></a>
+    <a href='<?php base_url(); ?>/Template/<?php echo $tmpl_file; ?>'><u>下载模板</u></a>
     <br/>
     <div id='month_div'>
         <h3>输入工作月份</h3>
