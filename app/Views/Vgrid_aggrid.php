@@ -1,4 +1,4 @@
-<!-- v3.9.1.1.202206252010, from home -->
+<!-- v3.10.1.1.202206252300, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -187,6 +187,10 @@
             if (data_columns_arr[ii].type == 'numericColumn')
             {
                 data_columns_arr[ii].comparator = value_sort;
+            }
+            if (data_columns_arr[ii].warning != '')
+            {
+                data_columns_arr[ii].cellStyle = cell_style;
             }
         }
 
@@ -898,6 +902,15 @@
         function value_sort(valueA, valueB, nodeA, nodeB, isInverted)
         {
             return valueA - valueB;
+        }
+
+        function cell_style(params)
+        {
+            if (params.value < 0)
+            {
+                return {color:'red'};
+            }
+            return null;
         }
 
         function cellEditorSelector(params)

@@ -1,5 +1,5 @@
 <?php
-/* v4.3.1.1.202206222255, from home */
+/* v4.4.1.1.202206252300, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -45,15 +45,15 @@ class Frame extends Controller
         $sql = sprintf(
             'select 
                 t1.角色编号,t1.角色名称,t1.功能赋权,t1.部门赋权,
-                t1.新增授权,t1.修改授权,t1.删除授权,
+                t1.新增授权,t1.修改授权,t1.删除授权,t1.导入授权,t1.导出授权,
                 t2.部门字段,t2.功能编码,
                 t2.一级菜单,t2.二级菜单,t2.功能模块,t2.查询模块,
-                t2.菜单顺序
+                t2.菜单顺序,t2.菜单显示
             from def_role as t1
             left join
             (
                 select 功能编码,一级菜单,二级菜单,功能模块,查询模块,
-                    部门字段,菜单顺序
+                    部门字段,菜单顺序,菜单显示
                 from def_function
                 where 菜单顺序>0
             ) as t2 on t1.功能赋权=t2.功能编码
@@ -70,17 +70,6 @@ class Frame extends Controller
         $authz = [];
         foreach ($results as $row)
         {
-            #附加功能编码回传使用
-            $row->功能模块 = $row->功能模块 . '/' . $row->功能编码 . '?func=' . $row->一级菜单;
-            $children = array(
-                'text' => sprintf('<a href="javascript:void(0);" tag="%s" onclick="goto(%s)">%s</a>', $row->功能模块, $row->功能编码, $row->二级菜单),
-                'expanded' => true
-            );
-
-            $json[$row->一级菜单]['text'] = $row->一级菜单;
-            $json[$row->一级菜单]['expanded'] = false;
-            $json[$row->一级菜单]['children'][] = $children;
-
             // 部门访问权限设置
             $dept_str = $row->部门赋权;
             $dept_fld = $row->部门字段;
@@ -115,8 +104,27 @@ class Frame extends Controller
             $session_arr[$row->功能赋权.'-add_authz'] = $row->新增授权;
             $session_arr[$row->功能赋权.'-modify_authz'] = $row->修改授权;
             $session_arr[$row->功能赋权.'-delete_authz'] = $row->删除授权;
+            $session_arr[$row->功能赋权.'-import_authz'] = $row->导入授权;
+            $session_arr[$row->功能赋权.'-export_authz'] = $row->导出授权;
             $session = \Config\Services::session();
             $session->set($session_arr);
+
+            // 显示标志不等于1,不生成菜单
+            if ($row->菜单显示 != 1)
+            {
+                continue;
+            }
+
+            // 生成前端页面菜单数据
+            $row->功能模块 = $row->功能模块 . '/' . $row->功能编码 . '?func=' . $row->一级菜单;
+            $children = array(
+                'text' => sprintf('<a href="javascript:void(0);" tag="%s" onclick="goto(%s)">%s</a>', $row->功能模块, $row->功能编码, $row->二级菜单),
+                'expanded' => true
+            );
+
+            $json[$row->一级菜单]['text'] = $row->一级菜单;
+            $json[$row->一级菜单]['expanded'] = false;
+            $json[$row->一级菜单]['children'][] = $children;
         }
 
         echo json_encode($json, 320);  //256+64,不转义中文+反斜杠
@@ -149,6 +157,7 @@ class Frame extends Controller
         $data_col_arr['选取']['checkboxSelection'] = true;
 
         $data_col_arr['序号']['field'] = '序号';
+        $data_col_arr['序号']['type'] = 'numericColumn';
         $data_col_arr['序号']['width'] = 90;
         $data_col_arr['序号']['resizable'] = true;
         $data_col_arr['序号']['sortable'] = true;
@@ -159,7 +168,7 @@ class Frame extends Controller
         $sql = sprintf('
             select 功能编码,查询模块,字段模块,部门字段,
                 列名,列类型,列宽度,字段名,查询名,对象,
-                可修改,可筛选,主键,赋值类型,列顺序
+                可修改,可筛选,主键,赋值类型,显示异常,列顺序
             from view_function
             where 功能编码=%s and 列顺序>0
             group by 列名
@@ -186,6 +195,7 @@ class Frame extends Controller
             $arr['赋值类型'] = $row->赋值类型;
             $arr['对象'] = $row->对象;
             $arr['可修改'] = $row->可修改;
+            $arr['显示异常'] = $row->显示异常;
 
             array_push($columns_arr, $arr);
 
@@ -214,6 +224,7 @@ class Frame extends Controller
                 $data_col_arr[$row->列名]['type'] = 'numericColumn';
                 $data_col_arr[$row->列名]['filter'] = 'agNumberColumnFilter';
             }
+            $data_col_arr[$row->列名]['warning'] = $row->显示异常;
 
             // 主键不能更改
             if ($row->主键 == 1) continue;
@@ -361,6 +372,8 @@ class Frame extends Controller
         $add_authz = $session->get($menu_id.'-add_authz');
         $modify_authz = $session->get($menu_id.'-modify_authz');
         $delete_authz = $session->get($menu_id.'-delete_authz');
+        $import_authz = $session->get($menu_id.'-import_authz');
+        $export_authz = $session->get($menu_id.'-export_authz');
 
         // 加上初始查询条件
         if ($query_where != '')
@@ -439,6 +452,8 @@ class Frame extends Controller
         $tb_arr['新增授权'] = ($add_authz=='1') ? true : false ;
         $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
         $tb_arr['删除授权'] = ($delete_authz=='1') ? true : false ;
+        $tb_arr['导入授权'] = ($import_authz=='1' && $import_func_id!='') ? true : false ;
+        $tb_arr['导出授权'] = ($export_authz=='1') ? true : false ;
 
         //返回页面
         $send['toolbar_json'] = json_encode($tb_arr);
