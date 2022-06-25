@@ -1,4 +1,4 @@
-<!-- v3.8.2.1.202205282355, from home -->
+<!-- v3.9.1.1.202206252010, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -114,7 +114,7 @@
 
         var update_flag = '';  // modify或add
 
-        // 生成主菜单栏
+        // 生成主工具栏
         var data_tb = new dhx.Toolbar('data_tb', {css:'toobar-class'});
         data_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         data_tb.data.add({id:'字段选择', type:'button', value:'字段选择'});
@@ -153,33 +153,42 @@
         }
         data_tb.data.add({id:'导出', type:'button', value:'导出'});
 
-        // 生成修改新增用菜单栏
+        // 生成修改新增用工具栏
         var update_tb = new dhx.Toolbar('update_tb', {css:'toobar-class'});
         update_tb.data.add({id:'返回', type:'button', value:'返回'});
         update_tb.data.add({type:'separator'});
         update_tb.data.add({id:'清空', type:'button', value:'清空'});
         update_tb.data.add({id:'提交', type:'button', value:'提交'});
 
-        // 生成设置条件用菜单栏
+        // 生成设置条件用工具栏
         var cond_tb = new dhx.Toolbar('cond_tb', {css:'toobar-class'});
         cond_tb.data.add({id:'返回', type:'button', value:'返回'});
         cond_tb.data.add({type:'separator'});
         cond_tb.data.add({id:'清空', type:'button', value:'清空'});
         cond_tb.data.add({id:'提交', type:'button', value:'提交'});
 
-        // 生成图形用菜单栏
+        // 生成图形用工具栏
         var chart_tb = new dhx.Toolbar('chart_tb', {css:'toobar-class'});
         chart_tb.data.add({id:'返回', type:'button', value:'返回'});
         chart_tb.data.add({id:'设置', type:'button', value:'设置'});
 
         // 生成data_grid
-        var data_page = 100;
+        var data_page = 500;
         var data_columns_obj = JSON.parse('<?php echo $data_col_json; ?>');
 
         var data_columns_arr = []; // 数据表使用
         data_columns_arr = Object.values(data_columns_obj);
 
         var data_grid_obj = JSON.parse('<?php echo $data_value_json; ?>');
+
+        // 数值排序
+        for (var ii in data_columns_arr)
+        {
+            if (data_columns_arr[ii].type == 'numericColumn')
+            {
+                data_columns_arr[ii].comparator = value_sort;
+            }
+        }
 
         const data_grid_options = 
         {
@@ -188,7 +197,6 @@
             {
                 width: 120,
                 resizable: true,
-                //comparator: cellSort
             },
             rowData: data_grid_obj,
             rowSelection: 'multiple',
@@ -887,9 +895,9 @@
             }
         }
 
-        function cellSort(valueA, valueB, nodeA, nodeB, isInverted)
+        function value_sort(valueA, valueB, nodeA, nodeB, isInverted)
         {
-            console.log('nodeA', nodeA);
+            return valueA - valueB;
         }
 
         function cellEditorSelector(params)
