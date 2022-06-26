@@ -1,6 +1,6 @@
 <?php
 
-/* v1.3.1.1.202206021225, from home */
+/* v1.3.2.1.202206261345, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -59,6 +59,7 @@ class Login extends Controller
             $session_arr['user_workid'] = $row->工号;
             $session_arr['user_name'] = $row->姓名;
             $session_arr['user_role'] = $row->角色;
+            $session_arr['user_pswd'] = $pswd;
 
             $session = \Config\Services::session();
             $session->set($session_arr);

@@ -1,5 +1,5 @@
 <?php
-/* v4.4.1.1.202206252300, from home */
+/* v4.4.2.1.202206261345, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -880,7 +880,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('导出',$menu_id,'');
+        $model->sql_log('导出', $menu_id, '');
 
         $query = $model->select($query_str);
 
@@ -889,5 +889,53 @@ class Frame extends Controller
         header('Accept-Ranges: bytes');
 
         exit($table->generate($query));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 修改密码
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function change_pswd($from='', $title='')
+    {
+        if ($from == 'front')
+        {
+            $new_pswd = $this->request->getPost()['pswd_1'];
+
+            // 从session中取出数据
+            $session = \Config\Services::session();
+            $user_workid = $session->get('user_workid');
+            $user_pswd = $session->get('user_pswd');
+
+            $model = new Mcommon();
+
+            // 写日志
+            $model->sql_log('修改密码', '', $user_pswd.'-->'.$new_pswd);
+
+            if ($new_pswd == $user_pswd)
+            {
+                echo '新密码与旧密码相同, 未作修改';
+                return;
+            }
+
+            $sql = sprintf('update def_user set 密码="%s" where 工号="%s"', 
+                $new_pswd, $user_workid);
+
+            if($model->exec($sql)>0)
+            {
+                echo '密码修改成功';
+                return;
+            }
+            else
+            {
+                echo '密码修改失败, 请联系技术人员';
+                return;
+            }
+        }
+        else
+        {
+            $send['title'] = ($title=='') ? '修改密码' : $title;
+            $send['next_page'] = 'Frame/change_pswd';
+
+            echo view('Vpassword.php', $send);
+        }
     }
 }
