@@ -1,5 +1,5 @@
 <?php
-/* v4.4.2.1.202206261345, from home */
+/* v4.4.3.1.202207032305, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -422,8 +422,8 @@ class Frame extends Controller
         }
 
         // 写日志
-        $model->sql_log('查询',$menu_id,sprintf('表名=%s,条件=`%s`',$query_table,$where));
-        //$model->sql_log('查询',$menu_id,sprintf('表名=%s,条件=%s',$query_table,''));
+        //$model->sql_log('查询',$menu_id,sprintf('表名=%s,条件=`%s`',$query_table,$where));
+        $model->sql_log('查询',$menu_id,sprintf('表名=%s,条件=%s',$query_table,''));
 
         // 读出数据
         $query = $model->select($sql);

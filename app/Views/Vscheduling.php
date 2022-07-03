@@ -1,4 +1,4 @@
-<!-- v1.2.1.1.202206011520, from home -->
+<!-- v1.3.1.1.202207032305, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -10,7 +10,7 @@
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
 
     <style type='text/css'>
-        div.condtion_box
+        div.float_box
         {
             width: 31%;
             height: 570px;
@@ -23,7 +23,7 @@
         div.result_box
         {
             width: 100%;
-            height: 570px;
+            height: 600px;
             margin-top: 10px;
             background-color: #f9f9f9;
             border: 1px solid #D0D0D0;
@@ -36,18 +36,21 @@
 
 <body>
     <div id='main_tb'></div>
-    <div class='condtion_box' id='csrbox'><b>选择人员</b></div>
-    <div class='condtion_box' id='datebox'><b>选择日期</b></div>
-    <div class='condtion_box' id='dutybox'><b>选择班务</b></div>
-    <div class='result_box' id='resultbox'></div>
+    <div class='float_box'>
+        <div id='csrbox' style='height:95%;'><b>选择人员</b></div>
+    </div>
+    <div class='float_box'>
+        <div id='datebox' style='height:95%;'><b>选择日期</b></div>
+    </div>
+    <div class='float_box'>
+        <div id='dutybox' style='height:95%;'><b>选择班务</b></div>
+    </div>
 
     <script type='text/javascript' charset='utf-8'>
         function $$(id)
         {
             return document.getElementById(id);
         }
-
-        $$('resultbox').style.display = 'none';
 
         // 生成主菜单栏
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});

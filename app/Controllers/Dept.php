@@ -1,5 +1,5 @@
 <?php
-/* v1.2.1.1.202207022030, from home */
+/* v1.2.2.1.202207032305, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -74,6 +74,7 @@ class Dept extends Controller
             {
                 if ($child['higher'] == $item['guid'])
                 {
+                    $child['value'] = sprintf('%s (0)',$child['value']);
                     array_push($dept['items'], $child);
                 }
             }
@@ -172,5 +173,38 @@ class Dept extends Controller
         $send['dept_json'] = json_encode($dept_arr);
 
         echo view('Vdept.php', $send);
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 部门操作
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function upkeep($menu_id='')
+    {
+        $cond_arr = $this->request->getJSON(true);
+
+        $model = new Mcommon();
+
+        if ($cond_arr['操作'] == '修改部门名称')
+        {
+            $sql = sprintf('update def_dept set 部门名称="%s" where 部门编码="%s"',
+                $cond_arr['部门名称'], $cond_arr['部门编码']);
+            $num = $model->exec($sql);
+        }
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 自定义函数
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function json_data($status=200, $msg, $count, $data =[])
+    {
+        $res = [
+            'status' => $status,
+            'msg' => $msg,
+            'number' => $count,
+            'data' => $data
+        ];
+
+        echo json_encode($res);
+        die;
     }
 }

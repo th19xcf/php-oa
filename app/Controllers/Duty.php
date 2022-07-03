@@ -1,5 +1,5 @@
 <?php
-/* v1.2.2.1.202206021225, from home */
+/* v1.2.3.1.202207032305, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -19,7 +19,7 @@ class Duty extends Controller
     {
         $model = new Mcommon();
 
-        $sql = sprintf('select 业务,班组,姓名,工号 from view_排班人员_202206');
+        $sql = sprintf('select 业务,班组,姓名,工号 from view_排班人员_202207');
 
         $query = $model->select($sql);
         $results = $query->getResult();
