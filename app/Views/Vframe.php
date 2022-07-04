@@ -1,4 +1,4 @@
-<!-- v1.1.0.1.202206261345, from home -->
+<!-- v1.2.1.1.202207041455, from office -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -95,7 +95,7 @@
             <b>北京电信发展有限公司</b>
         </div>
         <div class="toolBar">
-            <a id="lk_resetpwd" href="javascript:void(0);" tag="Frame/change_pswd/front" onClick="goto(-100)" title="修改密码">[修改密码]</a>
+            <a id="lk_resetpwd" href="javascript:void(0);" tag="Frame/change_pswd" onClick="goto(-100)" title="修改密码">[修改密码]</a>
             <a id="lk_exit" href="javascript:onLoginOut();" title="安全退出">[安全退出]</a>
         </div>
 

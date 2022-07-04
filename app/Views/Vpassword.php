@@ -1,4 +1,4 @@
-<!-- v1.1.1.1.202206261345, from home -->
+<!-- v1.1.2.1.202207041455, from office -->
 <!DOCTYPE html>
 <html style="display: block;">
 
@@ -25,7 +25,7 @@
     </script>
 
     <h2><?php echo $title; ?></h2>
-    <form name='pswd' action='<?php base_url(); ?>/<?php echo $next_page; ?>/front' onsubmit='return dosubmit()' method='post'>
+    <form name='pswd' action='<?php base_url(); ?>/<?php echo $next_page; ?>' onsubmit='return dosubmit()' method='post'>
         新密码：
         <input type='password' id='pswd_1' name='pswd_1'>
         再次输入新密码：

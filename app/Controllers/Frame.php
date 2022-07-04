@@ -1,5 +1,5 @@
 <?php
-/* v4.4.3.1.202207032305, from home */
+/* v4.4.4.1.202207041455, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -933,7 +933,7 @@ class Frame extends Controller
         else
         {
             $send['title'] = ($title=='') ? '修改密码' : $title;
-            $send['next_page'] = 'Frame/change_pswd';
+            $send['next_page'] = 'Frame/change_pswd/front';
 
             echo view('Vpassword.php', $send);
         }
