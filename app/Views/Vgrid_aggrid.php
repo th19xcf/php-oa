@@ -1,4 +1,4 @@
-<!-- v3.10.1.1.202206252300, from home -->
+<!-- v3.11.1.1.202207101800, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -63,7 +63,8 @@
         div_block('databox');
         $$('footbox').style.display = 'block';
 
-        $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{}, 汇总:{}, 合计:{}, 平均:{}, 最大:{}, 最小:{}, 计数:{}</b>';
+        foot_data = '&nbsp&nbsp<b>条件:{}, 汇总:{}, 合计:{}, 平均:{}, 最大:{}, 最小:{}, 计数:{}</b>';
+        $$('footbox').innerHTML = foot_data;
 
         function ColumnInfo()
         {
@@ -104,10 +105,15 @@
         var chart = new Chart();
 
         // footbox显示
-        var back_where = "<?php echo $back_where; ?>";
-        var back_group = "<?php echo $back_group; ?>";
+        var foot_data = '';
+        var foot_upkeep = '';
 
-        $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + back_where + '}, 汇总:{' + back_group + '}, 合计:{}, 平均:{}, 最大:{}, 最小:{}</b>';
+        var back_where = '<?php echo $back_where; ?>';
+        var back_group = '<?php echo $back_group; ?>';
+        var tip_column = '<?php echo $tip_column; ?>';
+
+        foot_data = '&nbsp&nbsp<b>条件:{' + back_where + '}, 汇总:{' + back_group + '}, 合计:{}, 平均:{}, 最大:{}, 最小:{}</b>';
+        $$('footbox').innerHTML = foot_data;
 
         // 字段信息
         var tb_obj = JSON.parse('<?php echo $toolbar_json; ?>');
@@ -155,6 +161,8 @@
 
         // 生成修改新增用工具栏
         var update_tb = new dhx.Toolbar('update_tb', {css:'toobar-class'});
+        //update_tb.data.add({id:'modify', type:'title', value:'修改菜单 --> '});
+        //update_tb.data.add({id:'add', type:'title', value:'新增菜单 --> '});
         update_tb.data.add({id:'返回', type:'button', value:'返回'});
         update_tb.data.add({type:'separator'});
         update_tb.data.add({id:'清空', type:'button', value:'清空'});
@@ -466,6 +474,14 @@
                         alert('请先选择要修改的记录');
                         break;
                     }
+
+                    foot_upkeep = '';
+                    for (var ii in rows)
+                    {
+                        if (foot_upkeep != '') foot_upkeep = foot_upkeep + ',';
+                        foot_upkeep = foot_upkeep + rows[ii][tip_column];
+                        $$('footbox').innerHTML = '&nbsp&nbsp<b>选定记录:{' + foot_upkeep + '}</b>';
+                    }
                     if (update_flag != 'modify')
                     {
                         // 清空
@@ -551,6 +567,7 @@
             {
                 case '返回':
                     div_block('databox');
+                    $$('footbox').innerHTML = foot_data;
                     break;
                 case '清空':
                     update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
@@ -569,6 +586,7 @@
             {
                 case '返回':
                     div_block('databox');
+                    $$('footbox').innerHTML = foot_data;
                     break;
                 case '清空':
                     cond_grid_obj = JSON.parse('<?php echo $cond_value_json; ?>');
@@ -587,6 +605,7 @@
             {
                 case '返回':
                     div_block('databox');
+                    $$('footbox').innerHTML = foot_data;
                     break;
                 case '设置':
                     tb_chart();
@@ -803,7 +822,8 @@
                     if (group_str != '') disp_group = group_str;
                 }
 
-                $$('footbox').innerHTML = '&nbsp&nbsp<b>条件:{' + disp_where + '} , 汇总:{' + disp_group + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}, 计数:{' + count_str + '}</b>';
+                foot_data = '&nbsp&nbsp<b>条件:{' + disp_where + '} , 汇总:{' + disp_group + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}, 计数:{' + count_str + '}</b>';
+                $$('footbox').innerHTML = foot_data;
             }).catch(function (err)
             {
                 alert('设置条件错误, ' + " " + err.statusText);

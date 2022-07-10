@@ -1,5 +1,5 @@
 <?php
-/* v1.2.3.1.202207032305, from home */
+/* v1.2.3.2.202207061015, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -19,7 +19,7 @@ class Duty extends Controller
     {
         $model = new Mcommon();
 
-        $sql = sprintf('select 业务,班组,姓名,工号 from view_排班人员_202207');
+        $sql = sprintf('select 业务,if(班组="","未分组",班组) as 班组,姓名,工号 from view_排班人员_202207');
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -55,7 +55,7 @@ class Duty extends Controller
             $ee_arr['id'] = sprintf('3级^%s^%s^%s^%s', $row->业务, $row->班组, $row->姓名, $row->工号);
             $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->工号);
 
-            if ($team_last == $row->班组 && $ii < (count($results)-1))
+            if ($team_last == sprintf('%s^%s', $row->业务, $row->班组) && $ii < (count($results)-1))
             {
                 array_push($team_arr['items'], $ee_arr);
                 $team_ee_num ++;
@@ -170,8 +170,9 @@ class Duty extends Controller
         $sql = sprintf('
             select 业务,班务编码,班务名称,班务时段,班务小时数 
             from biz_duty_rule
-            where 月份="2022-06"
-            group by 业务,班务编码');
+            where 月份="2022-07"
+            group by 业务,班务编码
+            order by 业务,班务编码');
 
         $query = $model->select($sql);
         $results = $query->getResult();

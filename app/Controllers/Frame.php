@@ -1,5 +1,5 @@
 <?php
-/* v4.4.4.1.202207041455, from office */
+/* v4.5.1.1.202207101745, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -149,6 +149,8 @@ class Frame extends Controller
         $update_value_arr = array();  // 前端update_grid值信息,用于显示
         $cond_value_arr = array();  // 条件设置信息
 
+        $tip_column = '';  // 前端foot显示的字段
+
         // 前端data_grid列信息,手工增加选取列和序号列
         $data_col_arr['选取']['field'] = '选取';
         $data_col_arr['选取']['width'] = 100;
@@ -168,7 +170,8 @@ class Frame extends Controller
         $sql = sprintf('
             select 功能编码,查询模块,字段模块,部门字段,
                 列名,列类型,列宽度,字段名,查询名,对象,
-                可修改,可筛选,主键,赋值类型,显示异常,列顺序
+                可修改,可筛选,主键,赋值类型,
+                显示提示,显示异常,列顺序
             from view_function
             where 功能编码=%s and 列顺序>0
             group by 列名
@@ -195,12 +198,18 @@ class Frame extends Controller
             $arr['赋值类型'] = $row->赋值类型;
             $arr['对象'] = $row->对象;
             $arr['可修改'] = $row->可修改;
+            $arr['显示提示'] = $row->显示提示;
             $arr['显示异常'] = $row->显示异常;
 
             array_push($columns_arr, $arr);
 
             $arr['查询名'] = '';
             array_push($send_columns_arr, $arr);
+
+            if ($row->显示提示 == 1)
+            {
+                $tip_column = $row->列名;
+            }
 
             // 前端data_grid列信息,用于显示
             $data_col_arr[$row->列名]['field'] = $row->列名;
@@ -472,6 +481,7 @@ class Frame extends Controller
         $send['next_func_condition'] = $next_func_condition;
         $send['import_func_id'] = $import_func_id;
         $send['import_func_name'] = $import_func_name;
+        $send['tip_column'] = $tip_column;
 
         echo view('Vgrid_aggrid.php', $send);
     }

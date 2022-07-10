@@ -1,4 +1,4 @@
-<!-- v1.3.1.1.202207032305, from home -->
+<!-- v1.3.2.1.202207101800, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -13,18 +13,8 @@
         div.float_box
         {
             width: 31%;
-            height: 570px;
+            height: 530px;
             margin: 10px;
-            background-color: #f9f9f9;
-            border: 1px solid #D0D0D0;
-            box-sizing: border-box;
-            float: left;
-        }
-        div.result_box
-        {
-            width: 100%;
-            height: 600px;
-            margin-top: 10px;
             background-color: #f9f9f9;
             border: 1px solid #D0D0D0;
             box-sizing: border-box;

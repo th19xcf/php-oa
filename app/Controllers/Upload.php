@@ -1,5 +1,5 @@
 <?php
-/* v1.4.1.1.202206231525, from office */
+/* v1.5.1.1.202207101740, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -107,7 +107,7 @@ class Upload extends Controller
             $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader('Xlsx');
         }
 
-        $reader->setReadDataOnly(TRUE);
+        //$reader->setReadDataOnly(TRUE);
         $spreadsheet = $reader->load($new_file_name); //载入excel表格
 
         $sheet_count = $spreadsheet->getSheetCount();
