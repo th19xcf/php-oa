@@ -1,5 +1,5 @@
 <?php
-/* v1.1.1.1.202207101700, from home */
+/* v1.1.2.1.202207121755, from office*/
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -24,7 +24,8 @@ class Train extends Controller
                 concat("培训师_",if(培训老师="","待补充",培训老师)) as 培训老师,
                 培训开始日期,预计完成日期,培训完成日期,
                 培训离开日期,培训离开原因
-            from ee_train');
+            from ee_train
+            order by 培训状态,培训老师,培训开始日期,姓名');
 
         $query = $model->select($sql);
         $results = $query->getResult();

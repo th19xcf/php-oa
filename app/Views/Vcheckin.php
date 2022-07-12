@@ -1,4 +1,4 @@
-<!-- v1.1.1.1.202206011955, from home -->
+<!-- v1.1.2.1.202207120955, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -51,22 +51,64 @@
                 label: '考勤类型',
                 labelWidth: '150px',
                 width: '200px',
-                options: [
-                {
-                    value: '迟到',
-                    content: '迟到',
-                },
-                {
-                    value: '早退',
-                    content: '早退'
-                }]
+                options: 
+                [
+                    {
+                        value: '病假',
+                        content: '病假',
+                    },
+                    {
+                        value: '事假',
+                        content: '事假',
+                    },
+                    {
+                        value: '法定年假',
+                        content: '法定年假',
+                    },
+                    {
+                        value: '补充年假',
+                        content: '补充年假',
+                    },
+                    {
+                        value: '婚假',
+                        content: '婚假',
+                    },
+                    {
+                        value: '产假',
+                        content: '产假',
+                    },
+                    {
+                        value: '陪产假',
+                        content: '陪产假',
+                    },
+                    {
+                        value: '产前检查假',
+                        content: '产前检查假',
+                    },
+                    {
+                        value: '哺乳假',
+                        content: '哺乳假',
+                    },
+                    {
+                        value: '丧假',
+                        content: '丧假',
+                    },
+                    {
+                        value: '迟到',
+                        content: '迟到',
+                    },
+                    {
+                        value: '早退',
+                        content: '早退'
+                    },
+                ]
             },
             {
                 type: 'input',
                 name: '小时数',
                 label: '小时数',
                 width: '200px',
-                icon: 'dxi dxi-magnify',
+                //icon: 'dxi dxi-magnify',
                 placeholder: '',
             }]
         });

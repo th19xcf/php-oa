@@ -1,5 +1,5 @@
 <?php
-/* v1.1.1.1.202207101700, from home */
+/* v1.1.2.1.202207121755, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -22,9 +22,10 @@ class Interview extends Controller
         $sql = sprintf('
             select GUID,姓名,身份证号,手机号码,招聘渠道,
                 if(mod(substr(身份证号,17,1),2)=0,"女","男") as 性别,
-                if(参培信息="","待参培",参培信息) as 参培信息,预约培训日期
+                if(参培信息="","待参培",参培信息) as 参培信息,
+                一次面试日期 as 面试日期,预约培训日期
             from ee_interview
-            order by 参培信息,招聘渠道,预约培训日期');
+            order by 参培信息,招聘渠道,预约培训日期,姓名');
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -38,7 +39,7 @@ class Interview extends Controller
         {
             $ee_arr = [];
             $ee_arr['id'] = sprintf('人员^%s^%s', $row->GUID, $row->姓名);
-            $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->预约培训日期);
+            $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->面试日期);
 
             $up1_id = sprintf('招聘渠道^%s^%s^%s', $row->参培信息, $row->预约培训日期, $row->招聘渠道);
             if (array_key_exists($up1_id, $up1_arr) == false)
@@ -63,12 +64,12 @@ class Interview extends Controller
             {
                 $up2_arr[$up2_id]['id'] = $up2_id;
                 $up2_arr[$up2_id]['num'] = 0;
-                $up2_arr[$up2_id]['value'] = $arr[2];
+                $up2_arr[$up2_id]['value'] = '预约培训日期 ' . $arr[2];
                 $up2_arr[$up2_id]['items'] = [];
             }
 
             $up2_arr[$up2_id]['num'] += $up1['num'];
-            $up2_arr[$up2_id]['value'] = sprintf('%s (%d人)', $arr[2], $up2_arr[$up2_id]['num']);
+            $up2_arr[$up2_id]['value'] = sprintf('预约培训日期 %s (%d人)', $arr[2], $up2_arr[$up2_id]['num']);
             array_push($up2_arr[$up2_id]['items'], $up1);
         }
 

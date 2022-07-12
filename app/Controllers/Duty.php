@@ -1,5 +1,5 @@
 <?php
-/* v1.2.3.2.202207061015, from office */
+/* v1.2.4.1.202207120920, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -19,7 +19,10 @@ class Duty extends Controller
     {
         $model = new Mcommon();
 
-        $sql = sprintf('select 业务,if(班组="","未分组",班组) as 班组,姓名,工号 from view_排班人员_202207');
+        $sql = sprintf('
+            select 业务,if(班组="","未分组",班组) as 班组,
+                姓名,工号,记录开始日期,记录结束日期 
+                from view_排班人员_202207');
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -52,7 +55,7 @@ class Duty extends Controller
             }
 
             $ee_arr = array();
-            $ee_arr['id'] = sprintf('3级^%s^%s^%s^%s', $row->业务, $row->班组, $row->姓名, $row->工号);
+            $ee_arr['id'] = sprintf('3级^%s^%s^%s^%s^%s', $row->业务, $row->班组, $row->姓名, $row->工号,$row->记录结束日期);
             $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->工号);
 
             if ($team_last == sprintf('%s^%s', $row->业务, $row->班组) && $ii < (count($results)-1))
@@ -321,104 +324,8 @@ class Duty extends Controller
     {
         $model = new Mcommon();
 
-        $sql = sprintf('select 业务,班组,姓名,工号 from view_排班人员_202206');
-
-        $query = $model->select($sql);
-        $results = $query->getResult();
-
-        $csr_arr = array();
-
-        $biz_last = '';
-        $biz_arr = [];
-        $biz_ee_num = 0;
-        $team_last = '';
-        $team_arr = [];
-        $team_ee_num = 0;
-
-        $ii = 0;
-        foreach ($results as $row)
-        {
-            $ii ++;
-
-            if ($team_last == '')
-            {
-                $team_last = $row->班组;
-                $team_arr['id'] = '2级^' . $row->班组;
-                $team_arr['value'] = $row->班组;
-                $team_arr['items'] = [];
-
-                $biz_last = $row->业务;
-                $biz_arr['id'] = '1级^' . $row->业务;
-                $biz_arr['value'] = $row->业务;
-                $biz_arr['items'] = [];
-            }
-
-            $ee_arr = array();
-            $ee_arr['id'] = sprintf('3级^%s^%s^%s^%s', $row->业务, $row->班组, $row->姓名, $row->工号);
-            $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->工号);
-
-            if ($team_last == $row->班组 && $ii < (count($results)-1))
-            {
-                array_push($team_arr['items'], $ee_arr);
-                $team_ee_num ++;
-            }
-            if ($team_last != $row->班组 && $ii < (count($results)-1))
-            {
-                // 新班组,老班组信息保存
-                $team_arr['value'] = sprintf('%s  (%d人)', $team_arr['value'], $team_ee_num);
-                $biz_ee_num = $biz_ee_num + $team_ee_num;
-                $team_ee_num = 0;
-
-                if ($biz_last == $row->业务)
-                {
-                    array_push($biz_arr['items'], $team_arr);
-                }
-                else
-                {
-                    array_push($biz_arr['items'], $team_arr);
-                    $biz_arr['value'] = sprintf('%s  (%d人)', $biz_arr['value'], $biz_ee_num);
-                    $biz_ee_num = 0;
-
-                    array_push($csr_arr, $biz_arr);
-    
-                    $biz_last = $row->业务;
-                    $biz_arr['id'] = '1级^' . $row->业务;
-                    $biz_arr['value'] = $row->业务;
-                    $biz_arr['items'] = [];    
-                }
-
-                // team信息初始化
-                $team_last = $row->班组;
-                $team_arr['id'] = '2级^' . $row->班组;
-                $team_arr['value'] = $row->班组;
-                $team_arr['items'] = [];
-
-                array_push($team_arr['items'], $ee_arr);
-                $team_ee_num ++;
-            }
-
-            if ($team_last == $row->班组 && $ii == (count($results)-1))
-            {
-                // 二级
-                array_push($team_arr['items'], $ee_arr);
-                $team_ee_num ++;
-
-                $team_arr['value'] = sprintf('%s  (%d人)', $team_arr['value'], $team_ee_num);
-                $biz_ee_num = $biz_ee_num + $team_ee_num;
-
-                // 一级
-                $biz_arr['value'] = sprintf('%s  (%d人)', $biz_arr['value'], $biz_ee_num);
-                $biz_ee_num = 0;
-                array_push($biz_arr['items'], $team_arr);
-
-                // 最终
-                array_push($csr_arr, $biz_arr);
-            }
-
-            if ($team_last != $row->班组 && $ii == (count($results)-1))
-            {
-            }
-        }
+        // 人员
+        $csr_arr = $this->csr_tree();
 
         // 日期
         $date_arr = [];
@@ -465,7 +372,7 @@ class Duty extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('考勤录入',$menu_id,'');
+        $model->sql_log('考勤录入', $menu_id, '');
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -509,4 +416,80 @@ class Duty extends Controller
         }
     }
 
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 取出人员数据
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function csr_tree()
+    {
+        $model = new Mcommon();
+
+        $sql = sprintf('
+            select 业务,if(班组="","未分组",班组) as 班组,
+                姓名,工号,记录开始日期,记录结束日期 
+                from view_排班人员_202207');
+
+        $query = $model->select($sql);
+        $results = $query->getResult();
+
+        $up3_arr = []; // 
+        $up2_arr = []; // 业务
+        $up1_arr = []; // 班组
+
+        // 班组
+        foreach ($results as $row)
+        {
+            $ee_arr = [];
+            $ee_arr['id'] = sprintf('3级^%s^%s^%s^%s^%s', $row->业务, $row->班组, $row->姓名, $row->工号,$row->记录结束日期);
+            $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->工号);
+
+            $up1_id = sprintf('2级^%s^%s', $row->业务, $row->班组);
+            if (array_key_exists($up1_id, $up1_arr) == false)
+            {
+                $up1_arr[$up1_id] = [];
+                $up1_arr[$up1_id]['num'] = 0;
+                $up1_arr[$up1_id]['id'] = $up1_id;
+                $up1_arr[$up1_id]['value'] = $row->班组;
+                $up1_arr[$up1_id]['items'] = [];
+            }
+            $up1_arr[$up1_id]['num'] = count($up1_arr[$up1_id]['items'])+1;
+            $up1_arr[$up1_id]['value'] = sprintf('%s (%d人)', $row->班组, $up1_arr[$up1_id]['num']);
+            array_push($up1_arr[$up1_id]['items'], $ee_arr);
+        }
+
+        // 业务
+        foreach ($up1_arr as $up1)
+        {
+            $arr = explode('^', $up1['id']);
+            $up2_id = sprintf('1级^%s', $arr[1]);
+            if (array_key_exists($up2_id, $up2_arr) == false)
+            {
+                $up2_arr[$up2_id]['id'] = $up2_id;
+                $up2_arr[$up2_id]['num'] = 0;
+                $up2_arr[$up2_id]['value'] = $arr[1];
+                $up2_arr[$up2_id]['items'] = [];
+            }
+
+            $up2_arr[$up2_id]['num'] += $up1['num'];
+            $up2_arr[$up2_id]['value'] = sprintf('%s (%d人)', $arr[1], $up2_arr[$up2_id]['num']);
+            array_push($up2_arr[$up2_id]['items'], $up1);
+        }
+
+        $csr_arr = [];
+        $csr_arr['id'] = '0级^热线人员';
+        $csr_arr['value'] = '面试通过人员';
+        $csr_arr['items'] = [];
+        $csr_num = 0;
+
+        foreach ($up2_arr as $up2)
+        {
+            $csr_num += $up2['num'];
+            $csr_arr['value'] = sprintf('热线人员 (%d人)', $csr_num);
+            array_push($csr_arr['items'], $up2);
+        }
+
+        $tree_arr = [];
+        array_push($tree_arr, $csr_arr);
+
+        return $tree_arr;
+    }
 }

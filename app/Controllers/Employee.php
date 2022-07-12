@@ -1,5 +1,5 @@
 <?php
-/* v1.1.1.1.202207101700, from home */
+/* v1.1.2.1.202207121755, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -26,7 +26,7 @@ class Employee extends Controller
                 岗位名称,岗位类型
             from ee_onjob
             where 变更表项=""
-            order by 员工状态,部门名称,班组');
+            order by 员工状态,部门名称,班组,姓名');
 
         $query = $model->select($sql);
         $results = $query->getResult();
