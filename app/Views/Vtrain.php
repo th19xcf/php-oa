@@ -1,4 +1,4 @@
-<!-- v1.1.1.1.202207101700, from home -->
+<!-- v1.1.2.1.202207122135, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -182,7 +182,7 @@
                     return {
                         component: 'agSelectCellEditor',
                         params: {
-                            values: ['','在培','通过','离开']
+                            values: ['','在培','通过','离开','辞退']
                         },
                     };
                 case '培训业务':
