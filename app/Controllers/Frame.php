@@ -1,5 +1,5 @@
 <?php
-/* v4.5.1.1.202207101745, from home */
+/* v4.6.1.1.202207140025, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -233,7 +233,6 @@ class Frame extends Controller
                 $data_col_arr[$row->列名]['type'] = 'numericColumn';
                 $data_col_arr[$row->列名]['filter'] = 'agNumberColumnFilter';
             }
-            $data_col_arr[$row->列名]['warning'] = $row->显示异常;
 
             // 主键不能更改
             if ($row->主键 == 1) continue;
@@ -431,8 +430,9 @@ class Frame extends Controller
         }
 
         // 写日志
-        //$model->sql_log('查询',$menu_id,sprintf('表名=%s,条件=`%s`',$query_table,$where));
-        $model->sql_log('查询',$menu_id,sprintf('表名=%s,条件=%s',$query_table,''));
+        $log_where = $where;
+        str_replace('"','',$log_where);
+        $model->sql_log('查询', $menu_id, sprintf('表名=%s,条件=`%s`',$query_table,$log_where));
 
         // 读出数据
         $query = $model->select($sql);
@@ -777,7 +777,9 @@ class Frame extends Controller
         }
 
         // 写日志
-        $model->sql_log('条件查询',$menu_id,sprintf('表=%s,条件=%s',$query_table, $where));
+        $log_where = $where;
+        str_replace('"','',$log_where);
+        $model->sql_log('条件查询',$menu_id,sprintf('表=%s,条件=%s', $query_table, str_replace('"','',$log_where)));
 
         // 读出数据
         $query = $model->select($sql);
@@ -824,7 +826,9 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('更新', $menu_id,sprintf('sql=%s',$sql));
+        $log_sql = $sql;
+        str_replace('"', '', $log_sql);   
+        $model->sql_log('更新', $menu_id, sprintf('sql=%s',$log_sql));
 
         $num = $model->modify($sql);
 
@@ -869,7 +873,9 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('新增',$menu_id,sprintf('sql=%s',$sql));
+        $log_sql = $sql;
+        str_replace('"', '', $log_sql);
+        $model->sql_log('新增', $menu_id, sprintf('sql=%s',$log_sql));
 
         $num = $model->exec($sql);
 
@@ -890,7 +896,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('导出', $menu_id, '');
+        $model->sql_log('导出', $menu_id, $query_str);
 
         $query = $model->select($query_str);
 

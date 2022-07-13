@@ -1,4 +1,4 @@
-<!-- v3.11.1.1.202207101800, from home -->
+<!-- v4.1.1.1.202207140025, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -115,7 +115,11 @@
         foot_data = '&nbsp&nbsp<b>条件:{' + back_where + '}, 汇总:{' + back_group + '}, 合计:{}, 平均:{}, 最大:{}, 最小:{}</b>';
         $$('footbox').innerHTML = foot_data;
 
-        // 字段信息
+        // 字段数据
+        var columns_obj = JSON.parse('<?php echo $columns_json; ?>');
+        var columns_arr = Object.values(columns_obj);
+
+        // 工具栏数据
         var tb_obj = JSON.parse('<?php echo $toolbar_json; ?>');
 
         var update_flag = '';  // modify或add
@@ -189,16 +193,25 @@
 
         var data_grid_obj = JSON.parse('<?php echo $data_value_json; ?>');
 
-        // 数值排序
+        // 字段排序,设置cell格式
         for (var ii in data_columns_arr)
         {
-            if (data_columns_arr[ii].type == 'numericColumn')
+            for (var jj in columns_obj)
             {
-                data_columns_arr[ii].comparator = value_sort;
-            }
-            if (data_columns_arr[ii].warning != '')
-            {
-                data_columns_arr[ii].cellStyle = cell_style;
+                if (columns_obj[jj].列名 != data_columns_arr[ii].field) continue;
+                
+                if (columns_obj[jj].类型 == '数值')
+                {
+                    data_columns_arr[ii].comparator = value_sort;
+                }
+                if (columns_obj[jj].显示异常 != '' && columns_obj[jj].类型 == '数值')
+                {
+                    data_columns_arr[ii].cellStyle = value_cell_style;
+                }
+                else if (columns_obj[jj].显示异常 != '' && columns_obj[jj].类型 == '字符')
+                {
+                    data_columns_arr[ii].cellStyle = str_cell_style;
+                }
             }
         }
 
@@ -226,8 +239,6 @@
         }
 
         // 生成update_grid
-        var columns_obj = JSON.parse('<?php echo $columns_json; ?>');
-        var columns_arr = Object.values(columns_obj);
         var update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
         var object_obj = JSON.parse('<?php echo $object_json; ?>');
 
@@ -527,8 +538,6 @@
                     var nl_str = '<?php echo $next_func_condition; ?>';
                     var nl_arr = nl_str.split(',');
                     var send_obj = {};
-
-                    console.log('rows=', rows);
 
                     for (var ii in nl_arr)
                     {
@@ -924,11 +933,22 @@
             return valueA - valueB;
         }
 
-        function cell_style(params)
+        function value_cell_style(params)
         {
             if (params.value < 0)
             {
-                return {color:'red'};
+                return {'color':'red','font-weight':'bold'};
+            }
+            return null;
+        }
+
+        function str_cell_style(params)
+        {
+            //console.log(params);
+            var str = params.value;
+            if (str.indexOf('请补充') != -1)
+            {
+                return {'color':'green','font-weight':'bold'};
             }
             return null;
         }
