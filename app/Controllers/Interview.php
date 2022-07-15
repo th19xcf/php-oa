@@ -1,5 +1,5 @@
 <?php
-/* v1.1.2.1.202207121755, from office */
+/* v1.1.3.1.202207151040, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -22,14 +22,16 @@ class Interview extends Controller
         $sql = sprintf('
             select GUID,姓名,身份证号,手机号码,招聘渠道,
                 if(mod(substr(身份证号,17,1),2)=0,"女","男") as 性别,
+                一次面试结果 as 面试结果,
                 if(参培信息="","待参培",参培信息) as 参培信息,
                 一次面试日期 as 面试日期,预约培训日期
             from ee_interview
-            order by 参培信息,招聘渠道,预约培训日期,姓名');
+            order by 面试结果,参培信息,招聘渠道,预约培训日期,姓名');
 
         $query = $model->select($sql);
         $results = $query->getResult();
 
+        $up4_arr = []; // 面试结果
         $up3_arr = []; // 参培信息
         $up2_arr = []; // 预约培训日期
         $up1_arr = []; // 招聘渠道
@@ -41,7 +43,7 @@ class Interview extends Controller
             $ee_arr['id'] = sprintf('人员^%s^%s', $row->GUID, $row->姓名);
             $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->面试日期);
 
-            $up1_id = sprintf('招聘渠道^%s^%s^%s', $row->参培信息, $row->预约培训日期, $row->招聘渠道);
+            $up1_id = sprintf('招聘渠道^%s^%s^%s^%s', $row->面试结果, $row->参培信息, $row->预约培训日期, $row->招聘渠道);
             if (array_key_exists($up1_id, $up1_arr) == false)
             {
                 $up1_arr[$up1_id] = [];
@@ -59,17 +61,17 @@ class Interview extends Controller
         foreach ($up1_arr as $up1)
         {
             $arr = explode('^', $up1['id']);
-            $up2_id = sprintf('培训日期^%s^%s', $arr[1], $arr[2]);
+            $up2_id = sprintf('培训日期^%s^%s^%s', $arr[1], $arr[2], $arr[3]);
             if (array_key_exists($up2_id, $up2_arr) == false)
             {
                 $up2_arr[$up2_id]['id'] = $up2_id;
                 $up2_arr[$up2_id]['num'] = 0;
-                $up2_arr[$up2_id]['value'] = '预约培训日期 ' . $arr[2];
+                $up2_arr[$up2_id]['value'] = '预约培训日期 ' . $arr[3];
                 $up2_arr[$up2_id]['items'] = [];
             }
 
             $up2_arr[$up2_id]['num'] += $up1['num'];
-            $up2_arr[$up2_id]['value'] = sprintf('预约培训日期 %s (%d人)', $arr[2], $up2_arr[$up2_id]['num']);
+            $up2_arr[$up2_id]['value'] = sprintf('预约培训日期 %s (%d人)', $arr[3], $up2_arr[$up2_id]['num']);
             array_push($up2_arr[$up2_id]['items'], $up1);
         }
 
@@ -77,31 +79,49 @@ class Interview extends Controller
         foreach ($up2_arr as $up2)
         {
             $arr = explode('^', $up2['id']);
-            $up3_id = sprintf('参培信息^%s', $arr[1]);
+            $up3_id = sprintf('参培信息^%s^%s', $arr[1], $arr[2]);
             if (array_key_exists($up3_id, $up3_arr) == false)
             {
                 $up3_arr[$up3_id]['id'] = $up3_id;
                 $up3_arr[$up3_id]['num'] = 0;
-                $up3_arr[$up3_id]['value'] = $arr[1];
+                $up3_arr[$up3_id]['value'] = $arr[2];
                 $up3_arr[$up3_id]['items'] = [];
             }
 
             $up3_arr[$up3_id]['num'] += $up2['num'];
-            $up3_arr[$up3_id]['value'] = sprintf('%s (%d人)', $arr[1], $up3_arr[$up3_id]['num']);
+            $up3_arr[$up3_id]['value'] = sprintf('%s (%d人)', $arr[2], $up3_arr[$up3_id]['num']);
             array_push($up3_arr[$up3_id]['items'], $up2);
         }
 
+        // 面试结果
+        foreach ($up3_arr as $up3)
+        {
+            $arr = explode('^', $up3['id']);
+            $up4_id = sprintf('面试结果^%s', $arr[1]);
+            if (array_key_exists($up4_id, $up4_arr) == false)
+            {
+                $up4_arr[$up4_id]['id'] = $up4_id;
+                $up4_arr[$up4_id]['num'] = 0;
+                $up4_arr[$up4_id]['value'] = $arr[1];
+                $up4_arr[$up4_id]['items'] = [];
+            }
+
+            $up4_arr[$up4_id]['num'] += $up3['num'];
+            $up4_arr[$up4_id]['value'] = sprintf('%s (%d人)', $arr[1], $up4_arr[$up4_id]['num']);
+            array_push($up4_arr[$up4_id]['items'], $up3);
+        }
+
         $csr_arr = [];
-        $csr_arr['id'] = '0级^面试通过人员';
-        $csr_arr['value'] = '面试通过人员';
+        $csr_arr['id'] = '0级^面试人员';
+        $csr_arr['value'] = '面试人员';
         $csr_arr['items'] = [];
         $csr_num = 0;
 
-        foreach ($up3_arr as $up3)
+        foreach ($up4_arr as $up4)
         {
-            $csr_num += $up3['num'];
-            $csr_arr['value'] = sprintf('面试通过人员 (%d人)', $csr_num);
-            array_push($csr_arr['items'], $up3);
+            $csr_num += $up4['num'];
+            $csr_arr['value'] = sprintf('面试人员 (%d人)', $csr_num);
+            array_push($csr_arr['items'], $up4);
         }
 
         $tree_arr = [];
