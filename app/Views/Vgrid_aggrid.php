@@ -1,4 +1,4 @@
-<!-- v4.1.1.1.202207140025, from home -->
+<!-- v4.1.2.1.202207171030, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -107,6 +107,7 @@
         // footbox显示
         var foot_data = '';
         var foot_upkeep = '';
+        var foot_chart = '';
 
         var back_where = '<?php echo $back_where; ?>';
         var back_group = '<?php echo $back_group; ?>';
@@ -182,6 +183,8 @@
         // 生成图形用工具栏
         var chart_tb = new dhx.Toolbar('chart_tb', {css:'toobar-class'});
         chart_tb.data.add({id:'返回', type:'button', value:'返回'});
+        chart_tb.data.add({type:'separator'});
+        chart_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         chart_tb.data.add({id:'设置', type:'button', value:'设置'});
 
         // 生成data_grid
@@ -616,6 +619,9 @@
                     div_block('databox');
                     $$('footbox').innerHTML = foot_data;
                     break;
+                case '刷新':
+                    chart_draw();
+                    break;
                 case '设置':
                     tb_chart();
                     break;
@@ -944,9 +950,8 @@
 
         function str_cell_style(params)
         {
-            //console.log(params);
             var str = params.value;
-            if (str.indexOf('请补充') != -1)
+            if (str.indexOf('请补充') != -1 || str.indexOf('请校准') != -1)
             {
                 return {'color':'green','font-weight':'bold'};
             }
@@ -1003,77 +1008,91 @@
             }
             else if (id == '确定')
             {
-                win_chart_set.hide();
-
-                chart.dataset[0] = [];
-                chart_grid_options.api.forEachNode((rowNode, index) => 
-                {
-                    switch (rowNode.data['图形类型'])
-                    {
-                        case '饼图':
-                            chart.type = 'pie';
-                            break;
-                        case '折线图':
-                            chart.type = 'line';
-                            break;
-                        case '柱图':
-                            chart.type = 'bar';
-                            break;
-                        case '散点图':
-                            chart.type = 'scatter';
-                            break;
-                        case '雷达图':
-                            break;
-                    }
-
-                    console.log('坐标轴', rowNode.data['坐标轴']);
-
-                    switch (rowNode.data['坐标轴'])
-                    {
-                        case 'X轴 (下方)':
-                            chart.x1_name = rowNode.data['字段名称'];
-                            break;
-                        case 'X轴 (上方)':
-                            chart.x2_name = rowNode.data['字段名称'];
-                            break;
-                        case 'Y轴 (左侧)':
-                            chart.y1_name = rowNode.data['字段名称'];
-                            break;
-                        case 'Y轴 (右侧)':
-                            chart.y2_name = rowNode.data['字段名称'];
-                            break;
-                    }
-
-                    chart.dataset[0].push(rowNode.data['字段名称']);
-                });
-
-                var pos = 1;
-                for (var ii in data_grid_obj)
-                {
-                    chart.dataset[pos] = [];
-
-                    for (var jj in chart.dataset[0])
-                    {
-                        var fld_name = chart.dataset[0][jj];
-                        chart.dataset[pos].push(data_grid_obj[ii][fld_name]);
-                    }
-
-                    pos = pos + 1;
-
-                    chart.x1_data.push(data_grid_obj[ii][chart.x1_name])
-                    chart.y1_data.push(data_grid_obj[ii][chart.y1_name])
-                }
-
-                console.log('x1_data', chart.x1_name, chart.x1_data);
-                console.log('y1_data', chart.y1_name, chart.y1_data);
-                console.log('dataset', chart.dataset);
-
                 chart_draw();
             }
         });
 
         function chart_draw()
         {
+            win_chart_set.hide();
+
+            var chart_type = '';
+            var x_axis = ''
+            var y_axis = '';
+
+            chart.dataset[0] = [];
+            chart_grid_options.api.forEachNode((rowNode, index) => 
+            {
+                if (chart_type == '') chart_type = rowNode.data['图形类型'];
+
+                switch (rowNode.data['图形类型'])
+                {
+                    case '饼图':
+                        chart.type = 'pie';
+                        break;
+                    case '折线图':
+                        chart.type = 'line';
+                        break;
+                    case '柱图':
+                        chart.type = 'bar';
+                        break;
+                    case '散点图':
+                        chart.type = 'scatter';
+                        break;
+                    case '雷达图':
+                        break;
+                }
+
+                console.log('坐标轴', rowNode.data['坐标轴']);
+
+                switch (rowNode.data['坐标轴'])
+                {
+                    case 'X轴 (下方)':
+                        chart.x1_name = rowNode.data['字段名称'];
+                        if (x_axis == '') x_axis = rowNode.data['字段名称'];
+                        break;
+                    case 'X轴 (上方)':
+                        chart.x2_name = rowNode.data['字段名称'];
+                        if (x_axis == '') x_axis = rowNode.data['字段名称'];
+                        break;
+                    case 'Y轴 (左侧)':
+                        chart.y1_name = rowNode.data['字段名称'];
+                        if (y_axis == '') y_axis = rowNode.data['字段名称'];
+                        break;
+                    case 'Y轴 (右侧)':
+                        chart.y2_name = rowNode.data['字段名称'];
+                        if (y_axis == '') y_axis = rowNode.data['字段名称'];
+                        break;
+                }
+
+                chart.dataset[0].push(rowNode.data['字段名称']);
+            });
+
+            var pos = 1;
+            data_grid_options.api.forEachNodeAfterFilter((rowNode, index) => 
+            {
+                rowNode.data['字段名称'];
+                chart.dataset[pos] = [];
+
+                for (var jj in chart.dataset[0])
+                {
+                    var fld_name = chart.dataset[0][jj];
+                    chart.dataset[pos].push(rowNode.data[fld_name]);
+                }
+
+                pos = pos + 1;
+
+                chart.x1_data.push(rowNode.data[chart.x1_name])
+                chart.y1_data.push(rowNode.data[chart.y1_name])
+            });
+
+            console.log('x1_data', chart.x1_name, chart.x1_data);
+            console.log('y1_data', chart.y1_name, chart.y1_data);
+            console.log('dataset', chart.dataset);
+
+            foot_chart = '&nbsp&nbsp<b>图型:{' + chart_type + '}, x轴:{' + x_axis + '}, y轴:{' + y_axis + '}</b>';
+            $$('footbox').innerHTML = foot_chart;
+
             var chart_win = echarts.init($$('chart_draw'));
             var data_source = [];
             for (var ii in chart.dataset)
