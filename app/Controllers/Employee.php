@@ -1,5 +1,5 @@
 <?php
-/* v1.1.2.1.202207121755, from office */
+/* v1.1.4.1.202207192345, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -23,7 +23,8 @@ class Employee extends Controller
             select GUID,姓名,工号1 as 工号,员工状态,
                 部门名称,
                 if(班组="","未分班组",班组) as 班组,
-                岗位名称,岗位类型
+                岗位名称,岗位类型,
+                培训完成日期
             from ee_onjob
             where 变更表项=""
             order by 员工状态,部门名称,班组,姓名');
@@ -40,7 +41,7 @@ class Employee extends Controller
         {
             $ee_arr = [];
             $ee_arr['id'] = sprintf('EE^%s^%s', $row->GUID, $row->姓名);
-            $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->工号);
+            $ee_arr['value'] = sprintf('%s (工号%s) (培训完成%s)', $row->姓名, $row->工号,$row->培训完成日期);
 
             $team_id = sprintf('TEAM^%s^%s^%s', $row->员工状态, $row->部门名称, $row->班组);
             if (array_key_exists($team_id, $team_arr) == false)

@@ -1,4 +1,4 @@
-<!-- v1.3.2.1.202207101800, from home -->
+<!-- v1.4.1.1.202207192345, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -46,6 +46,8 @@
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         main_tb.data.add({id:'提交', type:'button', value:'提交'});
+        main_tb.data.add({type:'spacer'});
+        main_tb.data.add({id:'导入', type:'button', value:'导入'});
 
         var csr_obj = JSON.parse('<?php echo $csr_json; ?>');
         var csr_tree = new dhx.Tree('csrbox', {checkbox: true});
@@ -69,6 +71,9 @@
                     break;
                 case '提交':
                     tree_submit();
+                    break;
+                case '导入':
+                    parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','Upload/init/<?php echo $import_func_id; ?>');
                     break;
             }
         });

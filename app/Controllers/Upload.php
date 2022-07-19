@@ -1,5 +1,5 @@
 <?php
-/* v1.5.1.1.202207101740, from home */
+/* v1.5.2.1.202207192345, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -131,11 +131,13 @@ class Upload extends Controller
         $query = $model->select($sql);
         $results = $query->getResult();
 
+        $col_arr = [];
         $fld_arr = [];
         $fld_ceate_str = '';
 
         foreach ($results as $row)
         {
+            array_push($col_arr, $row->列名);
             array_push($fld_arr, $row->字段名);
 
             if ($fld_ceate_str != '') $fld_ceate_str = $fld_ceate_str . ',';
@@ -149,7 +151,7 @@ class Upload extends Controller
             $tmp_table_name, $fld_ceate_str);
         $rc = $model->exec($sql);
 
-        $rc = $model->add_by_trans($tmp_table_name, $sheet_data, $fld_arr);
+        $rc = $model->add_by_trans($tmp_table_name, $sheet_data, $col_arr, $fld_arr);
         if ($rc == -1)
         {
             $this->json_data(400, '导入失败,请重试！', 0);

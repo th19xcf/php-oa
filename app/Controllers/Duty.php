@@ -1,5 +1,5 @@
 <?php
-/* v1.3.1.1.202207122115, from home */
+/* v1.4.1.1.202207192345, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -136,6 +136,9 @@ class Duty extends Controller
         $send['date_json'] = json_encode($date_arr);
         $send['task_json'] = json_encode($task_arr);
         $send['duty_json'] = json_encode($duty_arr);
+
+        $send['import_func_id'] = '7012';
+        $send['import_func_name'] = '排班';
 
         echo view('VScheduling.php', $send);
     }

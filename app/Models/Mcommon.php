@@ -1,6 +1,6 @@
 <?php
 
-/* v1.2.2.1.202206021225, from home */
+/* v1.2.3.1.202207192345, from home */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -57,7 +57,7 @@ class Mcommon extends Model
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 使用事务方式插入
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function add_by_trans($table, $data, $fld_arr)
+    public function add_by_trans($table, $data, $col_arr, $fld_arr)
     {
         $db = db_connect('btdc');
 
@@ -66,7 +66,8 @@ class Mcommon extends Model
         $num = 0;
         foreach ($data as $arr)
         {
-            if (!array_diff($arr, $fld_arr)) continue;  //表头
+            $arr = array_slice($arr, 0, count($fld_arr));
+            if (!array_diff($arr, $col_arr)) continue;  //表头
             $arr = array_combine($fld_arr, $arr);  //修改键名
             $db->table($table)->insert($arr);
             $num = $num + $db->affectedRows();
