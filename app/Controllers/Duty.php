@@ -1,5 +1,5 @@
 <?php
-/* v1.4.1.1.202207192345, from home */
+/* v1.4.2.1.202207200035, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -124,7 +124,7 @@ class Duty extends Controller
         foreach ($up2_arr as $up2)
         {
             $up3_num += $up2['num'];
-            $up3_arr['value'] = sprintf('面试通过人员 (%d)', $up3_num);
+            $up3_arr['value'] = sprintf('每月班务 (%d)', $up3_num);
             array_push($up3_arr['items'], $up2);
         }
 
