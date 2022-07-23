@@ -1,6 +1,6 @@
 <?php
 
-/* v1.2.3.1.202207192345, from home */
+/* v1.2.4.1.202207232335, from home */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -75,7 +75,7 @@ class Mcommon extends Model
 
         $db->transComplete();
 
-        if ($this->db->transStatus() == FALSE)
+        if ($this->db->transStatus() == false)
         {
             log_message('error', '事务执行错误');
             return -1;

@@ -1,5 +1,5 @@
 <?php
-/* v1.5.2.1.202207192345, from home */
+/* v1.6.2.1.202207232335, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -25,7 +25,8 @@ class Upload extends Controller
         $send = [];
 
         $sql = sprintf('
-            select 功能编码,导入模块,表单变量,模板文件
+            select 功能编码,导入模块,表单变量,模板文件,
+                表头行,数据行
             from def_function as t1
             left join def_import_config as t2
             on t1.查询模块=t2.导入模块
@@ -116,16 +117,17 @@ class Upload extends Controller
         $highestRow = $sheet->getHighestRow(); // 总行数
         $highestColumn = $sheet->getHighestColumn(); // 总列数
 
-        $sheet_data = $sheet->toArray(true, true, true, true, true);
+        #$sheet_data = $sheet->toArray(true, true, true, true, true);
+        $sheet_data = $sheet->toArray($nullValue='');
 
         //数据库操作
         $tmp_table_name = sprintf('tmp_%s_%s_%s_%s', $menu_id, $menu_1, $menu_2, $user_workid);
 
         $sql = sprintf(
-                'select 列名,字段名,字段类型,字段长度,
-                    校验类型,对象,导入类型,系统变量
-                from def_import_column
-                where 导入模块="%s" and 系统变量=""', $import);
+            'select 列名,字段名,字段类型,字段长度,
+                校验信息,校验类型,对象,导入类型,系统变量
+            from def_import_column
+            where 导入模块="%s" and 系统变量=""', $import);
 
         $model = new Mcommon();
         $query = $model->select($sql);
@@ -154,7 +156,7 @@ class Upload extends Controller
         $rc = $model->add_by_trans($tmp_table_name, $sheet_data, $col_arr, $fld_arr);
         if ($rc == -1)
         {
-            $this->json_data(400, '导入失败,请重试！', 0);
+            $this->json_data(400, '导入失败,事务执行错误,请重试！', 0);
             return;
         }
 
@@ -164,34 +166,43 @@ class Upload extends Controller
             switch ($row->校验类型)
             {
                 case '固定值':
-                    $sql = sprintf('
-                        select t1.%s as 变量值,t2.对象值 as 对象值
-                        from
-                        (
-                            select %s 
-                            from %s
-                            group by %s
-                        ) as t1
-                        left join
-                        (
-                            select 对象名称,对象值
-                            from def_object
-                            where 对象名称="%s"
-                        ) as t2 on t1.%s=t2.对象值
-                        where t2.对象值 is null',
-                        $row->字段名, $row->字段名, $tmp_table_name, $row->字段名,
-                        $row->对象, $row->字段名);
+                case '条件':
+                    if ($row->校验类型 == '固定值')
+                    {
+                        $sql = sprintf('
+                            select t1.变量值 as 变量值,t2.对象值 as 对象值
+                            from
+                            (
+                                select %s as 变量值
+                                from %s
+                                group by 变量值
+                            ) as t1
+                            left join
+                            (
+                                select 对象名称,对象值
+                                from def_object
+                                where 对象名称="%s"
+                            ) as t2 on t1.变量值=t2.对象值
+                            where t2.对象值 is null',
+                            $row->校验信息, $tmp_table_name, $row->对象);
+                    }
+                    else if ($row->校验类型 == '条件')
+                    {
+                        $sql = sprintf('
+                        select %s from %s where %s',
+                        $row->列名, $tmp_table_name, $row->校验信息);
+                    }
 
-                    $errs = $model->select($sql)->getResult();
+                    $errs = $model->select($sql)->getResultArray();
 
                     if (count($errs) != 0)
                     {
                         $err_arr = [];
                         foreach ($errs as $err)
                         {
-                            array_push($err_arr, $err->变量值);
+                            array_push($err_arr, $err[$row->列名]);
                         }
-                        $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录 [%s]',$row->字段名, implode(',', $err_arr)), 0);
+                        $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录 {%s}',$row->字段名, implode(',', $err_arr)), 0);
                         return;
                     }
                     break;
