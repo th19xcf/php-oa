@@ -1,4 +1,4 @@
-<!-- v4.1.2.1.202207171030, from home -->
+<!-- v4.1.3.1.202207241720, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -529,7 +529,7 @@
                     var rows = data_grid_options.api.getSelectedRows();
                     if (rows.length == 0)
                     {
-                        alert('请先选择要修改的记录');
+                        alert('请先选择要钻取的记录');
                         break;
                     }
                     if (rows.length > 1)
