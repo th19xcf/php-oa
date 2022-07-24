@@ -1,5 +1,5 @@
 <?php
-/* v4.6.1.1.202207140025, from home */
+/* v4.6.2.1.202207241515, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -344,8 +344,8 @@ class Frame extends Controller
             $next_func_id = $row->钻取模块;
             $next_func_name = $row->钻取名称;
             $next_func_condition = $row->钻取条件;
-            str_replace(' ', '' , $next_func_condition);
-            str_replace('，', ',' , $next_func_condition);
+            str_replace(' ', '', $next_func_condition);
+            str_replace('，', ',', $next_func_condition);
 
             $import_func_id = $row->导入模块;
             $import_func_name = $row->导入名称;
@@ -430,9 +430,7 @@ class Frame extends Controller
         }
 
         // 写日志
-        $log_where = $where;
-        str_replace('"','',$log_where);
-        $model->sql_log('查询', $menu_id, sprintf('表名=%s,条件=`%s`',$query_table,$log_where));
+        $model->sql_log('查询', $menu_id, sprintf('表名=%s,条件=%s', $query_table, str_replace('"','',$where)));
 
         // 读出数据
         $query = $model->select($sql);
@@ -474,7 +472,7 @@ class Frame extends Controller
         $send['object_json'] = json_encode($object_arr);
         $send['func_id'] = $menu_id;
         $send['primary_key'] = $primary_key;
-        $send['back_where'] = strtr($where, '"', "'");
+        $send['back_where'] = strtr($where, '"', '');
         $send['back_group'] = $group;
         $send['next_func_id'] = $next_func_id;
         $send['next_func_name'] = $next_func_name;
@@ -777,9 +775,7 @@ class Frame extends Controller
         }
 
         // 写日志
-        $log_where = $where;
-        str_replace('"','',$log_where);
-        $model->sql_log('条件查询',$menu_id,sprintf('表=%s,条件=%s', $query_table, str_replace('"','',$log_where)));
+        $model->sql_log('条件查询',$menu_id,sprintf('表=%s,条件=%s', $query_table, str_replace('"','',$where)));
 
         // 读出数据
         $query = $model->select($sql);
@@ -826,9 +822,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $log_sql = $sql;
-        str_replace('"', '', $log_sql);   
-        $model->sql_log('更新', $menu_id, sprintf('sql=%s',$log_sql));
+        $model->sql_log('更新', $menu_id, sprintf('sql=%s',str_replace('"','',$sql)));
 
         $num = $model->modify($sql);
 
@@ -873,9 +867,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $log_sql = $sql;
-        str_replace('"', '', $log_sql);
-        $model->sql_log('新增', $menu_id, sprintf('sql=%s',$log_sql));
+        $model->sql_log('新增', $menu_id, sprintf('sql=%s',str_replace('"','',$sql)));
 
         $num = $model->exec($sql);
 
