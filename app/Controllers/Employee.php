@@ -1,5 +1,5 @@
 <?php
-/* v1.1.4.1.202207192345, from home */
+/* v1.1.5.1.202207260025, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -273,12 +273,12 @@ class Employee extends Controller
             $user_workid = $session->get('user_workid');
 
             //增加新记录
-            $fld_str ='姓名,身份证号,手机号码,招聘渠道,
-                员工类别,部门编码,部门名称,班组,岗位名称,岗位类型,
-                工号1,工号2,实习结束日期,培训信息,培训开始日期,
-                培训完成日期,一阶段日期,二阶段日期,员工状态,员工阶段,
-                离职日期,离职原因,派遣公司,记录开始日期,
-                录入来源,录入人';
+            $fld_str ='姓名,身份证号,手机号码,招聘渠道,' .
+                '员工类别,部门编码,部门名称,班组,岗位名称,岗位类型,' .
+                '工号1,工号2,实习结束日期,培训信息,培训开始日期,' .
+                '培训完成日期,一阶段日期,二阶段日期,员工状态,员工阶段,' .
+                '离职日期,离职原因,派遣公司,记录开始日期,' .
+                '录入来源,录入人';
             $fld_arr = explode(',', $fld_str);
 
             $col_str = '';
@@ -324,5 +324,8 @@ class Employee extends Controller
                 where GUID in (%s)',
                 $update_str, $arg['生效日期'], $guid_str);
         }
+
+        $num = $model->exec($sql_insert);
+        $num = $model->exec($sql_update);
     }
 }

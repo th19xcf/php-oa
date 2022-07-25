@@ -1,4 +1,4 @@
-<!-- v1.1.1.1.202207101700, from home -->
+<!-- v1.1.2.1.202207260025, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -170,15 +170,11 @@
                 csr_guid.push(item[1]);
             }
             $$('info_box').innerHTML = '&nbsp&nbsp选定人员:' + csr_str;
-            console.log('csr_guid', csr_guid);
         });
 
         //grid event
         function cellEditorSelector(params)
         {
-            var col_name = params.data.列名;
-            console.log(params.data);
-
             switch (params.data.表项)
             {
                 case '岗位名称':
@@ -199,7 +195,7 @@
                     return {
                         component: 'agSelectCellEditor',
                         params: {
-                            values: ['','离职']
+                            values: ['在职','离职']
                         },
                     };
                 case '生效日期':
@@ -217,7 +213,7 @@
             [
                 {'表项':'属性', '值':'输入新值'},
                 {'表项':'生效日期', '值':''},
-                {'表项':'工号', '值':''},
+                {'表项':'工号1', '值':''},
                 {'表项':'岗位名称', '值':''},
                 {'表项':'岗位类型', '值':''},
                 {'表项':'部门名称', '值':''},
@@ -283,6 +279,20 @@
                 return;
             }
 
+            if (arg_obj['员工状态'] == '在职')
+            {
+                if (arg_obj['离职日期'] != '')
+                {
+                    alert('在职,不要填写离职日期');
+                    return;
+                }
+                if (arg_obj['离职原因'] != '')
+                {
+                    alert('在职,不要填写离职原因');
+                    return;
+                }
+            }
+
             if (arg_obj['员工状态'] == '离职')
             {
                 if (arg_obj['离职日期'] == '')
@@ -294,12 +304,13 @@
                 {
                     alert('离职,请填写离职原因');
                     return;
-                }                
+                }
             }
 
             dhx.ajax.post('<?php base_url(); ?>/Employee/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert('修改成功');
+                window.location.reload();
             }).catch(function (err)
             {
                 alert('修改失败, ' + " " + err.statusText);

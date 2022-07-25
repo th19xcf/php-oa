@@ -1,5 +1,5 @@
 <?php
-/* v1.1.2.1.202207121755, from office*/
+/* v1.1.3.1.202207260025, from home*/
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -223,9 +223,8 @@ class Train extends Controller
             $user_workid = $session->get('user_workid');
 
             $sql = sprintf('
-                insert into ee_onjob (姓名,身份证号,手机号码,培训开始日期,培训完成日期,录入来源,录入人)
-                select 姓名,身份证号,手机号码,培训开始日期,培训完成日期,
-                    "培训表转入" as 录入来源, "%s" as 录入人
+                insert into ee_onjob (姓名,身份证号,手机号码,培训开始日期,培训完成日期,记录开始日期,录入来源,录入人)
+                select 姓名,身份证号,手机号码,培训开始日期,培训完成日期,培训完成日期 as 记录开始日期,"培训表转入" as 录入来源, "%s" as 录入人
                 from ee_train
                 where GUID in (%s)', $user_workid, $guid_str);
 
