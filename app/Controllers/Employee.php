@@ -1,5 +1,5 @@
 <?php
-/* v1.1.5.1.202207260025, from home */
+/* v1.1.6.1.202207271825, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -247,12 +247,16 @@ class Employee extends Controller
                 where 身份证号 in
                     (
                         select 身份证号
-                        from ee_onjob
-                        where GUID in (%s)
+                        from
+                        (
+                            select 身份证号
+                            from ee_onjob
+                            where GUID in (%s)
+                        ) as ta
                     )',
                 $arg['员工状态'], $arg['离职日期'], $arg['离职原因'], $guid_str);
 
-            $num = $model->exec($sql);            
+            $num = $model->exec($sql);
         }
         else
         {
