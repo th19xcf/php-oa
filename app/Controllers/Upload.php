@@ -1,5 +1,5 @@
 <?php
-/* v1.6.2.1.202207232335, from home */
+/* v1.6.3.1.202207281220, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -175,6 +175,7 @@ class Upload extends Controller
                             (
                                 select %s as 变量值
                                 from %s
+                                where %s
                                 group by 变量值
                             ) as t1
                             left join
@@ -184,7 +185,7 @@ class Upload extends Controller
                                 where 对象名称="%s"
                             ) as t2 on t1.变量值=t2.对象值
                             where t2.对象值 is null',
-                            $row->校验信息, $tmp_table_name, $row->对象);
+                            $row->字段名, $tmp_table_name, $row->校验信息, $row->对象);
                     }
                     else if ($row->校验类型 == '条件')
                     {

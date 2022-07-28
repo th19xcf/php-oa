@@ -1,5 +1,5 @@
 <?php
-/* v1.1.6.1.202207271825, from home */
+/* v1.1.7.1.202207281030, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -327,9 +327,9 @@ class Employee extends Controller
                 set 变更表项="%s",记录结束日期="%s"
                 where GUID in (%s)',
                 $update_str, $arg['生效日期'], $guid_str);
-        }
 
-        $num = $model->exec($sql_insert);
-        $num = $model->exec($sql_update);
+                $num = $model->exec($sql_insert);
+                $num = $model->exec($sql_update);
+        }
     }
 }
