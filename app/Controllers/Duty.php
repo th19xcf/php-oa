@@ -1,5 +1,5 @@
 <?php
-/* v1.4.2.1.202207200035, from home */
+/* v1.4.3.1.202208050020, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -64,8 +64,8 @@ class Duty extends Controller
         $sql = sprintf('
             select 月份,业务,班务编码,班务名称,班务时段,班务小时数 
             from biz_duty_rule
-            group by 业务,班务编码
-            order by 业务,班务编码');
+            group by 月份,业务,班务编码
+            order by 月份,业务,班务编码');
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -76,11 +76,10 @@ class Duty extends Controller
         $month = [];
         $duty_arr = [];
 
-        // 业务
         foreach ($results as $row)
         {
             $item_arr = [];
-            $item_arr['id'] = sprintf('班务^%s^%s^%.1f', $row->班务编码, $row->班务时段, $row->班务小时数);
+            $item_arr['id'] = sprintf('班务^%s^%s^%.1f^%s', $row->班务编码, $row->班务时段, $row->班务小时数, $row->月份);
             $item_arr['value'] = sprintf('%s (%s^%.1f)', $row->班务名称, $row->班务时段, $row->班务小时数);
 
             $up1_id = sprintf('业务^%s^%s', $row->月份, $row->业务);
@@ -140,7 +139,7 @@ class Duty extends Controller
         $send['import_func_id'] = '7012';
         $send['import_func_name'] = '排班';
 
-        echo view('VScheduling.php', $send);
+        echo view('Vscheduling.php', $send);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -325,7 +324,7 @@ class Duty extends Controller
         $sql = sprintf('
             select 业务,if(班组="","未分组",班组) as 班组,
                 姓名,工号,记录开始日期,记录结束日期 
-                from view_排班人员_202207');
+                from view_排班人员_202208');
 
         $query = $model->select($sql);
         $results = $query->getResult();
