@@ -1,5 +1,5 @@
 <?php
-/* v4.6.2.1.202207241515, from home */
+/* v4.6.3.1.202208052000, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -133,11 +133,58 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 通用初始查询模块
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function init($menu_id='', $front_where='')
+    public function init($menu_id='', $front_id='', $front_where='')
     {
         $model = new Mcommon();
 
-        $front_where = json_decode($front_where);
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $dept_cond = $session->get($menu_id.'-dept_cond');
+        $dept_fld = $session->get($menu_id.'-dept_fld');
+        $add_authz = $session->get($menu_id.'-add_authz');
+        $modify_authz = $session->get($menu_id.'-modify_authz');
+        $delete_authz = $session->get($menu_id.'-delete_authz');
+        $import_authz = $session->get($menu_id.'-import_authz');
+        $export_authz = $session->get($menu_id.'-export_authz');
+        $caller_func_condition = $session->get($menu_id.'-caller_func_condition_'.$front_id);
+
+        // 处理钻取功能相关数据
+        $cond_arr = json_decode($front_where);
+        $front_where = [];
+        $caller_col_arr = [];
+
+        if ($front_id != '')
+        {
+            if ($caller_func_condition != '')
+            {
+                $caller_col = [];
+                $col_arr = explode(',', $caller_func_condition);
+                foreach ($col_arr as $col_str)
+                {
+                    if (strpos($col_str,'^') != false)
+                    {
+                        $arr = explode('^', $col_str);
+                        $caller_col['caller_col'] = $arr[0];
+                        $caller_col['called_col'] = $arr[1];
+                    }
+                    else
+                    {
+                        $caller_col['caller_col'] = $col_str;
+                        $caller_col['called_col'] = $col_str;
+                    }
+                    array_push($caller_col_arr, $caller_col);
+                }
+            }
+
+            foreach ($cond_arr as $key => $value)
+            {
+                foreach ($caller_col_arr as $col_arr)
+                {
+                    if ($key != $col_arr['caller_col']) continue;
+                    $front_where[$col_arr['called_col']] = $value;
+                }
+            }
+        }
 
         $primary_key = '';
 
@@ -275,8 +322,8 @@ class Frame extends Controller
 
             array_push($cond_value_arr, $cond);
 
-            // 匹配front_where
-            if ($front_where == '') continue;
+            // 匹配钻取条件
+            if ($front_id == '') continue;
             foreach ($front_where as $key => $value)
             {
                 if ($key != $row->列名) continue;
@@ -285,10 +332,10 @@ class Frame extends Controller
                 {
                     case '字符':
                     case '日期':
-                        $front_where->$key = sprintf('%s="%s"', $row->查询名, $value);
+                        $front_where[$key] = sprintf('%s="%s"', $row->查询名, $value);
                         break;
                     case '数值':
-                        $front_where->$key = sprintf('%s=%s', $row->查询名, $value);
+                        $front_where[$key] = sprintf('%s=%s', $row->查询名, $value);
                         break;
                 }
             }
@@ -372,24 +419,13 @@ class Frame extends Controller
             from %s,(select @i:=0) as xh', 
             $select_str, $query_table);
 
-        // 部门授权条件
-        // 从session中取出数据
-        $session = \Config\Services::session();
-        $dept_cond = $session->get($menu_id.'-dept_cond');
-        $dept_fld = $session->get($menu_id.'-dept_fld');
-        $add_authz = $session->get($menu_id.'-add_authz');
-        $modify_authz = $session->get($menu_id.'-modify_authz');
-        $delete_authz = $session->get($menu_id.'-delete_authz');
-        $import_authz = $session->get($menu_id.'-import_authz');
-        $export_authz = $session->get($menu_id.'-export_authz');
-
         // 加上初始查询条件
         if ($query_where != '')
         {
             $where = $query_where;
         }
 
-        // 条件语句加上部门授权
+        // 条件语句加上部门授权条件
         if ($dept_cond != '' && $dept_fld != '')
         {
             $where = ($where == '') ? $dept_cond : $where . ' and ' . $dept_cond;
@@ -446,9 +482,17 @@ class Frame extends Controller
         $session_arr[$menu_id.'-back_where'] = $where;
         $session_arr[$menu_id.'-back_group'] = $group;
         $session_arr[$menu_id.'-back_order'] = $order;
-        $session_arr[$menu_id.'-next_func_id'] = $next_func_id;
-        $session_arr[$menu_id.'-next_func_name'] = $next_func_name;
-        $session_arr[$menu_id.'-next_func_condition'] = $next_func_condition;
+
+        if ($next_func_id != '')
+        {
+            $session_arr[$menu_id.'-next_func_id'] = $next_func_id;
+            $session_arr[$menu_id.'-next_func_name'] = $next_func_name;
+            $session_arr[$menu_id.'-next_func_condition'] = $next_func_condition;
+
+            $session_arr[$next_func_id.'-caller_func_id_'.$menu_id] = $menu_id;
+            $session_arr[$next_func_id.'-caller_func_condition_'.$menu_id] = $next_func_condition;
+        }
+
         $session_arr[$menu_id.'-import_func_id'] = $import_func_id;
         $session_arr[$menu_id.'-import_func_name'] = $import_func_name;
         $session_arr[$menu_id.'-update_table'] = $update_table;
@@ -476,7 +520,19 @@ class Frame extends Controller
         $send['back_group'] = $group;
         $send['next_func_id'] = $next_func_id;
         $send['next_func_name'] = $next_func_name;
-        $send['next_func_condition'] = $next_func_condition;
+
+        $send['next_func_condition'] = '';
+        $col_arr = explode(',', $next_func_condition);
+        foreach ($col_arr as $col)
+        {
+            $arr = explode('^', $col);
+            if ($send['next_func_condition'] != '')
+            {
+                $send['next_func_condition'] = $send['next_func_condition'] . ',';
+            }
+            $send['next_func_condition'] = $send['next_func_condition'] . $arr[0];
+        }
+
         $send['import_func_id'] = $import_func_id;
         $send['import_func_name'] = $import_func_name;
         $send['tip_column'] = $tip_column;

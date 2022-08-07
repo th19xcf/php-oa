@@ -1,4 +1,4 @@
-<!-- v4.1.3.1.202207241720, from home -->
+<!-- v4.1.4.1.202208052000, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -550,7 +550,7 @@
                     send_str = JSON.stringify(send_obj);
                     //console.log('send=', send_obj, send_str);
 
-                    parent.window.goto('<?php echo $next_func_id; ?>','钻取-'+'<?php echo $next_func_name; ?>','Frame/init/<?php echo $next_func_id; ?>/'+send_str);
+                    parent.window.goto('<?php echo $next_func_id; ?>','钻取-'+'<?php echo $next_func_name; ?>','Frame/init/<?php echo $next_func_id; ?>/<?php echo $func_id; ?>/'+send_str);
                     break;
                 case '导入':
                     parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','Upload/init/<?php echo $import_func_id; ?>');
