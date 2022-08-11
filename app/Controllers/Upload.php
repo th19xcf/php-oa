@@ -1,5 +1,5 @@
 <?php
-/* v1.6.3.1.202207281220, from office */
+/* v1.6.4.1.202208112330, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -125,9 +125,9 @@ class Upload extends Controller
 
         $sql = sprintf(
             'select 列名,字段名,字段类型,字段长度,
-                校验信息,校验类型,对象,导入类型,系统变量
+                校验信息,校验类型,对象,导入类型,系统变量,顺序
             from def_import_column
-            where 导入模块="%s" and 系统变量=""', $import);
+            where 导入模块="%s" and 系统变量="" and 顺序>0', $import);
 
         $model = new Mcommon();
         $query = $model->select($sql);
@@ -169,15 +169,29 @@ class Upload extends Controller
                 case '条件':
                     if ($row->校验类型 == '固定值')
                     {
-                        $sql = sprintf('
-                            select t1.变量值 as 变量值,t2.对象值 as 对象值
-                            from
-                            (
+                        $src = '';
+                        if ($row->校验信息 == '')
+                        {
+                            $src = sprintf('
+                                select %s as 变量值
+                                from %s
+                                group by 变量值',
+                                $row->字段名, $tmp_table_name);
+                        }
+                        else
+                        {
+                            $src = sprintf('
                                 select %s as 变量值
                                 from %s
                                 where %s
-                                group by 变量值
-                            ) as t1
+                                group by 变量值',
+                                $row->字段名, $tmp_table_name, $row->校验信息);
+
+                        }
+
+                        $sql = sprintf('
+                            select t1.变量值 as 变量值,t2.对象值 as 对象值
+                            from (%s) as t1
                             left join
                             (
                                 select 对象名称,对象值
@@ -185,7 +199,7 @@ class Upload extends Controller
                                 where 对象名称="%s"
                             ) as t2 on t1.变量值=t2.对象值
                             where t2.对象值 is null',
-                            $row->字段名, $tmp_table_name, $row->校验信息, $row->对象);
+                            $src, $row->对象);
                     }
                     else if ($row->校验类型 == '条件')
                     {
@@ -233,7 +247,7 @@ class Upload extends Controller
                 replace(系统变量," ","") as 系统变量,
                 replace(表单变量," ","") as 表单变量
             from def_import_column
-            where 导入模块="%s"', $import);
+            where 导入模块="%s" and 顺序>0', $import);
 
         $query = $model->select($sql);
         $results = $query->getResult();
