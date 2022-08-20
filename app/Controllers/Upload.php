@@ -1,5 +1,5 @@
 <?php
-/* v1.6.4.1.202208112330, from home */
+/* v1.6.5.1.202208191340, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -173,39 +173,41 @@ class Upload extends Controller
                         if ($row->校验信息 == '')
                         {
                             $src = sprintf('
-                                select %s as 变量值
+                                select "%s" as 字段名, %s as 字段值
                                 from %s
-                                group by 变量值',
-                                $row->字段名, $tmp_table_name);
+                                group by 字段值',
+                                $row->字段名, $row->字段名, $tmp_table_name);
                         }
                         else
                         {
                             $src = sprintf('
-                                select %s as 变量值
+                                select "%s" as 字段名, %s as 字段值
                                 from %s
                                 where %s
-                                group by 变量值',
-                                $row->字段名, $tmp_table_name, $row->校验信息);
-
+                                group by 字段值',
+                                $row->字段名, $row->字段名, $tmp_table_name, $row->校验信息);
                         }
 
                         $sql = sprintf('
-                            select t1.变量值 as 变量值,t2.对象值 as 对象值
+                            select 
+                                t1.字段名 as 字段名,
+                                t1.字段值 as 字段值,
+                                ifnull(t2.对象值,"") as 对象值
                             from (%s) as t1
                             left join
                             (
                                 select 对象名称,对象值
                                 from def_object
                                 where 对象名称="%s"
-                            ) as t2 on t1.变量值=t2.对象值
+                            ) as t2 on t1.字段值=t2.对象值
                             where t2.对象值 is null',
                             $src, $row->对象);
                     }
                     else if ($row->校验类型 == '条件')
                     {
                         $sql = sprintf('
-                        select %s from %s where %s',
-                        $row->列名, $tmp_table_name, $row->校验信息);
+                            select "%s" as 字段名, %s as 字段值 from %s where %s',
+                            $row->列名, $row->列名, $tmp_table_name, $row->校验信息);
                     }
 
                     $errs = $model->select($sql)->getResultArray();
@@ -215,9 +217,9 @@ class Upload extends Controller
                         $err_arr = [];
                         foreach ($errs as $err)
                         {
-                            array_push($err_arr, $err[$row->列名]);
+                            array_push($err_arr, $err['字段值']);
                         }
-                        $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录 {%s}',$row->字段名, implode(',', $err_arr)), 0);
+                        $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录 {%s}',$row->列名, implode(',', $err_arr)), 0);
                         return;
                     }
                     break;

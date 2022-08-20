@@ -1,5 +1,5 @@
 <?php
-/* v4.6.3.1.202208052000, from home */
+/* v4.6.4.1.202208200830, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -940,6 +940,15 @@ class Frame extends Controller
         $query_str = $session->get($menu_id.'-query_str');
 
         $table = new \CodeIgniter\View\Table();
+
+        $template = 
+        [
+            'cell_start' => '<td style="vnd.ms-excel.numberformat:@">',
+            'cell_end' => '</td>',
+            'cell_alt_start' => '<td style="vnd.ms-excel.numberformat:@">',
+            'cell_alt_end' => '</td>'
+        ];
+        $table->setTemplate($template);
 
         $model = new Mcommon();
 
