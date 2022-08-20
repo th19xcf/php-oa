@@ -1,5 +1,5 @@
 <?php
-/* v4.6.4.1.202208200830, from home */
+/* v4.6.5.1.202208202205, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -158,7 +158,7 @@ class Frame extends Controller
             if ($caller_func_condition != '')
             {
                 $caller_col = [];
-                $col_arr = explode(',', $caller_func_condition);
+                $col_arr = explode(';', $caller_func_condition);
                 foreach ($col_arr as $col_str)
                 {
                     if (strpos($col_str,'^') != false)
@@ -306,7 +306,7 @@ class Frame extends Controller
 
             array_push($update_value_arr, $value_arr);
 
-            // 前端cond_grid信息
+            // 前端要显示的cond_grid条件信息
             $cond = array();
             $cond['列名'] = $row->列名;
             $cond['字段名'] = $row->字段名;
@@ -322,6 +322,7 @@ class Frame extends Controller
 
             array_push($cond_value_arr, $cond);
 
+            /*
             // 匹配钻取条件
             if ($front_id == '') continue;
             foreach ($front_where as $key => $value)
@@ -338,6 +339,16 @@ class Frame extends Controller
                         $front_where[$key] = sprintf('%s=%s', $row->查询名, $value);
                         break;
                 }
+            }
+            */
+        }
+
+        // 匹配钻取条件(没有获得字段类型,数值会有bug)
+        if ($front_id != '')
+        {
+            foreach ($front_where as $key => $value)
+            {
+                $front_where[$key] = sprintf('%s="%s"', $key, $value);
             }
         }
 
@@ -392,7 +403,7 @@ class Frame extends Controller
             $next_func_name = $row->钻取名称;
             $next_func_condition = $row->钻取条件;
             str_replace(' ', '', $next_func_condition);
-            str_replace('，', ',', $next_func_condition);
+            str_replace('；', ';', $next_func_condition);
 
             $import_func_id = $row->导入模块;
             $import_func_name = $row->导入名称;
@@ -522,7 +533,7 @@ class Frame extends Controller
         $send['next_func_name'] = $next_func_name;
 
         $send['next_func_condition'] = '';
-        $col_arr = explode(',', $next_func_condition);
+        $col_arr = explode(';', $next_func_condition);
         foreach ($col_arr as $col)
         {
             $arr = explode('^', $col);
