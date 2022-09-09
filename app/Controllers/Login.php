@@ -1,6 +1,6 @@
 <?php
 
-/* v1.3.2.1.202206261345, from home */
+/* v2.1.1.1.202208262355, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -31,13 +31,15 @@ class Login extends Controller
 	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function checkin()
     {
+        $company_id = $this->request->getPost('company_id');
         $user_workid = $this->request->getPost('userid');
         $pswd = $this->request->getPost('userpwd');
 
-        $sql = sprintf(
-            'select 员工编号,姓名,身份证号,工号,角色
+        $sql = sprintf('
+            select 员工编号,姓名,身份证号,工号,角色,员工属地
             from def_user
-            where 工号="%s" and 密码="%s" ', $user_workid, $pswd);
+            where 工号="%s" and 密码="%s" ',
+            $user_workid, $pswd);
 
         $model = new Mcommon();
         $query = $model->select($sql);
@@ -53,6 +55,12 @@ class Login extends Controller
 
         foreach ($results as $row)
         {
+            if ($row->员工属地 != $company_id)
+            {
+                $Arg['msg'] = '属地错误！';
+                exit('10');
+            }
+
             // 存入session
             $session_arr = [];
             $session_arr['user_id'] = $row->员工编号;
@@ -60,6 +68,7 @@ class Login extends Controller
             $session_arr['user_name'] = $row->姓名;
             $session_arr['user_role'] = $row->角色;
             $session_arr['user_pswd'] = $pswd;
+            $session_arr['user_location'] = $row->员工属地;
 
             $session = \Config\Services::session();
             $session->set($session_arr);

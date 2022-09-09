@@ -1,4 +1,4 @@
-<!-- v1.0.0.1.202110071730, from home -->
+<!-- v2.1.1.1.202208262355, from home -->
 
 <!DOCTYPE html>
 <html style="display: block;">
@@ -7,17 +7,6 @@
     <title>客服运营支撑系统</title>
     <link rel="stylesheet" type="text/css" href="assets/css/logincss2.css">
     <script src="assets/js/jquery.js"></script>
-
-    <script>
-        var _hmt = _hmt || [];
-        (function()
-        {
-            var hm = document.createElement("script");
-            hm.src = "https://hm.baidu.com/hm.js?93de95783156ef8a2a91cfbd3598f906";
-            var s = document.getElementsByTagName("script")[0]; 
-            s.parentNode.insertBefore(hm, s);
-        })();
-    </script>
 </head>
 
 <body>
@@ -36,17 +25,18 @@
             <div id="appLoginTab" class="loginForm">
                 <div id="login126">
                     <div id="idInputLine2" class="loginFormIpt showPlaceholder">
-                        <select id="ddl_company" name="company_id" disabled ="disabled">
-                            <option value="btdc" >队列编号</option>
+                        <select id="ddl_company" name="company_id" title="请输入部门名称" style="width:120px;">
+                            <option value="" >请选择属地</option>
+                            <option value="北京总公司" >北京总公司</option>
+                            <option value="河北分公司" >河北分公司</option>
+                            <option value="四川分公司" >四川分公司</option>
                         </select>
 
-                        <input class="formIpt2" tabindex="1" title="请输入帐号" id="idInput2" type="text" value="" autocomplete="off" style="width:120px;">
+                        <!--<input class="formIpt2" tabindex="1" title="请输入帐号" id="idInput2" type="text" value="" autocomplete="off" style="width:120px;">-->
                     </div>
                     <div id="idInputLine" class="loginFormIpt showPlaceholder">
-                            <b class="ico ico-uid"></b>
-    
-                            <input class="formIpt" tabindex="1" title="请输入帐号" id="idInput" type="text" value="" autocomplete="off">
-
+                        <b class="ico ico-uid"></b>
+                        <input class="formIpt" tabindex="1" title="请输入帐号" id="idInput" type="text" value="" autocomplete="off">
                     </div>
                     <!-- 普通密码登录 -->
                     <div id="normalLogin">
@@ -54,6 +44,7 @@
                             <b class="ico ico-pwd"></b>
                             <input class="formIpt" tabindex="2" title="请输入密码" id="pwdInput" name="password" type="password">
                         </div>
+                        <!--
                         <div id="div_checkcode" style="padding-bottom: 16px; margin-top:10px;display:none;">
                             <div style="clear:both; width:270px;">
                                 <input type="text" id="tb_validcode" tabindex="3" style="width:75px;height:25px;margin: -20px 10px 0 12px;" />
@@ -61,6 +52,7 @@
                                 <a href="#" onClick="ChgValidCode();" style="float:right;margin-top:7px; margin-right:5px; font-size:x-small;">看不清楚</a>
                             </div>
                         </div>
+                        -->
                         <div class="loginFormCheck">
                             <div id="lfAutoLogin" class="loginFormCheckInner">
                                 <b class="ico ico-checkbox"></b>
@@ -139,7 +131,7 @@
                 var $lgBtn = $(this);
                 $lgBtn.attr("disabled", "disabled");
                 var parms = {
-                    company_id: gSltTab == 1 ? "-1" : $("#idInput2").val(),
+                    company_id: gSltTab == 1 ? "-1" : $("#ddl_company").val(),
 
                     userid: $.trim($("#idInput").val()),
                     userpwd: $.trim($("#pwdInput").val()),
@@ -176,6 +168,7 @@
                                     case "2": showTip("用户不存在！请使用手机号登录！"); break;
                                     case "3": showTip("密码不正确！r="+r); break;
                                     case "4": showTip("账号被锁定，请与管理员联系！"); break;
+                                    case "10": showTip("属地错误！"); break;
                                     default: showTip("异常错误！r="+r); break;
                                 }
                                 $lgBtn.removeAttr("disabled");

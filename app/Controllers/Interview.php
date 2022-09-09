@@ -1,5 +1,5 @@
 <?php
-/* v1.1.3.1.202207151040, from office */
+/* v1.2.1.0.202209100025, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -19,6 +19,10 @@ class Interview extends Controller
     {
         $model = new Mcommon();
 
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_location = $session->get('user_location');
+
         $sql = sprintf('
             select GUID,姓名,身份证号,手机号码,招聘渠道,
                 if(mod(substr(身份证号,17,1),2)=0,"女","男") as 性别,
@@ -26,7 +30,9 @@ class Interview extends Controller
                 if(参培信息="","待参培",参培信息) as 参培信息,
                 一次面试日期 as 面试日期,预约培训日期
             from ee_interview
-            order by 面试结果,参培信息,招聘渠道,预约培训日期,姓名');
+            where 属地="%s"
+            order by 面试结果,参培信息,招聘渠道,预约培训日期,姓名',
+            $user_location);
 
         $query = $model->select($sql);
         $results = $query->getResult();

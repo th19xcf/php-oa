@@ -1,5 +1,5 @@
 <?php
-/* v1.1.1.0.202208252130, from home */
+/* v1.2.1.1.202209100025, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -19,14 +19,21 @@ class Store extends Controller
     {
         $model = new Mcommon();
 
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_location = $session->get('user_location');
+
         $sql = sprintf('
-            select GUID,姓名,身份证号,性别,手机号码,微信,QQ,
+            select GUID,姓名,身份证号,性别,年龄,手机号码,
+                学校,专业,现住址,属地,
                 邀约结果,招聘渠道,信息来源,邀约日期,邀约人,
                 邀约业务,邀约岗位,预约面试日期,
                 if(面试信息="","待面试",面试信息) as 面试信息,
                 录入来源,录入人,录入时间
             from ee_store
-            order by 邀约结果,面试信息,预约面试日期,招聘渠道,姓名');
+            where 属地="%s"
+            order by 邀约结果,面试信息,预约面试日期,招聘渠道,姓名',
+            $user_location);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -133,7 +140,7 @@ class Store extends Controller
         $send['func_id'] = $menu_id;
         $send['tree_json'] = json_encode($tree_arr);
         $send['grid_json'] = json_encode($grid_arr);
-        $send['import_func_id'] = '2022';
+        $send['import_func_id'] = '2012';
         $send['import_func_name'] = '邀约人员';
 
         echo view('Vstore.php', $send);
@@ -155,20 +162,35 @@ class Store extends Controller
         if ($arr[0] == '人员')
         {
             $sql = sprintf('
-                select 姓名,招聘渠道,面试业务,面试岗位,一次面试日期 as 面试日期,
-                    一次面试结果 as 面试结果,预约培训日期,参培信息
-                from ee_interview
+                select 姓名,身份证号,性别,年龄,手机号码,
+                    学校,专业,现住址,属地,招聘渠道,渠道名称,信息来源,
+                    邀约业务,邀约岗位,邀约日期,邀约人,
+                    预约面试日期,邀约结果,面试信息
+                from ee_store
                 where GUID=%s', $arr[1]);
             $query = $model->select($sql);
             $results = $query->getResult();
-        
-            array_push($rows_arr, array('表项'=>'属性', '值'=>'人员'));
+
+            array_push($rows_arr, array('表项'=>'属性', '值'=>'查询邀约信息'));
             array_push($rows_arr, array('表项'=>'姓名', '值'=>$results[0]->姓名));
+            array_push($rows_arr, array('表项'=>'身份证号', '值'=>$results[0]->身份证号));
+            array_push($rows_arr, array('表项'=>'性别', '值'=>$results[0]->性别));
+            array_push($rows_arr, array('表项'=>'年龄', '值'=>$results[0]->年龄));
+            array_push($rows_arr, array('表项'=>'手机号码', '值'=>$results[0]->手机号码));
+            array_push($rows_arr, array('表项'=>'学校', '值'=>$results[0]->学校));
+            array_push($rows_arr, array('表项'=>'专业', '值'=>$results[0]->专业));
+            array_push($rows_arr, array('表项'=>'现住址', '值'=>$results[0]->现住址));
+            array_push($rows_arr, array('表项'=>'属地', '值'=>$results[0]->属地));
             array_push($rows_arr, array('表项'=>'招聘渠道', '值'=>$results[0]->招聘渠道));
-            array_push($rows_arr, array('表项'=>'面试日期', '值'=>$results[0]->面试日期));
-            array_push($rows_arr, array('表项'=>'面试结果', '值'=>$results[0]->面试结果));
-            array_push($rows_arr, array('表项'=>'预约培训日期', '值'=>$results[0]->预约培训日期));
-            array_push($rows_arr, array('表项'=>'参培信息', '值'=>$results[0]->参培信息));
+            array_push($rows_arr, array('表项'=>'渠道名称', '值'=>$results[0]->渠道名称));
+            array_push($rows_arr, array('表项'=>'信息来源', '值'=>$results[0]->信息来源));
+            array_push($rows_arr, array('表项'=>'邀约业务', '值'=>$results[0]->邀约业务));
+            array_push($rows_arr, array('表项'=>'邀约岗位', '值'=>$results[0]->邀约岗位));
+            array_push($rows_arr, array('表项'=>'邀约日期', '值'=>$results[0]->邀约日期));
+            array_push($rows_arr, array('表项'=>'邀约人', '值'=>$results[0]->邀约人));
+            array_push($rows_arr, array('表项'=>'预约面试日期', '值'=>$results[0]->预约面试日期));
+            array_push($rows_arr, array('表项'=>'邀约结果', '值'=>$results[0]->邀约结果));
+            #array_push($rows_arr, array('表项'=>'面试信息', '值'=>$results[0]->面试信息));
         }
         else
         {
@@ -179,7 +201,7 @@ class Store extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 修改面试人员信息
+    // 修改邀约人员信息
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function upkeep($menu_id='', $type='')
     {
@@ -196,37 +218,26 @@ class Store extends Controller
             }
             else
             {
-                $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
+                $guid_str = sprintf('%s,"%s"', $guid_str, $guid);
             }
         }
 
         $sql = sprintf('
-            update ee_interview 
-            set 参培信息="%s" 
+            update ee_store 
+            set 姓名="%s",身份证号="%s",性别="%s",年龄=%d,
+                手机号码="%s",学校="%s",专业="%s",现住址="%s",
+                招聘渠道="%s",渠道名称="%s",信息来源="%s"
             where GUID in (%s) ',
-            $arg['参培信息'], $guid_str);
+            $arg['姓名'],$arg['身份证号'],$arg['性别'],$arg['年龄'],
+            $arg['手机号码'],$arg['学校'],$arg['专业'],$arg['现住址'],
+            $arg['招聘渠道'],$arg['渠道名称'],$arg['信息来源'],
+            $guid_str);
 
         $num = $model->exec($sql);
-
-        // 已参培记录导入ee_train
-        if ($arg['参培信息'] == '已参培')
-        {
-            // 从session中取出数据
-            $session = \Config\Services::session();
-            $user_workid = $session->get('user_workid');
-
-            $sql = sprintf('
-                insert into ee_train (姓名,身份证号,手机号码,面试信息,录入来源,录入人)
-                select 姓名,身份证号,手机号码,"有" as 面试信息,
-                    "面试表转入" as 录入来源, "%s" as 录入人
-                from ee_interview
-                where GUID in (%s)', $user_workid, $guid_str);
-            $num = $model->exec($sql);
-        }
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 新增面试人员信息
+    // 新增邀约人员信息
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function insert($menu_id='', $type='')
     {
@@ -250,9 +261,61 @@ class Store extends Controller
         }
 
         $sql = sprintf('
-            insert into ee_interview (%s) values (%s)',
+            insert into ee_store (%s) values (%s)',
             $flds_str, $values_str);
 
         $num = $model->exec($sql);
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 转面试
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function tran($menu_id='', $type='')
+    {
+        $arg = $this->request->getJSON(true);
+
+        $model = new Mcommon();
+
+        $guid_str = '';
+        foreach ($arg['人员'] as $guid)
+        {
+            if ($guid_str == '')
+            {
+                $guid_str = sprintf('"%s"', $guid);
+            }
+            else
+            {
+                $guid_str = sprintf('%s,"%s"', $guid_str, $guid);
+            }
+        }
+
+        $sql = sprintf('
+            update ee_store
+            set 面试信息="%s" 
+            where GUID in (%s) ',
+            $arg['面试信息'], $guid_str);
+
+        $num = $model->exec($sql);
+
+        // 邀约记录导入面试表ee_interview
+        if ($arg['面试信息'] == '转面试')
+        {
+            // 从session中取出数据
+            $session = \Config\Services::session();
+            $user_workid = $session->get('user_workid');
+
+            $sql = sprintf('
+                insert into ee_interview (姓名,身份证号,手机号码,属地,
+                    招聘渠道,渠道名称,信息来源,实习结束日期,
+                    面试业务,面试岗位,一次面试日期,一次面试人,一次面试结果,
+                    预约培训日期,邀约信息,录入来源,录入人)
+                select 姓名,身份证号,手机号码,属地,
+                    招聘渠道,渠道名称,信息来源,"",
+                    邀约业务,邀约岗位,"","","",
+                    "","通过","邀约表转入" as 录入来源,"%s" as 录入人
+                from ee_store
+                where GUID in (%s)', $user_workid, $guid_str);
+            $num = $model->exec($sql);
+        }
     }
 }

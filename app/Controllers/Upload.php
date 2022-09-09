@@ -1,5 +1,5 @@
 <?php
-/* v1.6.5.1.202208191340, from office */
+/* v1.7.1.1.202209100025, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -25,8 +25,8 @@ class Upload extends Controller
         $send = [];
 
         $sql = sprintf('
-            select 功能编码,导入模块,表单变量,模板文件,
-                表头行,数据行
+            select 功能编码,导入模块,导入条件,
+                表单变量,模板文件,表头行,数据行
             from def_function as t1
             left join def_import_config as t2
             on t1.查询模块=t2.导入模块
@@ -74,6 +74,7 @@ class Upload extends Controller
 
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
+        $user_location = $session->get('user_location');
         $menu_1 = $session->get($menu_id.'-menu_1');
         $menu_2 = $session->get($menu_id.'-menu_2');
         $import = $session->get($menu_id.'-import');
@@ -123,11 +124,12 @@ class Upload extends Controller
         //数据库操作
         $tmp_table_name = sprintf('tmp_%s_%s_%s_%s', $menu_id, $menu_1, $menu_2, $user_workid);
 
-        $sql = sprintf(
-            'select 列名,字段名,字段类型,字段长度,
+        $sql = sprintf('
+            select 列名,字段名,字段类型,字段长度,
                 校验信息,校验类型,对象,导入类型,系统变量,顺序
             from def_import_column
-            where 导入模块="%s" and 系统变量="" and 顺序>0', $import);
+            where 导入模块="%s" and 系统变量="" and 顺序>0
+            order by 顺序', $import);
 
         $model = new Mcommon();
         $query = $model->select($sql);
@@ -219,7 +221,7 @@ class Upload extends Controller
                         {
                             array_push($err_arr, $err['字段值']);
                         }
-                        $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录 {%s}',$row->列名, implode(',', $err_arr)), 0);
+                        $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录 {%s}', $row->列名, implode(',', $err_arr)), 0);
                         return;
                     }
                     break;
@@ -229,7 +231,8 @@ class Upload extends Controller
         }
 
         // 插入正式表
-        $sql = sprintf('select 表名,表单变量
+        $sql = sprintf('
+            select 表名,导入条件,表单变量
             from def_import_config
             where 导入模块="%s"', $import);
 
@@ -237,14 +240,16 @@ class Upload extends Controller
         $results = $query->getResult();
 
         $dest_table_name = '';
+        $import_condition = '';
         foreach ($results as $row)
         {
             $dest_table_name = $row->表名;
+            $import_condition = $row->导入条件;
             break;
         }
 
-        $sql = sprintf(
-            'select 列名,字段名,字段类型,字段长度,
+        $sql = sprintf('
+            select 列名,字段名,字段类型,字段长度,
                 校验类型,对象,导入类型,
                 replace(系统变量," ","") as 系统变量,
                 replace(表单变量," ","") as 表单变量
@@ -269,6 +274,9 @@ class Upload extends Controller
             switch ($row->系统变量)
             {
                 case '':
+                    break;
+                case '$属地':
+                    array_push($tmp_fld_arr, sprintf('"%s" as %s', $user_location, $row->字段名));
                     break;
                 case '$工号':
                     array_push($tmp_fld_arr, sprintf('"%s" as %s', $user_workid, $row->字段名));
@@ -299,10 +307,14 @@ class Upload extends Controller
         $tmp_fld_str = implode(',', $tmp_fld_arr);
         $dest_fld_str = implode(',', $dest_fld_arr);
         $sql_insert = sprintf('insert into %s (%s) select %s from %s', $dest_table_name, $dest_fld_str, $tmp_fld_str, $tmp_table_name);
+        if ($import_condition != '')
+        {
+            $sql_insert = sprintf('%s where %s', $sql_insert ,$import_condition);
+        }
         $rc = $model->exec($sql_insert);
 
         // 写日志
-        $model->sql_log('导入成功',$menu_id,'');
+        $model->sql_log('导入成功', $menu_id, '');
 
         $this->json_data(200, '导入成功', 0);
     }
@@ -310,13 +322,13 @@ class Upload extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 自定义函数
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function json_data($status=200, $msg, $count, $data =[])
+    public function json_data($status=200, $msg='', $count=0)
     {
         $res = [
             'status' => $status,
-            'msg'=>$msg,
-            'number'=>$count,
-            'data'=>$data
+            'msg' => $msg,
+            'number' => $count
+            #'data'=>$data
         ];
 
         echo json_encode($res);
