@@ -1,5 +1,5 @@
 <?php
-/* v1.1.3.1.202207260025, from home*/
+/* v1.1.4.1.202209151010, from surface*/
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -19,13 +19,19 @@ class Train extends Controller
     {
         $model = new Mcommon();
 
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_location = $session->get('user_location');
+
         $sql = sprintf('
             select GUID,姓名,身份证号,手机号码,培训状态,培训批次,
                 concat("培训师_",if(培训老师="","待补充",培训老师)) as 培训老师,
                 培训开始日期,预计完成日期,培训完成日期,
                 培训离开日期,培训离开原因
             from ee_train
-            order by 培训状态,培训老师,培训开始日期,姓名');
+            where 属地="%s"
+            order by 培训状态,培训老师,培训开始日期,姓名',
+            $user_location);
 
         $query = $model->select($sql);
         $results = $query->getResult();

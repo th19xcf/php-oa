@@ -1,6 +1,6 @@
 <?php
 
-/* v1.2.4.1.202207232335, from home */
+/* v2.1.1.1.202209102330, from surface */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -66,9 +66,6 @@ class Mcommon extends Model
         $num = 0;
         foreach ($data as $arr)
         {
-            $arr = array_slice($arr, 0, count($fld_arr));
-            if (!array_diff($arr, $col_arr)) continue;  //表头
-            $arr = array_combine($fld_arr, $arr);  //修改键名
             $db->table($table)->insert($arr);
             $num = $num + $db->affectedRows();
         }

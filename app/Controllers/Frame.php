@@ -1,5 +1,5 @@
 <?php
-/* v4.6.5.1.202208202205, from home */
+/* v5.1.1.1.202209112125, from surface */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -46,9 +46,10 @@ class Frame extends Controller
             'select 
                 t1.角色编号,t1.角色名称,t1.功能赋权,t1.部门赋权,
                 t1.新增授权,t1.修改授权,t1.删除授权,t1.导入授权,t1.导出授权,
-                t2.部门字段,t2.功能编码,
-                t2.一级菜单,t2.二级菜单,t2.功能模块,t2.查询模块,
-                t2.菜单顺序,t2.菜单显示
+                t2.功能编码,t2.一级菜单,t2.二级菜单,t2.功能模块,t2.查询模块,
+                t2.菜单顺序,t2.菜单显示,
+                ifnull(t3.部门字段,"") as 部门字段,
+                ifnull(t3.属地字段,"") as 属地字段
             from def_role as t1
             left join
             (
@@ -57,6 +58,7 @@ class Frame extends Controller
                 from def_function
                 where 菜单顺序>0
             ) as t2 on t1.功能赋权=t2.功能编码
+            left join def_query_config as t3 on t2.查询模块=t3.查询模块
             where t1.角色编号 in (%s)
             group by t1.功能赋权
             order by t2.菜单顺序', $role_str);
@@ -65,7 +67,7 @@ class Frame extends Controller
         $query = $model->select($sql);
         $results = $query->getResult();
 
-        $json = array();
+        $json = [];
 
         $authz = [];
         foreach ($results as $row)
@@ -77,10 +79,10 @@ class Frame extends Controller
             str_replace('，', ',' , $dept_str);
             $dept_arr = explode(',', $dept_str);
 
-            $dept_cond = $session->get($row->功能赋权.'-dept_cond'); //多个角色部门权限合并
+            $dept_cond = '';
             foreach ($dept_arr as $dept)
             {
-                if ($dept == '')
+                if ($dept == '' || $dept_fld == '')  //优化
                 {
                     break;
                 }
@@ -97,8 +99,8 @@ class Frame extends Controller
             // 存入session
             $session_arr = [];
             $session_arr[$row->功能赋权.'-dept_authz'] = $row->部门赋权;
-            $session_arr[$row->功能赋权.'-dept_fld'] = $row->部门字段;
             $session_arr[$row->功能赋权.'-dept_cond'] = $dept_cond;
+            $session_arr[$row->功能赋权.'-dept_fld'] = $row->部门字段;
             $session_arr[$row->功能赋权.'-menu_1'] = $row->一级菜单;
             $session_arr[$row->功能赋权.'-menu_2'] = $row->二级菜单;
             $session_arr[$row->功能赋权.'-add_authz'] = $row->新增授权;
@@ -140,7 +142,8 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $dept_cond = $session->get($menu_id.'-dept_cond');
-        $dept_fld = $session->get($menu_id.'-dept_fld');
+        //$dept_fld = $session->get($menu_id.'-dept_fld');
+        $user_location = $session->get('user_location');
         $add_authz = $session->get($menu_id.'-add_authz');
         $modify_authz = $session->get($menu_id.'-modify_authz');
         $delete_authz = $session->get($menu_id.'-delete_authz');
@@ -188,13 +191,13 @@ class Frame extends Controller
 
         $primary_key = '';
 
-        $data_col_arr = array();  // 前端data_grid列信息,用于显示
-        $columns_arr = array();  // 列信息
-        $send_columns_arr = array(); // 传递到前端的列信息,查询名为公式,前端报错
-        $tb_arr = array();  // 控制菜单栏
+        $data_col_arr = [];  // 前端data_grid列信息,用于显示
+        $columns_arr = [];  // 列信息
+        $send_columns_arr = []; // 传递到前端的列信息,查询名为公式,前端报错
+        $tb_arr = [];  // 控制菜单栏
 
-        $update_value_arr = array();  // 前端update_grid值信息,用于显示
-        $cond_value_arr = array();  // 条件设置信息
+        $update_value_arr = [];  // 前端update_grid值信息,用于显示
+        $cond_value_arr = [];  // 条件设置信息
 
         $tip_column = '';  // 前端foot显示的字段
 
@@ -211,11 +214,11 @@ class Frame extends Controller
         $data_col_arr['序号']['resizable'] = true;
         $data_col_arr['序号']['sortable'] = true;
 
-        $object_arr = array();  // 下拉选择的对象值
+        $object_arr = [];  // 下拉选择的对象值
 
         // 读出列配置信息
         $sql = sprintf('
-            select 功能编码,查询模块,字段模块,部门字段,
+            select 功能编码,查询模块,字段模块,部门字段,属地字段,
                 列名,列类型,列宽度,字段名,查询名,对象,
                 可修改,可筛选,主键,赋值类型,
                 显示提示,显示异常,列顺序
@@ -235,7 +238,7 @@ class Frame extends Controller
             }
 
             // 列信息
-            $arr = array();
+            $arr = [];
 
             $arr['列名'] = $row->列名;
             $arr['类型'] = $row->列类型;
@@ -285,7 +288,7 @@ class Frame extends Controller
             if ($row->主键 == 1) continue;
 
             // 前端update_grid值
-            $value_arr = array();
+            $value_arr = [];
             $value_arr['列名'] = $row->列名;
             $value_arr['字段名'] = $row->字段名;
             $value_arr['列类型'] = $row->列类型;
@@ -293,7 +296,7 @@ class Frame extends Controller
 
             if ($row->赋值类型 == '下拉')
             {
-                $object_arr[$row->列名] = array();
+                $object_arr[$row->列名] = [];
                 $object_arr[$row->列名][0] = '';
 
                 $qry = $model->select(sprintf('select 对象值 from def_object where 对象名称="%s" order by 顺序',$row->对象));
@@ -307,7 +310,7 @@ class Frame extends Controller
             array_push($update_value_arr, $value_arr);
 
             // 前端要显示的cond_grid条件信息
-            $cond = array();
+            $cond = [];
             $cond['列名'] = $row->列名;
             $cond['字段名'] = $row->字段名;
             $cond['列类型'] = $row->列类型;
@@ -357,6 +360,8 @@ class Frame extends Controller
         $group = '';
         $order = '';
         $query_table = '';
+        $dept_fld = '';  //部门字段
+        $location_fld = '';  //属地字段
         $query_where = '';
         $query_group = '';
         $query_order = '';
@@ -368,6 +373,7 @@ class Frame extends Controller
 
         $sql = sprintf('
             select t1.功能编码,查询表名,更新表名,
+                部门字段,属地字段,
                 查询条件,汇总条件,排序条件,初始条数,
                 钻取模块,钻取条件,
                 ifnull(t2.钻取名称,"") as 钻取名称,
@@ -395,6 +401,8 @@ class Frame extends Controller
         {
             $query_table = $row->查询表名;
             $result_count = $row->初始条数;
+            $dept_fld = $row->部门字段;
+            $location_fld = $row->属地字段;
             $query_where = $row->查询条件;
             $query_group = $row->汇总条件;
             $query_order = $row->排序条件;
@@ -437,9 +445,16 @@ class Frame extends Controller
         }
 
         // 条件语句加上部门授权条件
-        if ($dept_cond != '' && $dept_fld != '')
+        if ($dept_cond)
         {
             $where = ($where == '') ? $dept_cond : $where . ' and ' . $dept_cond;
+        }
+
+        // 条件语句加上属地条件
+        if ($location_fld != '')
+        {
+            $location_cond = sprintf('%s="%s"', $location_fld, $user_location);
+            $where = shu'di($where == '') ? $location_cond : $where . ' and ' . $location_cond;
         }
 
         // 数据钻取,条件语句加上前端选定的条件

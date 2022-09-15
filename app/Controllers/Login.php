@@ -1,6 +1,6 @@
 <?php
 
-/* v2.1.1.1.202208262355, from home */
+/* v2.1.1.1.202209112125, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -53,13 +53,10 @@ class Login extends Controller
             exit('2');
         }
 
+        // 验证属地
         foreach ($results as $row)
         {
-            if ($row->员工属地 != $company_id)
-            {
-                $Arg['msg'] = '属地错误！';
-                exit('10');
-            }
+            if ($row->员工属地 != $company_id) continue;
 
             // 存入session
             $session_arr = [];
@@ -77,5 +74,8 @@ class Login extends Controller
 
             exit('1');
         }
+
+        $Arg['msg'] = '属地错误！';
+        exit('10');
     }
 }

@@ -1,5 +1,5 @@
 <?php
-/* v1.7.1.1.202209100025, from surface */
+/* v2.1.1.1.202209102330, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -121,6 +121,12 @@ class Upload extends Controller
         #$sheet_data = $sheet->toArray(true, true, true, true, true);
         $sheet_data = $sheet->toArray($nullValue='');
 
+        if(count($sheet_data) <= 1)
+        {
+            $this->json_data(400, '导入的表是空表,请重试！', 0);
+            return;
+        }
+
         //数据库操作
         $tmp_table_name = sprintf('tmp_%s_%s_%s_%s', $menu_id, $menu_1, $menu_2, $user_workid);
 
@@ -141,11 +147,33 @@ class Upload extends Controller
 
         foreach ($results as $row)
         {
+            if (in_array($row->列名, $sheet_data[0]) == false)
+            {
+                $this->json_data(400, sprintf('导入失败,没有要求的字段"%s"',$row->列名), 0);
+                return;
+            }
+
             array_push($col_arr, $row->列名);
             array_push($fld_arr, $row->字段名);
 
             if ($fld_ceate_str != '') $fld_ceate_str = $fld_ceate_str . ',';
             $fld_ceate_str = sprintf('%s %s varchar(%s) not null default ""', $fld_ceate_str, $row->字段名, $row->字段长度);
+        }
+
+        $fact_data = [];
+        $ii = -1;
+        foreach ($sheet_data as $data)
+        {
+            $ii ++;
+            if ($ii == 0) continue;
+
+            $arr = [];
+            $data = array_combine($sheet_data[0], $data);  //修改键名
+            foreach ($col_arr as $col)
+            {
+                $arr[$col] = $data[$col];
+            }
+            array_push($fact_data, $arr);
         }
 
         $sql = sprintf('drop table if exists %s;', $tmp_table_name);
@@ -155,7 +183,7 @@ class Upload extends Controller
             $tmp_table_name, $fld_ceate_str);
         $rc = $model->exec($sql);
 
-        $rc = $model->add_by_trans($tmp_table_name, $sheet_data, $col_arr, $fld_arr);
+        $rc = $model->add_by_trans($tmp_table_name, $fact_data, $col_arr, $fld_arr);
         if ($rc == -1)
         {
             $this->json_data(400, '导入失败,事务执行错误,请重试！', 0);
@@ -328,7 +356,6 @@ class Upload extends Controller
             'status' => $status,
             'msg' => $msg,
             'number' => $count
-            #'data'=>$data
         ];
 
         echo json_encode($res);
