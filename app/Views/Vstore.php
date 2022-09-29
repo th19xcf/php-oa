@@ -1,4 +1,4 @@
-<!-- v1.2.1.1.202209100025, from surface -->
+<!-- v1.2.3.1.202209171725, from surface -->
 <!DOCTYPE html>
 <html>
 
@@ -79,7 +79,7 @@
         {
             columnDefs: 
             [
-                {field:'表项', editable:false},
+                {field:'表项', width:130, editable:false},
                 {field:'值', width:280, cellEditorSelector:cellEditorSelector}
             ],
             defaultColDef: 
@@ -146,8 +146,6 @@
                     editable = true;
                     break;
                 case '新增邀约信息':
-                    var rowNode = grid_options.api.getRowNode(0);
-                    rowNode.setDataValue('值', '新增邀约信息');
                     submit_type = 'insert';
                     editable = true;
                     button = '新增邀约信息';
@@ -159,8 +157,6 @@
                         alert('请选择相关人员');
                         return;
                     }
-                    var rowNode = grid_options.api.getRowNode(0);
-                    rowNode.setDataValue('值', '更新面试标识');
                     submit_type = 'tran';
                     editable = true;
                     button = '更新面试标识';
@@ -232,11 +228,11 @@
 
             switch (params.data.表项)
             {
-                case '面试信息':
+                case '面试结果':
                     return {
                         component: 'agSelectCellEditor',
                         params: {
-                            values: ['','转面试','未面试']
+                            values: ['','通过','未通过','未面试']
                         },
                     };
                 case '属地':
@@ -253,6 +249,14 @@
                             values: ['','校招','社招']
                         },
                     };
+                case '渠道名称':
+                    var object_obj = JSON.parse('<?php echo $object_json; ?>');
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: object_obj['渠道名称']
+                        },
+                    };
                 case '邀约业务':
                     return {
                         component: 'agSelectCellEditor',
@@ -262,6 +266,8 @@
                     };
                 case '邀约日期':
                 case '预约面试日期':
+                case '面试日期':
+                case '预约培训日期':
                     return {
                         component: 'datePicker',
                     };
@@ -269,7 +275,7 @@
                     return {
                         component: 'agSelectCellEditor',
                         params: {
-                            values: ['','通过','未通过','考虑']
+                            values: ['','到面','未到面','考虑']
                         },
                     };
             }
@@ -331,7 +337,7 @@
             dhx.ajax.post('<?php base_url(); ?>/store/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert('修改成功');
-                window.location.reload();
+                //window.location.reload();
             }).catch(function (err)
             {
                 alert('修改失败, ' + " " + err.statusText);
@@ -344,7 +350,10 @@
             rowData = 
             [
                 {'表项':'属性', '值':'更新面试标识'},
-                {'表项':'面试信息', '值':''},
+                {'表项':'面试日期', '值':''},
+                {'表项':'面试人', '值':''},
+                {'表项':'面试结果', '值':''},
+                {'表项':'预约培训日期', '值':''},
             ];
 
             grid_options.api.setRowData(rowData);
@@ -385,16 +394,16 @@
                 if (rowNode.data['表项'] != '属性')
                 {
                     arg_obj[rowNode.data['表项']] = rowNode.data['值'];
-                    if (rowNode.data['值'] != '')
+                    if (rowNode.data['表项']=='面试结果' && rowNode.data['值'] == '')
                     {
-                        ajax = 1;
+                        alert('"面试结果"为空,请补充.');
+                        ajax = -1;
                     }
                 }
             });
 
-            if (ajax == 0)
+            if (ajax == -1)
             {
-                alert('请输入要更改的信息');
                 return;
             }
 
@@ -412,7 +421,7 @@
         {
             rowData = 
             [
-                {'表项':'属性', '值':'新增记录'},
+                {'表项':'属性', '值':'新增邀约信息'},
                 {'表项':'姓名', '值':''},
                 {'表项':'身份证号', '值':''},
                 {'表项':'性别', '值':''},
@@ -431,7 +440,7 @@
                 {'表项':'邀约人', '值':''},
                 {'表项':'预约面试日期', '值':''},
                 {'表项':'邀约结果', '值':''},
-                {'表项':'面试信息', '值':''},
+                {'表项':'面试结果', '值':''},
             ];
 
             grid_options.api.setRowData(rowData);

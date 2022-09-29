@@ -1,5 +1,5 @@
 <?php
-/* v5.1.1.1.202209112125, from surface */
+/* v5.1.2.1.202209292345, from surface */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -454,7 +454,7 @@ class Frame extends Controller
         if ($location_fld != '')
         {
             $location_cond = sprintf('%s="%s"', $location_fld, $user_location);
-            $where = shu'di($where == '') ? $location_cond : $where . ' and ' . $location_cond;
+            $where = ($where == '') ? $location_cond : $where . ' and ' . $location_cond;
         }
 
         // 数据钻取,条件语句加上前端选定的条件

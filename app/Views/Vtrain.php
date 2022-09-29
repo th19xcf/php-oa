@@ -1,10 +1,10 @@
-<!-- v1.1.2.1.202207122135, from home -->
+<!-- v1.2.1.1.202209292345, from surface -->
 <!DOCTYPE html>
 <html>
 
 <head>
     <meta charset='utf-8'>
-    <title>培训人员管理</title>
+    <title>培训人员维护</title>
 
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/dhtmlx/codebase/suite.css'>
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
@@ -19,9 +19,9 @@
     <style type='text/css'>
         div.float_box
         {
-            width: 46%;
+            width: 47%;
             height: 510px;
-            margin: 8px;
+            margin: 4px;
             background-color: #f9f9f9;
             border: 1px solid #D0D0D0;
             box-sizing: border-box;
@@ -51,8 +51,9 @@
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         main_tb.data.add({type:'separator'});
-        main_tb.data.add({id:'修改人员信息', type:'button', value:'修改人员信息'});
-        main_tb.data.add({id:'新增人员信息', type:'button', value:'新增人员信息'});
+        main_tb.data.add({id:'修改培训信息', type:'button', value:'修改培训信息'});
+        main_tb.data.add({id:'新增培训信息', type:'button', value:'新增培训信息'});
+        main_tb.data.add({id:'更新培训结果', type:'button', value:'更新培训结果'});
         main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'提交', type:'button', value:'提交'});
         main_tb.data.add({type:'spacer'});
@@ -63,7 +64,10 @@
 
         var csr_str = '';
         var csr_guid = [];
+        var csr_guid_query = '';
         var submit_type = '';
+        var editable = false;
+        var button = '';
 
         var tree_obj = JSON.parse('<?php echo $tree_json; ?>');
         var tree = new dhx.Tree('tree_box', {checkbox: true});
@@ -75,14 +79,16 @@
         {
             columnDefs: 
             [
-                {field:'表项', editable:false},
-                {field:'值', width:300, cellEditorSelector:cellEditorSelector}
+                {field:'表项', width:130, editable:false},
+                {field:'值', width:280, cellEditorSelector:cellEditorSelector}
             ],
             defaultColDef: 
             {
                 resizable: true,
                 editable: (params) =>
                 {
+                    if (editable == false) return false;
+
                     // 根据配置判断是否可以修改
                     switch (params.data.表项)
                     {
@@ -109,19 +115,61 @@
             {
                 case '刷新':
                     window.location.reload();
+                    editable = false;
+                    button = '';
                     break;
-                case '修改人员信息':
+                case '修改培训信息':
+                    if (button != '查询培训信息')
+                    {
+                        alert('查询培训信息下, 才能修改');
+                        return;
+                    }
+                    if (csr_guid.length == 0)
+                    {
+                        alert('请选择相关人员');
+                        return;
+                    }
+                    else if (csr_guid.length > 1)
+                    {
+                        alert('只能选择一个人员');
+                        return;
+                    }
+
+                    if (csr_guid[0] != csr_guid_query)
+                    {
+                        alert('选择人员和查询人员不符, 请重新选择')
+                    }
+
+                    var rowNode = grid_options.api.getRowNode(0);
+                    rowNode.setDataValue('值', '修改培训信息');
                     submit_type = 'upkeep';
-                    upkeep();
+                    editable = true;
                     break;
-                case '新增人员信息':
+                case '新增培训信息':
                     submit_type = 'insert';
+                    editable = true;
+                    button = '新增培训信息';
                     insert();
+                    break;
+                case '更新培训结果':
+                    if (csr_guid.length == 0)
+                    {
+                        alert('请选择相关人员');
+                        return;
+                    }
+                    submit_type = 'tran';
+                    editable = true;
+                    button = '更新培训结果';
+                    tran();
                     break;
                 case '提交':
                     if (submit_type == 'upkeep')
                     {
                         upkeep_submit();
+                    }
+                    else if (submit_type == 'tran')
+                    {
+                        tran_submit();
                     }
                     else if (submit_type == 'insert')
                     {
@@ -137,12 +185,14 @@
         //tree event
         tree.events.on('itemClick', function(id, e)
         {
-            var item = id.split('^');
-
-            dhx.ajax.post('<?php base_url(); ?>/Train/ajax/<?php echo $func_id; ?>', id).then(function (data)
+            dhx.ajax.post('<?php base_url(); ?>/train/ajax/<?php echo $func_id; ?>', id).then(function (data)
             {
                 grid_obj = JSON.parse(data);
                 grid_options.api.setRowData(grid_obj);
+                editable = false;
+                button = grid_obj[0]['值'];
+                var item = id.split('^');
+                csr_guid_query = item[1];
             }).catch(function (err)
             {
                 console.log('err=', err);
@@ -178,56 +228,71 @@
 
             switch (params.data.表项)
             {
-                case '培训状态':
+                case '培训结果':
                     return {
                         component: 'agSelectCellEditor',
                         params: {
-                            values: ['','在培','通过','离开','辞退']
+                            values: ['','通过','未通过','离开','淘汰','转期']
+                        },
+                    };
+                case '属地':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','北京总公司','河北分公司','四川分公司']
+                        },
+                    };
+                case '招聘渠道':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','校招','社招']
                         },
                     };
                 case '培训业务':
+                    var object_obj = JSON.parse('<?php echo $object_json; ?>');
                     return {
                         component: 'agSelectCellEditor',
                         params: {
-                            values: ['','北京热线','河北热线','山西热线','内蒙古热线','吉林热线']
+                            values: object_obj['培训业务']
+                        },
+                    };
+                case '住宿':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','是','否']
                         },
                     };
                 case '培训开始日期':
                 case '预计完成日期':
                 case '培训完成日期':
                 case '培训离开日期':
+                case '培训结束日期':
                     return {
                         component: 'datePicker',
+                    };
+                case '邀约结果':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','通过','未通过','考虑']
+                        },
                     };
             }
         }
 
-        //其他函数
-        function upkeep()
-        {
-            rowData = 
-            [
-                {'表项':'属性', '值':'更新记录'},
-                {'表项':'培训状态', '值':''},
-                {'表项':'培训业务', '值':''},
-                {'表项':'培训批次', '值':''},
-                {'表项':'培训老师', '值':''},
-                {'表项':'培训开始日期', '值':''},
-                {'表项':'预计完成日期', '值':''},
-                {'表项':'培训完成日期', '值':''},
-                {'表项':'培训离开日期', '值':''},
-                {'表项':'培训离开原因', '值':''},
-            ];
-
-            grid_options.api.setRowData(rowData);
-        }
-
-        // 更新记录提交
+        // 更新培训信息
         function upkeep_submit(id)
         {
-            if (csr_guid == false)
+            if (csr_guid.length == 0)
             {
                 alert('请选择相关人员');
+                return;
+            }
+            else if (csr_guid.length > 1)
+            {
+                alert('只能选择一个人员');
                 return;
             }
 
@@ -236,9 +301,9 @@
             grid_options.api.stopEditing();
             grid_options.api.forEachNode((rowNode, index) =>
             {
-                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '更新记录')
+                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '修改培训信息')
                 {
-                    alert('请点选工具栏"修改人员信息选项"按钮进行相关操作');
+                    alert('请点选修改培训信息选项进行相关操作');
                     ajax = -1;
                 }
             });
@@ -249,7 +314,7 @@
             }
 
             var arg_obj = {};
-            arg_obj['操作'] = '修改人员信息';
+            arg_obj['操作'] = '修改记录';
             arg_obj['人员'] = csr_guid;
 
             grid_options.api.forEachNode((rowNode, index) =>
@@ -270,7 +335,84 @@
                 return;
             }
 
-            dhx.ajax.post('<?php base_url(); ?>/Train/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            dhx.ajax.post('<?php base_url(); ?>/train/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            {
+                alert('修改成功');
+            }).catch(function (err)
+            {
+                alert('修改失败, ' + " " + err.statusText);
+            });
+        }
+
+        // 转入正式表
+        function tran()
+        {
+            rowData = 
+            [
+                {'表项':'属性', '值':'更新培训结果'},
+                {'表项':'培训结果', '值':''},
+                {'表项':'培训结束日期', '值':''},
+                {'表项':'账号', '值':''},
+                {'表项':'工号', '值':''},
+            ];
+
+            grid_options.api.setRowData(rowData);
+        }
+
+        // 参培标识更改提交
+        function tran_submit(id)
+        {
+            if (csr_guid == false)
+            {
+                alert('请选择相关人员');
+                return;
+            }
+
+            var ajax = 0;
+
+            grid_options.api.stopEditing();
+            grid_options.api.forEachNode((rowNode, index) =>
+            {
+                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '更新培训结果')
+                {
+                    alert('请点选更新培训结果按钮进行更新操作');
+                    ajax = -1;
+                }
+            });
+
+            if (ajax == -1)
+            {
+                return;
+            }
+
+            var arg_obj = {};
+            arg_obj['操作'] = '更新培训结果';
+            arg_obj['人员'] = csr_guid;
+
+            grid_options.api.forEachNode((rowNode, index) =>
+            {
+                if (rowNode.data['表项'] != '属性')
+                {
+                    arg_obj[rowNode.data['表项']] = rowNode.data['值'];
+                    if (rowNode.data['表项']=='培训结果' && rowNode.data['值'] == '')
+                    {
+                        alert('"参培结果"为空,请补充.');
+                        ajax = -1;
+                    }
+                    if (rowNode.data['表项']=='培训结束日期' && rowNode.data['值'] == '')
+                    {
+                        alert('"培训结束日期"为空,请补充.');
+                        ajax = -1;
+                    }
+                }
+            });
+
+            if (ajax == -1)
+            {
+                return;
+            }
+
+            dhx.ajax.post('<?php base_url(); ?>/train/tran/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert('修改成功');
                 window.location.reload();
@@ -284,19 +426,24 @@
         {
             rowData = 
             [
-                {'表项':'属性', '值':'更新记录'},
+                {'表项':'属性', '值':'新增培训信息'},
                 {'表项':'姓名', '值':''},
                 {'表项':'身份证号', '值':''},
                 {'表项':'手机号码', '值':''},
-                {'表项':'培训状态', '值':''},
-                {'表项':'培训业务', '值':''},
-                {'表项':'培训批次', '值':''},
-                {'表项':'培训老师', '值':''},
-                {'表项':'培训开始日期', '值':''},
-                {'表项':'预计完成日期', '值':''},
-                {'表项':'培训完成日期', '值':''},
-                {'表项':'培训离开日期', '值':''},
-                {'表项':'培训离开原因', '值':''},
+                {'表项':'属地', '值':''},
+                {'表项':'招聘渠道', '值':''},
+                {'表项':'实习结束日期', '值':''},
+                {'表项':'渠道名称', '值':''},
+                {'表项':'信息来源', '值':''},
+                {'表项':'面试业务', '值':''},
+                {'表项':'面试岗位', '值':''},
+                {'表项':'面试日期', '值':''},
+                {'表项':'面试结果', '值':''},
+                {'表项':'面试人', '值':''},
+                {'表项':'预约培训日期', '值':''},
+                {'表项':'住宿', '值':''},
+                {'表项':'备注说明', '值':''},
+                {'表项':'参培信息', '值':''},
             ];
 
             grid_options.api.setRowData(rowData);
@@ -310,9 +457,9 @@
             grid_options.api.stopEditing();
             grid_options.api.forEachNode((rowNode, index) =>
             {
-                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '新增记录')
+                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '新增培训信息')
                 {
-                    alert('请点选工具栏"新增人员信息选项"按钮进行相关操作');
+                    alert('请点选新增培训信息选项进行相关操作');
                     ajax = -1;
                 }
             });
@@ -323,7 +470,7 @@
             }
 
             var arg_obj = {};
-            arg_obj['操作'] = '新增记录';
+            arg_obj['操作'] = '新增培训信息';
 
             grid_options.api.forEachNode((rowNode, index) =>
             {
@@ -343,7 +490,7 @@
                 return;
             }
 
-            dhx.ajax.post('<?php base_url(); ?>/Train/insert/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            dhx.ajax.post('<?php base_url(); ?>/train/insert/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert('新增记录成功');
                 window.location.reload();

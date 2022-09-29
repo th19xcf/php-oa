@@ -1,5 +1,5 @@
 <?php
-/* v1.2.1.1.202209100025, from surface */
+/* v1.2.2.1.202209171725, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -137,11 +137,45 @@ class Store extends Controller
         //grid
         $grid_arr = [];
 
+        // 直接给一些固定变量赋值
+        $object_arr = []; 
+        $channel = '';
+
+        $object_arr['渠道名称'] = [];
+        $object_arr['渠道名称'][0] = '';
+
+        switch ($user_location)
+        {
+            case '北京总公司':
+                $channel = '北京渠道名称';
+                break;
+            case '河北分公司':
+                $channel = '北一渠道名称';
+                break;
+            case '四川分公司':
+                $channel = '南一渠道名称';
+                break;
+        }
+
+        $sql = sprintf('
+            select 对象值 
+            from def_object 
+            where 对象名称="%s"
+            order by 对象值', $channel);
+
+        $query = $model->select($sql);
+        $result = $query->getResult();
+        foreach($result as $val)
+        {
+            array_push($object_arr['渠道名称'], $val->对象值);
+        }
+
         $send['func_id'] = $menu_id;
         $send['tree_json'] = json_encode($tree_arr);
         $send['grid_json'] = json_encode($grid_arr);
         $send['import_func_id'] = '2012';
         $send['import_func_name'] = '邀约人员';
+        $send['object_json'] = json_encode($object_arr);
 
         echo view('Vstore.php', $send);
     }
@@ -222,6 +256,9 @@ class Store extends Controller
             }
         }
 
+        // 写日志
+        $model->sql_log('更新', $menu_id, sprintf('表名=ee_store,GUID="%s"', $guid_str));
+
         $sql = sprintf('
             update ee_store 
             set 姓名="%s",身份证号="%s",性别="%s",年龄=%d,
@@ -268,7 +305,7 @@ class Store extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 转面试
+    // 更新面试标识,转面试
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function tran($menu_id='', $type='')
     {
@@ -289,16 +326,28 @@ class Store extends Controller
             }
         }
 
+        $interview = '';
+        switch ($arg['面试结果'])
+        {
+            case '通过':
+            case '未通过':
+                $interview = '已面试';
+                break;
+            case '未面试':
+                $interview = '未面试';
+                break;
+        }
+
         $sql = sprintf('
             update ee_store
             set 面试信息="%s" 
             where GUID in (%s) ',
-            $arg['面试信息'], $guid_str);
+            $arg['面试结果'], $guid_str);
 
         $num = $model->exec($sql);
 
-        // 邀约记录导入面试表ee_interview
-        if ($arg['面试信息'] == '转面试')
+        // 面试的邀约记录导入面试表ee_interview
+        if ($arg['面试结果'] == '通过' || $arg['面试结果'] == '未通过')
         {
             // 从session中取出数据
             $session = \Config\Services::session();
@@ -311,10 +360,12 @@ class Store extends Controller
                     预约培训日期,邀约信息,录入来源,录入人)
                 select 姓名,身份证号,手机号码,属地,
                     招聘渠道,渠道名称,信息来源,"",
-                    邀约业务,邀约岗位,"","","",
-                    "","通过","邀约表转入" as 录入来源,"%s" as 录入人
+                    邀约业务,邀约岗位,"%s","%s","%s",
+                    "%s","通过","邀约表转入" as 录入来源,"%s" as 录入人
                 from ee_store
-                where GUID in (%s)', $user_workid, $guid_str);
+                where GUID in (%s)', 
+                $arg['面试日期'], $arg['面试人'], $arg['面试结果'], 
+                $arg['预约培训日期'], $user_workid, $guid_str);
             $num = $model->exec($sql);
         }
     }
