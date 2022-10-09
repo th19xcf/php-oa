@@ -1,4 +1,4 @@
-<!-- v1.2.1.1.202209292345, from surface -->
+<!-- v1.2.2.1.202210022035, from surface -->
 <!DOCTYPE html>
 <html>
 
@@ -232,7 +232,7 @@
                     return {
                         component: 'agSelectCellEditor',
                         params: {
-                            values: ['','已参培','未参培']
+                            values: ['','已参培','再次参培','未参培']
                         },
                     };
                 case '属地':
@@ -271,13 +271,6 @@
                 case '预计完成日期':
                     return {
                         component: 'datePicker',
-                    };
-                case '邀约结果':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','通过','未通过','考虑']
-                        },
                     };
             }
         }

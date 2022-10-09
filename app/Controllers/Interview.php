@@ -1,5 +1,5 @@
 <?php
-/* v1.3.1.0.202209292345, from surface */
+/* v1.3.2.1.202210022035, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -31,7 +31,7 @@ class Interview extends Controller
                 一次面试日期 as 面试日期,预约培训日期
             from ee_interview
             where 属地="%s"
-            order by 面试结果,参培信息,招聘渠道,预约培训日期,姓名',
+            order by 面试结果,参培信息,招聘渠道,预约培训日期,convert(姓名 using gbk)',
             $user_location);
 
         $query = $model->select($sql);
@@ -339,8 +339,10 @@ class Interview extends Controller
         $num = $model->exec($sql);
 
         // 面试记录导入培训表ee_train
-        if ($arg['参培信息'] == '已参培')
+        if ($arg['参培信息'] == '已参培' || $arg['参培信息'] == '再次参培')
         {
+            if ($arg['参培信息'] == '已参培') $arg['培训状态'] ='在培';
+            if ($arg['参培信息'] == '再次参培') $arg['培训状态'] = '重复在培';
             $arg['开始操作时间'] = date('Y-m-d H:m:s');
             $arg['结束操作时间'] = '';
     
@@ -357,7 +359,7 @@ class Interview extends Controller
                     开始操作时间,结束操作时间,
                     录入来源,录入人)
                 select 姓名,身份证号,手机号码,属地,
-                    "%s" as 培训业务,"在培" as 培训状态,
+                    "%s" as 培训业务,"%s" as 培训状态,
                     "%s" as 培训批次,"%s" as 培训老师,
                     "%s" as 培训开始日期,"%s" as 预计完成日期,"" as 培训完成日期,
                     "" as 培训离开日期,"" as 培训离开原因,"有" as 面试信息,
@@ -365,7 +367,7 @@ class Interview extends Controller
                     "面试表转入" as 录入来源,"%s" as 录入人
                 from ee_interview
                 where GUID in (%s)', 
-                $arg['培训业务'],
+                $arg['培训业务'],$arg['培训状态'],
                 $arg['培训批次'],$arg['培训老师'],
                 $arg['培训开始日期'],$arg['预计完成日期'],
                 $arg['开始操作时间'],

@@ -1,5 +1,5 @@
 <?php
-/* v1.2.1.1.202209291450, from surface*/
+/* v1.2.2.1.202210022035, from surface*/
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -30,7 +30,7 @@ class Train extends Controller
                 培训离开日期,培训离开原因
             from ee_train
             where 属地="%s"
-            order by 培训状态,培训老师,培训开始日期,姓名',
+            order by 培训状态,培训老师,培训开始日期,convert(姓名 using gbk)',
             $user_location);
 
         $query = $model->select($sql);

@@ -1,5 +1,5 @@
 <?php
-/* v1.1.7.1.202207281030, from home */
+/* v2.1.2.1.202210032200, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -13,95 +13,100 @@ class Employee extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    //入职人员
+    // 在职人员
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function init($menu_id='')
     {
         $model = new Mcommon();
 
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_location = $session->get('user_location');
+
         $sql = sprintf('
             select GUID,姓名,工号1 as 工号,员工状态,
-                部门名称,
-                if(班组="","未分班组",班组) as 班组,
-                岗位名称,岗位类型,
-                培训完成日期
+                属地,部门名称,if(班组="","未分班组",班组) as 班组,
+                岗位名称,岗位类型,培训完成日期
             from ee_onjob
-            where 变更表项=""
-            order by 员工状态,部门名称,班组,姓名');
+            where 属地="%s" and 变更表项=""
+            order by 员工状态,部门名称,班组,convert(姓名 using gbk)',
+            $user_location);
 
         $query = $model->select($sql);
         $results = $query->getResult();
 
-        $state_arr = [];
-        $dept_arr = [];
-        $team_arr = [];
+        $up3_arr = []; // 班组
+        $up2_arr = []; // 部门名称
+        $up1_arr = []; // 员工状态
 
-        $team_ee = 0;
+        // 班组
         foreach ($results as $row)
         {
             $ee_arr = [];
-            $ee_arr['id'] = sprintf('EE^%s^%s', $row->GUID, $row->姓名);
-            $ee_arr['value'] = sprintf('%s (工号%s) (培训完成%s)', $row->姓名, $row->工号,$row->培训完成日期);
+            $ee_arr['id'] = sprintf('人员^%s^%s', $row->GUID, $row->姓名);
+            $ee_arr['value'] = sprintf('%s', $row->姓名);
 
-            $team_id = sprintf('TEAM^%s^%s^%s', $row->员工状态, $row->部门名称, $row->班组);
-            if (array_key_exists($team_id, $team_arr) == false)
+            $up1_id = sprintf('班组^%s^%s^%s', $row->员工状态, $row->部门名称, $row->班组);
+            if (array_key_exists($up1_id, $up1_arr) == false)
             {
-                $team_arr[$team_id] = [];
-                $team_arr[$team_id]['num'] = 0;
-                $team_arr[$team_id]['id'] = $team_id;
-                $team_arr[$team_id]['value'] = $row->班组;
-                $team_arr[$team_id]['items'] = [];
+                $up1_arr[$up1_id] = [];
+                $up1_arr[$up1_id]['num'] = 0;
+                $up1_arr[$up1_id]['id'] = $up1_id;
+                $up1_arr[$up1_id]['value'] = $row->班组;
+                $up1_arr[$up1_id]['items'] = [];
             }
-            $team_arr[$team_id]['num'] = count($team_arr[$team_id]['items'])+1;
-            $team_arr[$team_id]['value'] = sprintf('%s (%d人)', $row->班组, $team_arr[$team_id]['num']);
-            array_push($team_arr[$team_id]['items'], $ee_arr);
+            $up1_arr[$up1_id]['num'] = count($up1_arr[$up1_id]['items']) + 1;
+            $up1_arr[$up1_id]['value'] = sprintf('%s (%d人)', $row->班组, $up1_arr[$up1_id]['num']);
+            array_push($up1_arr[$up1_id]['items'], $ee_arr);
         }
 
-        foreach ($team_arr as $team)
+        // 部门
+        foreach ($up1_arr as $up1)
         {
-            $arr = explode('^', $team['id']);
-            $dept_id = sprintf('DEPT^%s^%s', $arr[1], $arr[2]);
-            if (array_key_exists($dept_id, $dept_arr) == false)
+            $arr = explode('^', $up1['id']);
+            $up2_id = sprintf('部门^%s^%s', $arr[1], $arr[2]);
+            if (array_key_exists($up2_id, $up2_arr) == false)
             {
-                $dept_arr[$dept_id]['id'] = $dept_id;
-                $dept_arr[$dept_id]['num'] = 0;
-                $dept_arr[$dept_id]['value'] = $arr[2];
-                $dept_arr[$dept_id]['items'] = [];
+                $up2_arr[$up2_id]['id'] = $up2_id;
+                $up2_arr[$up2_id]['num'] = 0;
+                $up2_arr[$up2_id]['value'] = $arr[2];
+                $up2_arr[$up2_id]['items'] = [];
             }
 
-            $dept_arr[$dept_id]['num'] += $team['num'];
-            $dept_arr[$dept_id]['value'] = sprintf('%s (%d人)', $arr[2], $dept_arr[$dept_id]['num']);
-            array_push($dept_arr[$dept_id]['items'], $team);
+            $up2_arr[$up2_id]['num'] += $up1['num'];
+            $up2_arr[$up2_id]['value'] = sprintf('%s (%d人)', $arr[2], $up2_arr[$up2_id]['num']);
+            array_push($up2_arr[$up2_id]['items'], $up1);
         }
 
-        foreach ($dept_arr as $dept)
+        // 员工状态
+        foreach ($up2_arr as $up2)
         {
-            $arr = explode('^', $dept['id']);
-            $state_id = sprintf('1级^%s', $arr[1]);
-            if (array_key_exists($state_id, $state_arr) == false)
+            $arr = explode('^', $up2['id']);
+            $up3_id = sprintf('员工状态^%s', $arr[1]);
+            if (array_key_exists($up3_id, $up3_arr) == false)
             {
-                $state_arr[$state_id]['id'] = $state_id;
-                $state_arr[$state_id]['num'] = 0;
-                $state_arr[$state_id]['value'] = $arr[1];
-                $state_arr[$state_id]['items'] = [];
+                $up3_arr[$up3_id]['id'] = $up3_id;
+                $up3_arr[$up3_id]['num'] = 0;
+                $up3_arr[$up3_id]['value'] = $arr[1];
+                $up3_arr[$up3_id]['items'] = [];
             }
 
-            $state_arr[$state_id]['num'] += $dept['num'];
-            $state_arr[$state_id]['value'] = sprintf('%s (%d人)', $arr[1], $state_arr[$state_id]['num']);
-            array_push($state_arr[$state_id]['items'], $dept);
+            $up3_arr[$up3_id]['num'] += $up2['num'];
+            $up3_arr[$up3_id]['value'] = sprintf('%s (%d人)', $arr[1], $up3_arr[$up3_id]['num']);
+            array_push($up3_arr[$up3_id]['items'], $up2);
         }
 
         $csr_arr = [];
-        $csr_arr['id'] = '0级^入职人员';
-        $csr_arr['value'] = '入职人员';
+        $csr_arr['id'] = '0级^在职人员';
+        $csr_arr['value'] = '在职人员';
         $csr_arr['items'] = [];
         $csr_num = 0;
 
-        foreach ($state_arr as $state)
+        foreach ($up3_arr as $up3)
         {
-            $csr_num += $state['num'];
-            $csr_arr['value'] = sprintf('入职人员 (%d人)', $csr_num);
-            array_push($csr_arr['items'], $state);
+            $csr_num += $up3['num'];
+            $csr_arr['value'] = sprintf('在职人员 (%d人)', $csr_num);
+            array_push($csr_arr['items'], $up3);
         }
 
         $tree_arr = [];
@@ -109,24 +114,18 @@ class Employee extends Controller
 
         //grid
         $grid_arr = [];
-        /*
-        array_push($grid_arr, array('表项'=>'姓名', '值'=>''));
-        array_push($grid_arr, array('表项'=>'员工状态', '值'=>''));
-        array_push($grid_arr, array('表项'=>'岗位名称', '值'=>''));
-        array_push($grid_arr, array('表项'=>'岗位类型', '值'=>''));
-        array_push($grid_arr, array('表项'=>'部门名称', '值'=>''));
-        array_push($grid_arr, array('表项'=>'班组', '值'=>''));
-        array_push($grid_arr, array('表项'=>'离职日期', '值'=>''));
-        array_push($grid_arr, array('表项'=>'离职原因', '值'=>''));
-        */
+
+        // 直接给一些固定变量赋值
+        $object_arr = []; 
 
         $send['func_id'] = $menu_id;
         $send['tree_json'] = json_encode($tree_arr);
         $send['grid_json'] = json_encode($grid_arr);
         $send['import_func_id'] = '2042';
-        $send['import_func_name'] = '入职人员';
+        $send['import_func_name'] = '培训人员';
+        $send['object_json'] = json_encode($object_arr);
 
-        echo view('VEmployee.php', $send);
+        echo view('Vemployee.php', $send);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -142,7 +141,7 @@ class Employee extends Controller
         $model = new Mcommon();
         $rows_arr = [];
 
-        if ($arr[0] == 'DEPT')
+        if ($arr[0] == '部门')
         {
             $dept = $arr[2];
 
@@ -166,7 +165,7 @@ class Employee extends Controller
                 array_push($rows_arr, array('表项'=>'部门名称', '值'=>$results[0]->部门名称));
             }
         }
-        else if ($arr[0] == 'TEAM')
+        else if ($arr[0] == '班组')
         {
             $team = $arr[3];
 
@@ -190,7 +189,7 @@ class Employee extends Controller
                 array_push($rows_arr, array('表项'=>'班组', '值'=>$results[0]->部门名称));
             }
         }
-        else if ($arr[0] == 'EE')
+        else if ($arr[0] == '人员')
         {
             $sql = sprintf('
                 select 姓名,身份证号,员工状态,岗位名称,岗位类型,部门名称,班组,离职日期,离职原因
@@ -199,7 +198,8 @@ class Employee extends Controller
             $query = $model->select($sql);
             $results = $query->getResult();
         
-            array_push($rows_arr, array('表项'=>'属性', '值'=>'人员'));
+            array_push($rows_arr, array('表项'=>'属性', '值'=>'查询人员信息'));
+            array_push($rows_arr, array('表项'=>'生效日期', '值'=>''));
             array_push($rows_arr, array('表项'=>'姓名', '值'=>$results[0]->姓名));
             array_push($rows_arr, array('表项'=>'岗位名称', '值'=>$results[0]->岗位名称));
             array_push($rows_arr, array('表项'=>'岗位类型', '值'=>$results[0]->岗位类型));
@@ -239,7 +239,7 @@ class Employee extends Controller
             }
         }
 
-        if ($arg['员工状态'] == '离职') //更新所有该员工的记录
+        if ($arg['员工状态']['值'] == '离职') //更新所有该员工的记录
         {
             $sql = sprintf('
                 update ee_onjob
@@ -254,7 +254,8 @@ class Employee extends Controller
                             where GUID in (%s)
                         ) as ta
                     )',
-                $arg['员工状态'], $arg['离职日期'], $arg['离职原因'], $guid_str);
+                $arg['员工状态']['值'], $arg['离职日期']['值'], 
+                $arg['离职原因']['值'], $guid_str);
 
             $num = $model->exec($sql);
         }
@@ -263,7 +264,8 @@ class Employee extends Controller
             $update_str = '';
             foreach ($arg as $key => $value)
             {
-                if ($key=='操作' || $key=='人员' || $key=='生效日期' || $value=='') continue;
+                if ($key=='操作' || $key=='人员' || $key=='生效日期') continue;
+                if ($value['更改标识'] == '0') continue;
 
                 if ($update_str != '')
                 {
@@ -277,7 +279,7 @@ class Employee extends Controller
             $user_workid = $session->get('user_workid');
 
             //增加新记录
-            $fld_str ='姓名,身份证号,手机号码,招聘渠道,' .
+            $fld_str ='姓名,身份证号,手机号码,属地,招聘渠道,' .
                 '员工类别,部门编码,部门名称,班组,岗位名称,岗位类型,' .
                 '工号1,工号2,实习结束日期,培训信息,培训开始日期,' .
                 '培训完成日期,一阶段日期,二阶段日期,员工状态,员工阶段,' .
@@ -293,7 +295,7 @@ class Employee extends Controller
                 switch ($fld)
                 {
                     case '记录开始日期':
-                        $col = sprintf('"%s" as 记录开始日期', $arg['生效日期']);
+                        $col = sprintf('"%s" as 记录开始日期', $arg['生效日期']['值']);
                         break;
                     case '录入来源':
                         $col = '"页面更改" as 录入来源';
@@ -305,10 +307,12 @@ class Employee extends Controller
 
                 foreach ($arg as $key => $value)
                 {
-                    if ($value == '') continue;
+                    if ($key=='操作' || $key=='人员' || $key=='生效日期') continue;
+                    if ($value['更改标识'] == '0') continue;
+
                     if ($fld == $key)
                     {
-                        $col = sprintf('"%s" as %s', $value, $key);
+                        $col = sprintf('"%s" as %s', $value['值'], $key);
                         break;
                     }
                 }
@@ -326,10 +330,10 @@ class Employee extends Controller
                 update ee_onjob
                 set 变更表项="%s",记录结束日期="%s"
                 where GUID in (%s)',
-                $update_str, $arg['生效日期'], $guid_str);
+                $update_str, $arg['生效日期']['值'], $guid_str);
 
-                $num = $model->exec($sql_insert);
-                $num = $model->exec($sql_update);
+            $num = $model->exec($sql_insert);
+            $num = $model->exec($sql_update);
         }
     }
 }

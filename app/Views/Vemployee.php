@@ -1,10 +1,10 @@
-<!-- v1.1.2.1.202207260025, from home -->
+<!-- v2.1.1.1.202210032200, from surface -->
 <!DOCTYPE html>
 <html>
 
 <head>
     <meta charset='utf-8'>
-    <title>入职人员管理</title>
+    <title>在职人员维护</title>
 
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/dhtmlx/codebase/suite.css'>
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
@@ -19,9 +19,9 @@
     <style type='text/css'>
         div.float_box
         {
-            width: 46%;
+            width: 47%;
             height: 510px;
-            margin: 8px;
+            margin: 4px;
             background-color: #f9f9f9;
             border: 1px solid #D0D0D0;
             box-sizing: border-box;
@@ -52,7 +52,6 @@
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'修改人员信息', type:'button', value:'修改人员信息'});
-        //main_tb.data.add({id:'新增人员信息', type:'button', value:'新增人员信息'});
         main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'提交', type:'button', value:'提交'});
         main_tb.data.add({type:'spacer'});
@@ -63,7 +62,10 @@
 
         var csr_str = '';
         var csr_guid = [];
+        var csr_guid_query = '';
         var submit_type = '';
+        var editable = false;
+        var button = '';
 
         var tree_obj = JSON.parse('<?php echo $tree_json; ?>');
         var tree = new dhx.Tree('tree_box', {checkbox: true});
@@ -71,18 +73,22 @@
 
         //grid视图
         var grid_obj = JSON.parse('<?php echo $grid_json; ?>');
+        var value_obj = JSON.parse('<?php echo $grid_json; ?>');
+
         const grid_options = 
         {
             columnDefs: 
             [
-                {field:'表项', editable:false},
-                {field:'值', width:300, cellEditorSelector:cellEditorSelector}
+                {field:'表项', width:130, editable:false},
+                {field:'值', width:280, cellEditorSelector:cellEditorSelector}
             ],
             defaultColDef: 
             {
                 resizable: true,
                 editable: (params) =>
                 {
+                    if (editable == false) return false;
+
                     // 根据配置判断是否可以修改
                     switch (params.data.表项)
                     {
@@ -102,6 +108,15 @@
 
         new agGrid.Grid($$('grid_box'), grid_options);
 
+        /*
+        grid_options.onCellValueChanged = cellchanaged;
+        function cellchanaged(params)
+        {
+          // your code here
+          console.log('cell changed', params);
+        };
+        */
+
         // 工具栏点击
         main_tb.events.on('click', function(id, e)
         {
@@ -109,23 +124,44 @@
             {
                 case '刷新':
                     window.location.reload();
+                    editable = false;
+                    button = '';
                     break;
                 case '修改人员信息':
+                    if (button != '查询人员信息')
+                    {
+                        alert('查询人员信息下, 才能修改');
+                        return;
+                    }
+                    if (csr_guid.length == 0)
+                    {
+                        alert('请选择相关人员');
+                        return;
+                    }
+                    else if (csr_guid.length > 1)
+                    {
+                        alert('只能选择一个人员');
+                        return;
+                    }
+
+                    if (csr_guid[0] != csr_guid_query)
+                    {
+                        alert('选择人员和查询人员不符, 请重新选择')
+                    }
+
+                    var rowNode = grid_options.api.getRowNode(0);
+                    rowNode.setDataValue('值', '修改人员信息');
                     submit_type = 'upkeep';
-                    upkeep();
-                    break;
-                case '新增人员信息':
-                    submit_type = 'insert';
-                    //insert();
+                    editable = true;
                     break;
                 case '提交':
                     if (submit_type == 'upkeep')
                     {
                         upkeep_submit();
                     }
-                    else if (submit_type == 'insert')
+                    else
                     {
-                        //insert_submit();
+                        alert('请先选择功能按钮进行操作');
                     }
                     break;
                 case '导入':
@@ -137,17 +173,19 @@
         //tree event
         tree.events.on('itemClick', function(id, e)
         {
-            var item = id.split('^');
-
-            dhx.ajax.post('<?php base_url(); ?>/Employee/ajax/<?php echo $func_id; ?>', id).then(function (data)
+            dhx.ajax.post('<?php base_url(); ?>/employee/ajax/<?php echo $func_id; ?>', id).then(function (data)
             {
+                value_obj = JSON.parse(data);  //原记录
                 grid_obj = JSON.parse(data);
                 grid_options.api.setRowData(grid_obj);
+                editable = false;
+                button = grid_obj[0]['值'];
+                var item = id.split('^');
+                csr_guid_query = item[1];
             }).catch(function (err)
             {
                 console.log('err=', err);
                 alert('失败, ' + " " + err.statusText);
-                tree.paint();
             });
         });
 
@@ -161,7 +199,7 @@
             for (var ii in selected_arr)
             {
                 item = selected_arr[ii].split('^');
-                if (item[0] != 'EE')
+                if (item[0] != '人员')
                 {
                     continue;
                 }
@@ -175,27 +213,29 @@
         //grid event
         function cellEditorSelector(params)
         {
+            var col_name = params.data.列名;
+
             switch (params.data.表项)
             {
-                case '岗位名称':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','客服代表','班组长']
-                        },
-                    };
-                    case '岗位类型':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','按量结算','按席结算','部分结算','无结算']
-                        },
-                    };
                 case '员工状态':
                     return {
                         component: 'agSelectCellEditor',
                         params: {
                             values: ['在职','离职']
+                        },
+                    };
+                case '属地':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','北京总公司','河北分公司','四川分公司']
+                        },
+                    };
+                case '住宿':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','是','否']
                         },
                     };
                 case '生效日期':
@@ -206,42 +246,17 @@
             }
         }
 
-        //其他函数
-        function upkeep()
-        {
-            rowData = 
-            [
-                {'表项':'属性', '值':'输入新值'},
-                {'表项':'生效日期', '值':''},
-                {'表项':'工号1', '值':''},
-                {'表项':'岗位名称', '值':''},
-                {'表项':'岗位类型', '值':''},
-                {'表项':'部门名称', '值':''},
-                {'表项':'班组', '值':''},
-                {'表项':'员工状态', '值':''},
-                {'表项':'离职日期', '值':''},
-                {'表项':'离职原因', '值':''},
-            ];
-
-            grid_options.api.setRowData(rowData);
-        }
-
+        // 更新人员信息
         function upkeep_submit(id)
         {
-            if (csr_guid == false)
-            {
-                alert('请选择相关人员');
-                return;
-            }
-
             var ajax = 0;
 
             grid_options.api.stopEditing();
             grid_options.api.forEachNode((rowNode, index) =>
             {
-                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '输入新值')
+                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '修改人员信息')
                 {
-                    alert('请点选修改人员信息选项进行相关操作');
+                    alert('请点选修改人员信息按钮,进行相关操作');
                     ajax = -1;
                 }
             });
@@ -252,30 +267,41 @@
             }
 
             var arg_obj = {};
-            arg_obj['操作'] = '更新记录';
+            arg_obj['操作'] = '修改记录';
             arg_obj['人员'] = csr_guid;
 
             grid_options.api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] != '属性')
                 {
-                    arg_obj[rowNode.data['表项']] = rowNode.data['值'];
-                    if (rowNode.data['值'] != '' && rowNode.data['表项'] != '生效日期')
+                    for (var jj in value_obj)
                     {
-                        ajax = 1;
+                        if (rowNode.data['表项'] != value_obj[jj]['表项']) continue;
+
+                        arg_obj[rowNode.data['表项']] = {};
+                        arg_obj[rowNode.data['表项']]['值'] = rowNode.data['值'];
+                        arg_obj[rowNode.data['表项']]['更改标识'] = '0';
+
+                        if (rowNode.data['值'] != value_obj[jj]['值']) //值有更新
+                        {
+                            arg_obj[rowNode.data['表项']]['更改标识'] = '1';
+                            ajax = 1;
+                        }
+
+                        break;
                     }
                 }
             });
 
             if (ajax == 0)
             {
-                alert('请输入要更改的信息');
+                alert('没有更新的信息');
                 return;
             }
 
-            if (arg_obj['生效日期'] == '' && arg_obj['员工状态'] == '')
+            if (arg_obj['生效日期'] == '')
             {
-                alert('请填写生效日期');
+                alert('需要填写生效日期');
                 return;
             }
 
@@ -307,10 +333,9 @@
                 }
             }
 
-            dhx.ajax.post('<?php base_url(); ?>/Employee/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            dhx.ajax.post('<?php base_url(); ?>/employee/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert('修改成功');
-                window.location.reload();
             }).catch(function (err)
             {
                 alert('修改失败, ' + " " + err.statusText);

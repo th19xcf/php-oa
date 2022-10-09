@@ -1,5 +1,5 @@
 <?php
-/* v1.2.2.1.202209171725, from surface */
+/* v1.2.3.1.202210022035, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -32,7 +32,7 @@ class Store extends Controller
                 录入来源,录入人,录入时间
             from ee_store
             where 属地="%s"
-            order by 邀约结果,面试信息,预约面试日期,招聘渠道,姓名',
+            order by 邀约结果,面试信息,预约面试日期,招聘渠道,convert(姓名 using gbk)',
             $user_location);
 
         $query = $model->select($sql);
