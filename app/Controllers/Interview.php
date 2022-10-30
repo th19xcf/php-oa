@@ -1,5 +1,5 @@
 <?php
-/* v1.3.2.1.202210022035, from surface */
+/* v1.4.2.1.202210270555, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -275,6 +275,7 @@ class Interview extends Controller
             $guid_str);
 
         $num = $model->exec($sql);
+        $this->json_data(200, sprintf('%d条',$num), 0);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -306,6 +307,7 @@ class Interview extends Controller
             $flds_str, $values_str);
 
         $num = $model->exec($sql);
+        $this->json_data(200, sprintf('%d条',$num), 0);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -330,6 +332,32 @@ class Interview extends Controller
             }
         }
 
+        // 查询ee_train是否已有相同记录
+        $sql = sprintf('
+            select 姓名,身份证号
+            from ee_train
+            where 身份证号 in
+                (
+                    select 身份证号
+                    from ee_interview
+                    where GUID in (%s)
+                    group by 身份证号
+                )', $guid_str);
+
+        $errs = $model->select($sql)->getResultArray();
+
+        if (count($errs) != 0)
+        {
+            $err_arr = [];
+            foreach ($errs as $err)
+            {
+                array_push($err_arr, $err['身份证号']);
+            }
+            $this->json_data(400, sprintf('未执行,在人员表中有重复记录,请确认,身份证号{%s}', implode(',', $err_arr)), 0);
+            return;
+        }
+
+        // 更新表ee_interview
         $sql = sprintf('
             update ee_interview
             set 参培信息="%s" 
@@ -339,10 +367,9 @@ class Interview extends Controller
         $num = $model->exec($sql);
 
         // 面试记录导入培训表ee_train
-        if ($arg['参培信息'] == '已参培' || $arg['参培信息'] == '再次参培')
+        if ($arg['参培信息'] == '已参培')
         {
             if ($arg['参培信息'] == '已参培') $arg['培训状态'] ='在培';
-            if ($arg['参培信息'] == '再次参培') $arg['培训状态'] = '重复在培';
             $arg['开始操作时间'] = date('Y-m-d H:m:s');
             $arg['结束操作时间'] = '';
     
@@ -374,5 +401,22 @@ class Interview extends Controller
                 $user_workid, $guid_str);
             $num = $model->exec($sql);
         }
+
+        $this->json_data(200, sprintf('%d条',$num), 0);
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 自定义函数
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function json_data($status=200, $msg='', $count=0)
+    {
+        $res = [
+            'status' => $status,
+            'msg' => $msg,
+            'number' => $count
+        ];
+
+        echo json_encode($res);
+        die;
     }
 }

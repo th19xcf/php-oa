@@ -1,6 +1,6 @@
 <?php
 
-/* v2.1.1.1.202209112125, from surface */
+/* v2.1.2.1.202209112125, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -67,6 +67,9 @@ class Login extends Controller
             $session_arr['user_pswd'] = $pswd;
             $session_arr['user_location'] = $row->员工属地;
 
+            str_replace(' ', '', $session_arr['user_role']);
+            str_replace('，', ',', $session_arr['user_role']);
+    
             $session = \Config\Services::session();
             $session->set($session_arr);
 

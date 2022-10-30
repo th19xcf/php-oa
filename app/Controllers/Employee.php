@@ -1,5 +1,5 @@
 <?php
-/* v2.1.2.1.202210032200, from surface */
+/* v2.1.3.1.202210261330, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -29,7 +29,7 @@ class Employee extends Controller
                 岗位名称,岗位类型,培训完成日期
             from ee_onjob
             where 属地="%s" and 变更表项=""
-            order by 员工状态,部门名称,班组,convert(姓名 using gbk)',
+            order by 员工状态,convert(部门名称 using gbk),convert(班组 using gbk),convert(姓名 using gbk)',
             $user_location);
 
         $query = $model->select($sql);
@@ -192,9 +192,10 @@ class Employee extends Controller
         else if ($arr[0] == '人员')
         {
             $sql = sprintf('
-                select 姓名,身份证号,员工状态,岗位名称,岗位类型,部门名称,班组,离职日期,离职原因
+                select 姓名,身份证号,员工状态,一阶段日期,
+                    岗位名称,岗位类型,部门名称,班组,离职日期,离职原因
                 from ee_onjob
-                where GUID=%s', $arr[1]);
+                where GUID="%s"', $arr[1]);
             $query = $model->select($sql);
             $results = $query->getResult();
         
@@ -206,6 +207,7 @@ class Employee extends Controller
             array_push($rows_arr, array('表项'=>'部门名称', '值'=>$results[0]->部门名称));
             array_push($rows_arr, array('表项'=>'班组', '值'=>$results[0]->班组));
             array_push($rows_arr, array('表项'=>'员工状态', '值'=>$results[0]->员工状态));
+            array_push($rows_arr, array('表项'=>'一阶段日期', '值'=>$results[0]->一阶段日期));
             array_push($rows_arr, array('表项'=>'离职日期', '值'=>$results[0]->离职日期));
             array_push($rows_arr, array('表项'=>'离职原因', '值'=>$results[0]->离职原因));
         }
@@ -328,7 +330,7 @@ class Employee extends Controller
             //原记录更新
             $sql_update = sprintf('
                 update ee_onjob
-                set 变更表项="%s",记录结束日期="%s"
+                set 变更表项="%s",记录结束日期="%s",是否有效="0"
                 where GUID in (%s)',
                 $update_str, $arg['生效日期']['值'], $guid_str);
 

@@ -1,4 +1,4 @@
-<!-- v1.2.1.1.202207041455, from office -->
+<!-- v1.2.2.1.202210162340, from surface -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -92,7 +92,9 @@
 <body>
     <div id="header">
         <div class="sysName">
-            <b>北京电信发展有限公司</b>
+            <b>北京电发</b>
+            <b><?php echo $user_location;?></b>
+            <b><?php echo $user_name;?></b>
         </div>
         <div class="toolBar">
             <a id="lk_resetpwd" href="javascript:void(0);" tag="Frame/change_pswd" onClick="goto(-100)" title="修改密码">[修改密码]</a>
@@ -322,7 +324,7 @@
         /*退出系统*/
         function LoginOut()
         {
-            $.get("Frame/LoginOut"); setTimeout(function () { window.location.href = "Frame/Login"; }, 300);
+            $.get("Frame/LoginOut"); setTimeout(function () { window.location.href = "Login"; }, 300);
         }
 
         /*设置窗口大小*/

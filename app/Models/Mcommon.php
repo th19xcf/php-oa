@@ -1,6 +1,6 @@
 <?php
 
-/* v2.1.1.1.202209102330, from surface */
+/* v2.2.1.1.202210122010, from surface */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -96,6 +96,18 @@ class Mcommon extends Model
         $db->close();
 
         return $num;
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 读出字段
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function get_fields($table_name)
+    {
+        $db = db_connect('btdc');
+        $fields = $db->getFieldNames($table_name);
+        $db->close();
+
+        return $fields;
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

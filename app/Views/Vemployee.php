@@ -1,4 +1,4 @@
-<!-- v2.1.1.1.202210032200, from surface -->
+<!-- v2.2.1.1.202210302055, from surface -->
 <!DOCTYPE html>
 <html>
 
@@ -51,9 +51,11 @@
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         main_tb.data.add({type:'separator'});
-        main_tb.data.add({id:'修改人员信息', type:'button', value:'修改人员信息'});
+        main_tb.data.add({id:'修改个人信息 (单选)', type:'button', value:'修改个人信息 (单选)'});
+        main_tb.data.add({id:'修改共性信息 (多选)', type:'button', value:'修改共性信息 (多选)'});
+        main_tb.data.add({id:'修改提交', type:'button', value:'修改提交'});
         main_tb.data.add({type:'separator'});
-        main_tb.data.add({id:'提交', type:'button', value:'提交'});
+        main_tb.data.add({id:'删除', type:'button', value:'删除'});
         main_tb.data.add({type:'spacer'});
         main_tb.data.add({id:'导入', type:'button', value:'导入'});
 
@@ -127,7 +129,7 @@
                     editable = false;
                     button = '';
                     break;
-                case '修改人员信息':
+                case '修改个人信息 (单选)':
                     if (button != '查询人员信息')
                     {
                         alert('查询人员信息下, 才能修改');
@@ -150,11 +152,47 @@
                     }
 
                     var rowNode = grid_options.api.getRowNode(0);
-                    rowNode.setDataValue('值', '修改人员信息');
+                    rowNode.setDataValue('值', '修改个人信息 (单选)');
                     submit_type = 'upkeep';
                     editable = true;
                     break;
-                case '提交':
+                case '修改共性信息 (多选)':
+                    rowData = 
+                        [
+                            {'表项':'属性', '值':'修改共性信息 (多选)'},
+                            {'表项':'生效日期', '值':''},
+                            {'表项':'部门名称', '值':''},
+                            {'表项':'班组', '值':''},
+                            {'表项':'员工状态', '值':''},
+                            {'表项':'一阶段日期', '值':''},
+                            {'表项':'离职日期', '值':''},
+                            {'表项':'离职原因', '值':''},
+                        ];
+
+                    grid_options.api.setRowData(rowData);
+
+                    if (csr_guid.length == 0)
+                    {
+                        alert('请选择相关人员');
+                        return;
+                    }
+
+                    var rowNode = grid_options.api.getRowNode(0);
+                    rowNode.setDataValue('值', '修改共性信息 (多选)');
+                    submit_type = 'upkeep';
+                    editable = true;
+                    break;
+                case '修改提交':
+                    if (submit_type == 'upkeep')
+                    {
+                        upkeep_submit();
+                    }
+                    else
+                    {
+                        alert('请先选择功能按钮进行操作');
+                    }
+                    break;
+                case '删除':
                     if (submit_type == 'upkeep')
                     {
                         upkeep_submit();
@@ -239,6 +277,7 @@
                         },
                     };
                 case '生效日期':
+                case '一阶段日期':
                 case '离职日期':
                     return {
                         component: 'datePicker',
@@ -254,10 +293,13 @@
             grid_options.api.stopEditing();
             grid_options.api.forEachNode((rowNode, index) =>
             {
-                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '修改人员信息')
+                if (rowNode.data['表项'] == '属性')
                 {
-                    alert('请点选修改人员信息按钮,进行相关操作');
-                    ajax = -1;
+                    if (rowNode.data['值'] != '修改个人信息 (单选)' && rowNode.data['值'] != '修改共性信息 (多选)')
+                    {
+                        alert('请点选修改按钮,进行相关操作');
+                        ajax = -1;
+                    }
                 }
             });
 

@@ -1,5 +1,5 @@
 <?php
-/* v2.1.1.1.202209102330, from surface */
+/* v2.2.1.0.202210302040, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -253,10 +253,16 @@ class Upload extends Controller
                         return;
                     }
                     break;
+                case '日期':
+                    #日期格式校验
+                    break;
                 default:
                     break;
             }
         }
+
+        //是否有重复记录
+
 
         // 插入正式表
         $sql = sprintf('

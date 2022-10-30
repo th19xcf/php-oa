@@ -1,4 +1,4 @@
-<!-- v1.2.1.1.202209292345, from surface -->
+<!-- v1.2.2.1.202210240010, from surface -->
 <!DOCTYPE html>
 <html>
 
@@ -257,7 +257,7 @@
                             values: object_obj['培训业务']
                         },
                     };
-                case '住宿':
+                case '是否住宿':
                     return {
                         component: 'agSelectCellEditor',
                         params: {
@@ -271,13 +271,6 @@
                 case '培训结束日期':
                     return {
                         component: 'datePicker',
-                    };
-                case '邀约结果':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','通过','未通过','考虑']
-                        },
                     };
             }
         }
@@ -337,7 +330,7 @@
 
             dhx.ajax.post('<?php base_url(); ?>/train/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('修改成功');
+                alert('修改成功',data);
             }).catch(function (err)
             {
                 alert('修改失败, ' + " " + err.statusText);
@@ -414,11 +407,20 @@
 
             dhx.ajax.post('<?php base_url(); ?>/train/tran/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('修改成功');
-                window.location.reload();
-            }).catch(function (err)
+                var obj = JSON.parse(data);
+
+                if (obj['status'] == '200')
+                {
+                    alert('成功');
+                    window.location.reload();
+                }
+                else
+                {
+                    alert('失败, ' + obj.msg);
+                }
+           }).catch(function (err)
             {
-                alert('修改失败, ' + " " + err.statusText);
+                alert('失败, ' + " " + err.statusText);
             });
         }
 

@@ -1,5 +1,5 @@
 <?php
-/* v1.2.2.1.202210022035, from surface*/
+/* v1.3.2.1.202210270540, from surface*/
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -24,13 +24,15 @@ class Train extends Controller
         $user_location = $session->get('user_location');
 
         $sql = sprintf('
-            select GUID,姓名,身份证号,手机号码,培训状态,培训批次,
+            select GUID,姓名,身份证号,手机号码,
+                if(instr(培训状态,"在培"),"在培",培训状态) as 培训状态,培训批次,
                 concat("培训师_",if(培训老师="","待补充",培训老师)) as 培训老师,
                 培训开始日期,预计完成日期,培训完成日期,
                 培训离开日期,培训离开原因
             from ee_train
             where 属地="%s"
-            order by 培训状态,培训老师,培训开始日期,convert(姓名 using gbk)',
+            order by if(instr(培训状态,"在培"),"在培",培训状态),
+                培训老师,培训开始日期,convert(姓名 using gbk)',
             $user_location);
 
         $query = $model->select($sql);
@@ -47,7 +49,8 @@ class Train extends Controller
             $ee_arr['id'] = sprintf('人员^%s^%s', $row->GUID, $row->姓名);
             $ee_arr['value'] = sprintf('%s', $row->姓名);
 
-            $up1_id = sprintf('培训开始日期^%s^%s^培训开始日期 (%s)', $row->培训状态, $row->培训老师, $row->培训开始日期);
+            $up1_id = sprintf('培训开始日期^%s^%s^培训开始日期 (%s)', 
+                $row->培训状态, $row->培训老师, $row->培训开始日期);
             if (array_key_exists($up1_id, $up1_arr) == false)
             {
                 $up1_arr[$up1_id] = [];
@@ -57,7 +60,8 @@ class Train extends Controller
                 $up1_arr[$up1_id]['items'] = [];
             }
             $up1_arr[$up1_id]['num'] = count($up1_arr[$up1_id]['items'])+1;
-            $up1_arr[$up1_id]['value'] = sprintf('培训开始日期%s (%d人)', $row->培训开始日期, $up1_arr[$up1_id]['num']);
+            $up1_arr[$up1_id]['value'] = sprintf('培训开始日期%s (%d人)', 
+                $row->培训开始日期, $up1_arr[$up1_id]['num']);
             array_push($up1_arr[$up1_id]['items'], $ee_arr);
         }
 
@@ -75,7 +79,8 @@ class Train extends Controller
             }
 
             $up2_arr[$up2_id]['num'] += $up1['num'];
-            $up2_arr[$up2_id]['value'] = sprintf('%s (%d人)', $arr[2], $up2_arr[$up2_id]['num']);
+            $up2_arr[$up2_id]['value'] = sprintf('%s (%d人)', 
+                $arr[2], $up2_arr[$up2_id]['num']);
             array_push($up2_arr[$up2_id]['items'], $up1);
         }
 
@@ -93,7 +98,8 @@ class Train extends Controller
             }
 
             $up3_arr[$up3_id]['num'] += $up2['num'];
-            $up3_arr[$up3_id]['value'] = sprintf('%s (%d人)', $arr[1], $up3_arr[$up3_id]['num']);
+            $up3_arr[$up3_id]['value'] = sprintf('%s (%d人)', 
+                $arr[1], $up3_arr[$up3_id]['num']);
             array_push($up3_arr[$up3_id]['items'], $up2);
         }
 
@@ -239,6 +245,7 @@ class Train extends Controller
                 where GUID in (%s)', $user_workid, $guid_str);
 
             $num = $model->exec($sql);
+            $this->json_data(200, sprintf('%d条',$num), 0);
         }
     }
 
@@ -271,6 +278,7 @@ class Train extends Controller
             $flds_str, $values_str);
 
         $num = $model->exec($sql);
+        $this->json_data(200, sprintf('%d条',$num), 0);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -295,96 +303,131 @@ class Train extends Controller
             }
         }
 
+        // 查询ee_onjob中是否有重复记录
+        $sql = sprintf('
+            select 姓名,身份证号
+            from ee_onjob
+            where 删除标识=""
+                and 身份证号 in
+                (
+                    select 身份证号
+                    from ee_train
+                    where GUID in (%s)
+                    group by 身份证号
+                )', $guid_str);
+
+        $errs = $model->select($sql)->getResultArray();
+
+        if (count($errs) != 0)
+        {
+            $err_arr = [];
+            foreach ($errs as $err)
+            {
+                array_push($err_arr, $err['身份证号']);
+            }
+            $this->json_data(400, sprintf('未执行,在人员表中有重复记录,请确认,身份证号{%s}', implode(',', $err_arr)), 0);
+            return;
+        }
+
+        // 修改信息
+        $sql = sprintf('
+            update ee_train
+            set 培训状态="%s",
+                培训离开日期="%s",
+                结束操作时间="%s"
+            where GUID in (%s) ',
+            $arg['培训结果'],
+            $arg['培训结束日期'],
+            date('Y-m-d H:m:s'),
+            $guid_str);
+
+        $num = $model->exec($sql);
+
         if ($arg['培训结果'] != '通过')
         {
-            $sql = sprintf('
-                update ee_train
-                set 培训状态="%s",培训离开日期="%s"
-                where GUID in (%s) ',
-                $arg['培训结果'], $arg['培训结束日期'], $guid_str);
-
-            $num = $model->exec($sql);
+            $this->json_data(200, sprintf('%d条',$num), 0);
+            return;
         }
 
         // 培训通过记录导入人员表ee_onjob
-        else
-        {
-            $sql = sprintf('
-                update ee_train
-                set 培训状态="%s",培训完成日期="%s"
-                where GUID in (%s) ',
-                $arg['培训结果'], $arg['培训结束日期'], $guid_str);
-
-            $num = $model->exec($sql);
-
-            $arg['开始操作时间'] = date('Y-m-d H:m:s');
-            $arg['结束操作时间'] = '';
+        $arg['开始操作时间'] = date('Y-m-d H:m:s');
+        $arg['结束操作时间'] = '';
     
-            // 从session中取出数据
-            $session = \Config\Services::session();
-            $user_workid = $session->get('user_workid');
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
 
-            $sql = sprintf('
-                insert into ee_onjob (
-                    姓名,身份证号,手机号码,属地,
-                    招聘渠道,员工类别,实习结束日期,
-                    部门编码,部门名称,班组,
-                    岗位名称,岗位类型,
-                    工号1,工号2,
-                    培训信息,培训开始日期,培训完成日期,
-                    一阶段日期,二阶段日期,
-                    三阶段日期,四阶段日期,
-                    正式期日期,
-                    员工阶段,员工状态,
-                    离职日期,离职原因,
-                    派遣公司,变更表项,
-                    记录开始日期,记录结束日期,
-                    录入来源,录入人)
+        $sql = sprintf('
+            insert into ee_onjob (
+                姓名,身份证号,手机号码,属地,
+                招聘渠道,员工类别,实习结束日期,
+                部门编码,部门名称,班组,
+                岗位名称,岗位类型,
+                工号1,工号2,
+                培训信息,培训开始日期,培训完成日期,
+                一阶段日期,二阶段日期,
+                三阶段日期,四阶段日期,
+                正式期日期,
+                员工阶段,员工状态,
+                离职日期,离职原因,
+                派遣公司,变更表项,
+                记录开始日期,记录结束日期,
+                录入来源,录入人)
+            select 
+                t1.姓名,t1.身份证号,t1.手机号码,t1.属地,
+                t2.招聘渠道,
+                if(t2.招聘渠道="校招","未毕业学生","合同制员工") as 员工类别,
+                t2.实习结束日期,
+                "" as 部门编码,"" as 部门名称,"" as 班组,
+                "客服代表" as 岗位名称,"按量结算" as 岗位类型,
+                "%s" as 工号1,
+                "%s" as 工号2,
+                "有" as 培训信息,
+                培训开始日期,培训完成日期,
+                培训完成日期 as 一阶段日期,"" as 二阶段日期,
+                "" as 三阶段日期,"" as 四阶段日期,
+                "" as 正式期日期,
+                "新人组" as 员工阶段,"" as 员工状态,
+                "" as 离职日期,"" as 离职原因,
+                "" as 派遣公司,"" as 变更表项,
+                "%s" as 记录开始日期,"" as 记录结束日期,
+                "培训表转入" as 录入来源,"%s" as 录入人
+            from
+            (
+                select GUID,姓名,身份证号,手机号码,属地,培训业务,培训状态,
+                    培训批次,培训老师,培训开始日期,预计完成日期,
+                    培训完成日期,培训离开日期,培训离开原因,面试信息,
+                    开始操作时间,结束操作时间,录入来源,录入时间,录入人
+                from ee_train
+            ) as t1
+            left join
+            (
+                select 姓名,身份证号,招聘渠道,实习结束日期
+                from ee_interview
+                group by 身份证号
+            ) as t2
+            on t1.身份证号=t2.身份证号
+            where t1.GUID in (%s)', 
+            $arg['账号'],$arg['工号'],
+            $arg['开始操作时间'],
+            $user_workid, $guid_str);
 
-                select 
-                    t1.姓名,t1.身份证号,t1.手机号码,t1.属地,
-                    t2.招聘渠道,
-                    if(t2.招聘渠道="校招","未毕业学生","合同制员工") as 员工类别,
-                    t2.实习结束日期,
-                    "" as 部门编码,"" as 部门名称,"" as 班组,
-                    "客服代表" as 岗位名称,"按量结算" as 岗位类型,
-                    "%s" as 工号1,
-                    "%s" as 工号2,
-                    "有" as 培训信息,
-                    培训开始日期,培训完成日期,
-                    培训完成日期 as 一阶段日期,"" as 二阶段日期,
-                    "" as 三阶段日期,"" as 四阶段日期,
-                    "" as 正式期日期,
-                    "新人组" as 员工阶段,"" as 员工状态,
-                    "" as 离职日期,"" as 离职原因,
-                    "" as 派遣公司,"" as 变更表项,
-                    "%s" as 记录开始日期,"" as 记录结束日期,
-                    "培训表转入" as 录入来源,"%s" as 录入人
-                from
-                (
-                    select GUID,姓名,身份证号,手机号码,属地,培训业务,培训状态,
-                        培训批次,培训老师,培训开始日期,预计完成日期,
-                        培训完成日期,培训离开日期,培训离开原因,面试信息,
-                        开始操作时间,结束操作时间,录入来源,录入时间,录入人
-                    from ee_train
-                ) as t1
-                left join
-                (
-                    select 姓名,身份证号,手机号码,属地,招聘渠道,渠道名称,
-                    信息来源,实习结束日期,面试业务,面试岗位,住宿,
-                    一次面试日期,一次面试人,一次面试结果,
-                    二次面试日期,二次面试人,二次面试结果,
-                    预约培训日期,备注说明,邀约信息,参培信息,
-                    录入来源,录入人,录入时间,校验标识,删除标识
-                    from ee_interview
-                ) as t2
-                on t1.身份证号=t2.身份证号
-                where t1.GUID in (%s)', 
-                $arg['账号'],$arg['工号'],
-                $arg['开始操作时间'],
-                $user_workid, $guid_str);
+        $num = $model->exec($sql);
+        $this->json_data(200, sprintf('%d条',$num), 0);
+    }
 
-                $num = $model->exec($sql);
-        }
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 自定义函数
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function json_data($status=200, $msg='', $count=0)
+    {
+        $res = [
+            'status' => $status,
+            'msg' => $msg,
+            'number' => $count
+        ];
+
+        echo json_encode($res);
+        die;
     }
 }
