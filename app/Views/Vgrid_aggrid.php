@@ -1,4 +1,4 @@
-<!-- v4.3.1.1.202210301520, from surface -->
+<!-- v4.3.2.1.202211070010, from surface -->
 <!DOCTYPE html>
 <html>
 
@@ -262,10 +262,6 @@
         {
             column_name_arr.push(columns_arr[ii]['列名']);
         }
-
-        //console.log('columns_obj', columns_obj);
-        //console.log('cols_arr', columns_arr);
-        //console.log('col_name_arr', column_name_arr);
 
         const update_grid_options = 
         {
@@ -549,8 +545,8 @@
                         update_grid_options.api.setRowData(rowData);
                     }
 
-                   $$('footbox').innerHTML = '&nbsp&nbsp<b>提交记录:{' + foot_upkeep + '}</b>';
-                   div_block('updatebox');
+                    $$('footbox').innerHTML = '&nbsp&nbsp<b>提交记录:{' + foot_upkeep + '}</b>';
+                    div_block('updatebox');
                     break;
                 case '新增':
                     if (update_flag != id)
@@ -598,12 +594,11 @@
                     }
 
                     send_str = JSON.stringify(send_obj);
-                    //console.log('send=', send_obj, send_str);
 
-                    parent.window.goto('<?php echo $next_func_id; ?>','钻取-'+'<?php echo $next_func_name; ?>','Frame/init/<?php echo $next_func_id; ?>/<?php echo $func_id; ?>/'+send_str);
+                    parent.window.goto('<?php echo $next_func_id; ?>','钻取-'+'<?php echo $next_func_name; ?>','frame/init/<?php echo $next_func_id; ?>/<?php echo $func_id; ?>/'+send_str);
                     break;
                 case '导入':
-                    parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','Upload/init/<?php echo $import_func_id; ?>');
+                    parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','upload/init/<?php echo $import_func_id; ?>');
                     break;
                 case '导出':
                     var href = '<?php base_url(); ?>/frame/export/<?php echo $func_id; ?>';
@@ -622,7 +617,7 @@
             }
         });
 
-        // 工具栏点击
+        // 修改窗口,工具栏点击
         update_tb.events.on('click', function(id, e) 
         {
             switch (id)
@@ -641,7 +636,7 @@
             }
         });
 
-        // 条件栏点击
+        // 条件窗口,工具栏点击
         cond_tb.events.on('click', function(id, e) 
         {
             switch (id)
@@ -660,7 +655,7 @@
             }
         });
 
-        // 图形工具栏点击
+        // 图形窗口,工具栏点击
         chart_tb.events.on('click', function(id, e) 
         {
             switch (id)
@@ -779,7 +774,7 @@
 
                 var ajax = false;
                 var cond = new CondInfo();
-                cond.col_name = rowNode.data['字段名'];
+                cond.col_name = rowNode.data['列名'];
                 cond.fld_name = rowNode.data['字段名'];
                 cond.type = rowNode.data['列类型'];
                 cond.cond_1 = rowNode.data['条件1'];
@@ -857,7 +852,6 @@
                 return;
             }
 
-            console.log('cond=', cond_arr);
             dhx.ajax.post('<?php base_url(); ?>/frame/set_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
             {
                 data_grid_obj = JSON.parse(data);
@@ -903,7 +897,7 @@
             update_grid_options.api.stopEditing();
 
             // 获得要提交的数据
-            if (update_flag == '多条修改')
+            if (update_flag == '多条修改')  // 多条
             {
                 update_grid_options.api.stopEditing();
                 update_grid_options.api.forEachNode((rowNode, index) => 
@@ -1030,8 +1024,6 @@
 
                 send_arr.push(col);
 
-                console.log('send=', send_arr);
-
                 //数据检查
                 for (var ii in send_arr)
                 {
@@ -1098,8 +1090,6 @@
             col.value = key_values;
 
             send_arr.push(col);
-
-            console.log('send=', send_arr);
 
             var url = '<?php base_url(); ?>/frame/delete_row/<?php echo $func_id; ?>';
             dhx.ajax.post(url, send_arr).then(function (data)

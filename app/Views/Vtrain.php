@@ -1,4 +1,4 @@
-<!-- v1.2.2.1.202210240010, from surface -->
+<!-- v1.3.1.1.202211061315, from surface -->
 <!DOCTYPE html>
 <html>
 
@@ -51,7 +51,8 @@
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         main_tb.data.add({type:'separator'});
-        main_tb.data.add({id:'修改培训信息', type:'button', value:'修改培训信息'});
+        main_tb.data.add({id:'修改培训信息 (单选)', type:'button', value:'修改培训信息 (单选)'});
+        main_tb.data.add({id:'修改培训信息 (多选)', type:'button', value:'修改培训信息 (多选)'});
         main_tb.data.add({id:'新增培训信息', type:'button', value:'新增培训信息'});
         main_tb.data.add({id:'更新培训结果', type:'button', value:'更新培训结果'});
         main_tb.data.add({type:'separator'});
@@ -118,7 +119,7 @@
                     editable = false;
                     button = '';
                     break;
-                case '修改培训信息':
+                case '修改培训信息 (单选)':
                     if (button != '查询培训信息')
                     {
                         alert('查询培训信息下, 才能修改');
@@ -141,7 +142,29 @@
                     }
 
                     var rowNode = grid_options.api.getRowNode(0);
-                    rowNode.setDataValue('值', '修改培训信息');
+                    rowNode.setDataValue('值', '修改培训信息 (单选)');
+                    submit_type = 'upkeep';
+                    editable = true;
+                    break;
+                case '修改培训信息 (多选)':
+                    rowData = 
+                    [
+                        {'表项':'属性', '值':'修改培训信息 (多选)'},
+                        {'表项':'培训业务', '值':''},
+                        {'表项':'培训批次', '值':''},
+                        {'表项':'培训老师', '值':''},
+                        {'表项':'培训开始日期', '值':''},
+                        {'表项':'预计完成日期', '值':''},
+                    ];
+
+                    grid_options.api.setRowData(rowData);
+
+                    if (csr_guid.length == 0)
+                    {
+                        alert('请选择相关人员');
+                        return;
+                    }
+
                     submit_type = 'upkeep';
                     editable = true;
                     break;
@@ -232,7 +255,7 @@
                     return {
                         component: 'agSelectCellEditor',
                         params: {
-                            values: ['','通过','未通过','离开','淘汰','转期']
+                            values: ['','在培','通过','未通过','离开','淘汰','转期']
                         },
                     };
                 case '属地':
@@ -278,26 +301,18 @@
         // 更新培训信息
         function upkeep_submit(id)
         {
-            if (csr_guid.length == 0)
-            {
-                alert('请选择相关人员');
-                return;
-            }
-            else if (csr_guid.length > 1)
-            {
-                alert('只能选择一个人员');
-                return;
-            }
-
             var ajax = 0;
 
             grid_options.api.stopEditing();
             grid_options.api.forEachNode((rowNode, index) =>
             {
-                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '修改培训信息')
+                if (rowNode.data['表项'] == '属性')
                 {
-                    alert('请点选修改培训信息选项进行相关操作');
-                    ajax = -1;
+                    if (rowNode.data['值'] != '修改培训信息 (单选)' && rowNode.data['值'] != '修改培训信息 (多选)')
+                    {
+                        alert('请点选修改培训信息选项进行相关操作');
+                        ajax = -1;
+                    }
                 }
             });
 
@@ -331,6 +346,7 @@
             dhx.ajax.post('<?php base_url(); ?>/train/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert('修改成功',data);
+                window.location.reload();
             }).catch(function (err)
             {
                 alert('修改失败, ' + " " + err.statusText);
@@ -343,10 +359,11 @@
             rowData = 
             [
                 {'表项':'属性', '值':'更新培训结果'},
+                {'表项':'生效日期', '值':''},
                 {'表项':'培训结果', '值':''},
                 {'表项':'培训结束日期', '值':''},
-                {'表项':'账号', '值':''},
-                {'表项':'工号', '值':''},
+                {'表项':'培训离开日期', '值':''},
+                {'表项':'培训离开原因', '值':''},
             ];
 
             grid_options.api.setRowData(rowData);

@@ -1,5 +1,5 @@
 <?php
-/* v1.3.2.1.202210270540, from surface*/
+/* v1.4.1.1.202211061715, from surface*/
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -124,6 +124,36 @@ class Train extends Controller
 
         // 直接给一些固定变量赋值
         $object_arr = []; 
+        $value = '';
+
+        $object_arr['培训业务'] = [];
+        $object_arr['培训业务'][0] = '';
+
+        switch ($user_location)
+        {
+            case '北京总公司':
+                $value = '北京培训业务';
+                break;
+            case '河北分公司':
+                $value = '北一培训业务';
+                break;
+            case '四川分公司':
+                $value = '南一培训业务';
+                break;
+        }
+
+        $sql = sprintf('
+            select 对象值 
+            from def_object 
+            where 对象名称="%s"
+            order by 对象值', $value);
+
+        $query = $model->select($sql);
+        $result = $query->getResult();
+        foreach($result as $val)
+        {
+            array_push($object_arr['培训业务'], $val->对象值);
+        }
 
         $send['func_id'] = $menu_id;
         $send['tree_json'] = json_encode($tree_arr);
@@ -152,9 +182,8 @@ class Train extends Controller
         {
             $sql = sprintf('
                 select GUID,姓名,身份证号,手机号码,
-                    培训业务,培训状态,培训业务,培训批次,培训老师,
-                    培训开始日期,预计完成日期,培训完成日期,
-                    培训离开日期,培训离开原因
+                    培训业务,培训状态,培训批次,培训老师,
+                    培训开始日期,预计完成日期
                 from ee_train
                 where GUID=%s', $arr[1]);
             $query = $model->select($sql);
@@ -162,15 +191,11 @@ class Train extends Controller
 
             array_push($rows_arr, array('表项'=>'属性', '值'=>'查询培训信息'));
             array_push($rows_arr, array('表项'=>'姓名', '值'=>$results[0]->姓名));
-            array_push($rows_arr, array('表项'=>'培训状态', '值'=>$results[0]->培训状态));
             array_push($rows_arr, array('表项'=>'培训业务', '值'=>$results[0]->培训业务));
             array_push($rows_arr, array('表项'=>'培训批次', '值'=>$results[0]->培训批次));
             array_push($rows_arr, array('表项'=>'培训老师', '值'=>$results[0]->培训老师));
             array_push($rows_arr, array('表项'=>'培训开始日期', '值'=>$results[0]->培训开始日期));
             array_push($rows_arr, array('表项'=>'预计完成日期', '值'=>$results[0]->预计完成日期));
-            array_push($rows_arr, array('表项'=>'培训完成日期', '值'=>$results[0]->培训完成日期));
-            array_push($rows_arr, array('表项'=>'培训离开日期', '值'=>$results[0]->培训离开日期));
-            array_push($rows_arr, array('表项'=>'培训离开原因', '值'=>$results[0]->培训离开原因));
         }
         else
         {
@@ -187,14 +212,12 @@ class Train extends Controller
     {
         $arg = $this->request->getJSON(true);
 
-        if ($arg['培训状态'] == '在培')
-        {
-            $arg['开始操作时间'] = date('Y-m-d H:m:s');
-        }
-        else if ($arg['培训状态'] == '通过')
-        {
-            $arg['结束操作时间'] = date('Y-m-d H:m:s');
-        }
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
+        $arg['录入时间'] = date('Y-m-d H:m:s');
+        $arg['录入人'] = $user_workid;
 
         $model = new Mcommon();
 
@@ -220,33 +243,12 @@ class Train extends Controller
             $set_str = $set_str . sprintf('%s="%s"', $key, $value);
         }
 
-        // 从session中取出数据
-        $session = \Config\Services::session();
-        $user_workid = $session->get('user_workid');
-
         $sql = sprintf('
             update ee_train
             set %s where GUID in (%s) ',
             $set_str, $guid_str);
 
         $num = $model->exec($sql);
-
-        // 培训通过记录导入ee_onjob
-        if ($arg['培训状态'] == '通过')
-        {
-            // 从session中取出数据
-            $session = \Config\Services::session();
-            $user_workid = $session->get('user_workid');
-
-            $sql = sprintf('
-                insert into ee_onjob (姓名,身份证号,手机号码,培训开始日期,培训完成日期,记录开始日期,录入来源,录入人)
-                select 姓名,身份证号,手机号码,培训开始日期,培训完成日期,培训完成日期 as 记录开始日期,"培训表转入" as 录入来源, "%s" as 录入人
-                from ee_train
-                where GUID in (%s)', $user_workid, $guid_str);
-
-            $num = $model->exec($sql);
-            $this->json_data(200, sprintf('%d条',$num), 0);
-        }
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -288,6 +290,13 @@ class Train extends Controller
     {
         $arg = $this->request->getJSON(true);
 
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
+        $arg['录入时间'] = date('Y-m-d H:m:s');
+        $arg['录入人'] = $user_workid;
+
         $model = new Mcommon();
 
         $guid_str = '';
@@ -303,43 +312,49 @@ class Train extends Controller
             }
         }
 
-        // 查询ee_onjob中是否有重复记录
-        $sql = sprintf('
-            select 姓名,身份证号
-            from ee_onjob
-            where 删除标识=""
-                and 身份证号 in
-                (
-                    select 身份证号
-                    from ee_train
-                    where GUID in (%s)
-                    group by 身份证号
-                )', $guid_str);
-
-        $errs = $model->select($sql)->getResultArray();
-
-        if (count($errs) != 0)
+        if ($arg['培训结果'] == '通过')
         {
-            $err_arr = [];
-            foreach ($errs as $err)
+            // 查询ee_onjob中是否有重复记录,有则报错
+            $sql = sprintf('
+                select 姓名,身份证号
+                from ee_onjob
+                where 删除标识=""
+                    and 身份证号 in
+                    (
+                        select 身份证号
+                        from ee_train
+                        where GUID in (%s)
+                        group by 身份证号
+                    )', $guid_str);
+
+            $errs = $model->select($sql)->getResultArray();
+
+            if (count($errs) != 0)
             {
-                array_push($err_arr, $err['身份证号']);
+                $err_arr = [];
+                foreach ($errs as $err)
+                {
+                    array_push($err_arr, $err['身份证号']);
+                }
+                $this->json_data(400, sprintf('未执行,在人员表中有重复记录,请确认,身份证号{%s}', implode(',', $err_arr)), 0);
+                return;
             }
-            $this->json_data(400, sprintf('未执行,在人员表中有重复记录,请确认,身份证号{%s}', implode(',', $err_arr)), 0);
-            return;
         }
 
-        // 修改信息
+        // 修改ee_train信息
+        $set_str = '';
+        foreach ($arg as $key => $value)
+        {
+            if ($key=='操作' || $key=='人员' || $key=='生效日期' || $value=='') continue;
+
+            if ($set_str != '') $set_str = $set_str . ',';
+            $set_str = $set_str . sprintf('%s="%s"', $key, $value);
+        }
+
         $sql = sprintf('
             update ee_train
-            set 培训状态="%s",
-                培训离开日期="%s",
-                结束操作时间="%s"
-            where GUID in (%s) ',
-            $arg['培训结果'],
-            $arg['培训结束日期'],
-            date('Y-m-d H:m:s'),
-            $guid_str);
+            set %s where GUID in (%s) ',
+            $set_str, $guid_str);
 
         $num = $model->exec($sql);
 
@@ -349,18 +364,16 @@ class Train extends Controller
             return;
         }
 
-        // 培训通过记录导入人员表ee_onjob
+        // 培训通过,记录导入人员表ee_onjob
         $arg['开始操作时间'] = date('Y-m-d H:m:s');
         $arg['结束操作时间'] = '';
     
-        // 从session中取出数据
-        $session = \Config\Services::session();
-        $user_workid = $session->get('user_workid');
-
         $sql = sprintf('
             insert into ee_onjob (
                 姓名,身份证号,手机号码,属地,
-                招聘渠道,员工类别,实习结束日期,
+                招聘渠道,
+                员工类别,
+                实习结束日期,
                 部门编码,部门名称,班组,
                 岗位名称,岗位类型,
                 工号1,工号2,
@@ -380,14 +393,12 @@ class Train extends Controller
                 t2.实习结束日期,
                 "" as 部门编码,"" as 部门名称,"" as 班组,
                 "客服代表" as 岗位名称,"按量结算" as 岗位类型,
-                "%s" as 工号1,
-                "%s" as 工号2,
-                "有" as 培训信息,
-                培训开始日期,培训完成日期,
+                "" as 工号1,"" as 工号2,
+                "有" as 培训信息,培训开始日期,培训完成日期,
                 培训完成日期 as 一阶段日期,"" as 二阶段日期,
                 "" as 三阶段日期,"" as 四阶段日期,
                 "" as 正式期日期,
-                "新人组" as 员工阶段,"" as 员工状态,
+                "新人组" as 员工阶段,"在职" as 员工状态,
                 "" as 离职日期,"" as 离职原因,
                 "" as 派遣公司,"" as 变更表项,
                 "%s" as 记录开始日期,"" as 记录结束日期,
@@ -407,10 +418,8 @@ class Train extends Controller
                 group by 身份证号
             ) as t2
             on t1.身份证号=t2.身份证号
-            where t1.GUID in (%s)', 
-            $arg['账号'],$arg['工号'],
-            $arg['开始操作时间'],
-            $user_workid, $guid_str);
+            where t1.GUID in (%s)',
+            $arg['生效日期'], $user_workid, $guid_str);
 
         $num = $model->exec($sql);
         $this->json_data(200, sprintf('%d条',$num), 0);
