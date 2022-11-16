@@ -1,5 +1,5 @@
 <?php
-/* v5.3.1.1.202210301520, from surface */
+/* v5.3.2.1.2022111160955, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -236,7 +236,7 @@ class Frame extends Controller
         $sql = sprintf('
             select 功能编码,查询模块,字段模块,部门字段,属地字段,
                 列名,列类型,列宽度,字段名,查询名,对象,
-                可修改,可筛选,主键,赋值类型,
+                可修改,可筛选,可新增,主键,赋值类型,
                 显示提示,显示异常,列顺序
             from view_function
             where 功能编码=%s and 列顺序>0
@@ -264,6 +264,7 @@ class Frame extends Controller
             $arr['赋值类型'] = $row->赋值类型;
             $arr['对象'] = $row->对象;
             $arr['可修改'] = $row->可修改;
+            $arr['可新增'] = $row->可新增;
             $arr['显示提示'] = $row->显示提示;
             $arr['显示异常'] = $row->显示异常;
 
@@ -304,6 +305,8 @@ class Frame extends Controller
             if ($row->主键 == 1) continue;
 
             // 前端update_grid值
+            if ($row->可新增 != 1) continue;
+
             $value_arr = [];
             $value_arr['列名'] = $row->列名;
             $value_arr['字段名'] = $row->字段名;
