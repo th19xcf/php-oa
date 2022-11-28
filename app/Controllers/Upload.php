@@ -1,5 +1,5 @@
 <?php
-/* v2.2.1.0.202210302040, from surface */
+/* v2.2.2.1.202211281500, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -166,6 +166,19 @@ class Upload extends Controller
         {
             $ii ++;
             if ($ii == 0) continue;
+
+            //判断是否所有数据都为空
+            $empty = true;
+            foreach ($data as $item)
+            {
+                if ($item != '')
+                {
+                    $empty = false;
+                    break;
+                }
+            }
+
+            if ($empty) continue;
 
             $arr = [];
             $data = array_combine($sheet_data[0], $data);  //修改键名
