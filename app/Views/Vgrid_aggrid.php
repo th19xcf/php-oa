@@ -1,4 +1,4 @@
-<!-- v4.3.2.1.202211070010, from surface -->
+<!-- v5.1.1.1.202211300950, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -208,13 +208,9 @@
                 {
                     data_columns_arr[ii].comparator = value_sort;
                 }
-                if (columns_obj[jj].显示异常 != '' && columns_obj[jj].类型 == '数值')
+                if (columns_obj[jj].提示条件 != '' || columns_obj[jj].异常条件 != '')
                 {
-                    data_columns_arr[ii].cellStyle = value_cell_style;
-                }
-                else if (columns_obj[jj].显示异常 != '' && columns_obj[jj].类型 == '字符')
-                {
-                    data_columns_arr[ii].cellStyle = str_cell_style;
+                    data_columns_arr[ii].cellStyle = set_cell_style;
                 }
             }
         }
@@ -1107,22 +1103,103 @@
             return valueA - valueB;
         }
 
-        function value_cell_style(params)
+        function set_cell_style(params)
         {
-            if (params.value < 0)
+            for (var jj in columns_obj)
             {
-                return {'color':'red','font-weight':'bold'};
-            }
-            return null;
-        }
+                if (params.colDef.field != columns_obj[jj].列名) continue;
 
-        function str_cell_style(params)
-        {
-            var str = params.value;
-            if (str.indexOf('请补充') != -1 || str.indexOf('请校准') != -1)
-            {
-                return {'color':'green','font-weight':'bold'};
+                console.log('提示',jj,columns_obj[jj].列名,columns_obj[jj].提示条件,columns_obj[jj].提示样式);
+                console.log('异常',jj,columns_obj[jj].列名,columns_obj[jj].异常条件,columns_obj[jj].异常样式);
+
+                var str = '';
+                var style_str = '';
+
+                if (columns_obj[jj].提示条件 != '')
+                {
+                    str = columns_obj[jj].提示条件;
+                    style_str = columns_obj[jj].提示样式;
+                    style_default = {'color':'green','font-weight':'bold'};
+                }
+                if (columns_obj[jj].异常条件 != '')
+                {
+                    str = columns_obj[jj].异常条件;
+                    style_str = columns_obj[jj].异常样式;
+                    style_default = {'color':'red','font-weight':'bold','background-color': '#f7acbc'};
+                }
+
+                if (str.search('>=')!=-1 || str.search('<=')!=-1 || str.search('!=')!=-1)
+                {
+                    opt = str.substr(0,2);
+                    value = str.substr(2);
+                }
+                else if (str.search('>')!=-1 || str.search('<')!=-1 || str.search('=')!=-1)
+                {
+                    opt = str.substr(0,1);
+                    value = str.substr(1);
+                }
+
+                var style_obj = {};
+                if (style_str != '')
+                {
+                    var style_arr = style_str.split(',');
+
+                    for (var ii in style_arr)
+                    {
+                        var item_arr = style_arr[ii].split(':');
+                        style_obj[item_arr[0]] = item_arr[1];
+                    }
+                }
+                else
+                {
+                    style_obj = style_default;
+                }
+
+                error = false;
+
+                if (columns_obj[jj].类型 == '数值')
+                {
+                    switch (opt)
+                    {
+                        case '>':
+                            if (params.value > value) error = true;
+                            break;
+                        case '<':
+                            if (params.value < value) error = true;
+                            break;
+                        case '=':
+                            if (params.value = value) error = true;
+                            break;
+                        case '>=':
+                            if (params.value >= value) error = true;
+                            break;
+                        case '<=':
+                            if (params.value <= value) error = true;
+                            break;
+                        case '!=':
+                            if (params.value != value) error = true;
+                            break;
+                    }
+                }
+                else
+                {
+                    switch (opt)
+                    {
+                        case '=':
+                            if (params.value.indexOf(value) != -1) error = true;
+                            break;
+                        case '!=':
+                            if (params.value.indexOf(value) == -1) error = true;
+                            break;
+                    }
+                }
+
+                if (error)
+                {
+                    return style_obj;
+                }
             }
+
             return null;
         }
 

@@ -1,5 +1,5 @@
 <?php
-/* v5.3.2.1.2022111160955, from office */
+/* v6.1.1.1.202211300950, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -237,7 +237,7 @@ class Frame extends Controller
             select 功能编码,查询模块,字段模块,部门字段,属地字段,
                 列名,列类型,列宽度,字段名,查询名,对象,
                 可修改,可筛选,可新增,主键,赋值类型,
-                显示提示,显示异常,列顺序
+                提示条件,提示样式设置,异常条件,异常样式设置,列顺序
             from view_function
             where 功能编码=%s and 列顺序>0
             group by 列名
@@ -265,15 +265,17 @@ class Frame extends Controller
             $arr['对象'] = $row->对象;
             $arr['可修改'] = $row->可修改;
             $arr['可新增'] = $row->可新增;
-            $arr['显示提示'] = $row->显示提示;
-            $arr['显示异常'] = $row->显示异常;
+            $arr['提示条件'] = $row->提示条件;
+            $arr['提示样式'] = $row->提示样式设置;
+            $arr['异常条件'] = $row->异常条件;
+            $arr['异常样式'] = $row->异常样式设置;
 
             array_push($columns_arr, $arr);
 
             $arr['查询名'] = '';
             array_push($send_columns_arr, $arr);
 
-            if ($row->显示提示 == 1)
+            if ($row->提示条件 == 1)
             {
                 $tip_column = $row->列名;
             }
