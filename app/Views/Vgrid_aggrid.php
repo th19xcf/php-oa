@@ -1,4 +1,4 @@
-<!-- v5.1.1.1.202211300950, from office -->
+<!-- v5.1.2.1.202212062300, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1109,8 +1109,10 @@
             {
                 if (params.colDef.field != columns_obj[jj].列名) continue;
 
-                console.log('提示',jj,columns_obj[jj].列名,columns_obj[jj].提示条件,columns_obj[jj].提示样式);
-                console.log('异常',jj,columns_obj[jj].列名,columns_obj[jj].异常条件,columns_obj[jj].异常样式);
+                if (columns_obj[jj].提示样式 == '' && columns_obj[jj].提示样式 == '')
+                {
+                    return null;
+                }
 
                 var str = '';
                 var style_str = '';

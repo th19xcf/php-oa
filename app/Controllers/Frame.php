@@ -1,5 +1,5 @@
 <?php
-/* v6.1.1.1.202211300950, from office */
+/* v6.1.2.1.202212062300, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -239,7 +239,7 @@ class Frame extends Controller
                 可修改,可筛选,可新增,主键,赋值类型,
                 提示条件,提示样式设置,异常条件,异常样式设置,列顺序
             from view_function
-            where 功能编码=%s and 列顺序>0
+            where 功能编码="%s" and 列顺序>0
             group by 列名
             order by 列顺序', $menu_id);
 
@@ -426,7 +426,7 @@ class Frame extends Controller
                 from view_function
                 group by 功能编码
             ) as t3 on t1.导入模块=t3.功能编码
-            where t1.功能编码=%s
+            where t1.功能编码="%s"
             group by t1.功能编码', $menu_id);
 
         $query = $model->select($sql);
