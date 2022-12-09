@@ -1,5 +1,5 @@
 <?php
-/* v6.1.2.1.202212062300, from home */
+/* v6.1.3.1.202212091520, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -303,10 +303,26 @@ class Frame extends Controller
                 $data_col_arr[$row->列名]['filter'] = 'agNumberColumnFilter';
             }
 
+            // 前端要显示的cond_grid条件信息
+            $cond = [];
+            $cond['列名'] = $row->列名;
+            $cond['字段名'] = $row->字段名;
+            $cond['列类型'] = $row->列类型;
+            $cond['汇总条件'] = '';
+            $cond['平均'] = '';
+            $cond['条件1'] = '';
+            $cond['参数1'] = '';
+            $cond['条件关系'] = '';
+            $cond['条件2'] = '';
+            $cond['参数2'] = '';
+            $cond['计算方式'] = '';
+
+            array_push($cond_value_arr, $cond);
+
+            // 前端update_grid信息
             // 主键不能更改
             if ($row->主键 == 1) continue;
 
-            // 前端update_grid值
             if ($row->可新增 != 1) continue;
 
             $value_arr = [];
@@ -337,22 +353,6 @@ class Frame extends Controller
             }
 
             array_push($update_value_arr, $value_arr);
-
-            // 前端要显示的cond_grid条件信息
-            $cond = [];
-            $cond['列名'] = $row->列名;
-            $cond['字段名'] = $row->字段名;
-            $cond['列类型'] = $row->列类型;
-            $cond['汇总条件'] = '';
-            $cond['平均'] = '';
-            $cond['条件1'] = '';
-            $cond['参数1'] = '';
-            $cond['条件关系'] = '';
-            $cond['条件2'] = '';
-            $cond['参数2'] = '';
-            $cond['计算方式'] = '';
-
-            array_push($cond_value_arr, $cond);
 
             /*
             // 匹配钻取条件
