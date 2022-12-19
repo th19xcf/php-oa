@@ -1,4 +1,4 @@
-<!-- v1.3.1.1.202211061315, from surface -->
+<!-- v1.3.2.1.202212191555, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -54,7 +54,7 @@
         main_tb.data.add({id:'修改培训信息 (单选)', type:'button', value:'修改培训信息 (单选)'});
         main_tb.data.add({id:'修改培训信息 (多选)', type:'button', value:'修改培训信息 (多选)'});
         main_tb.data.add({id:'新增培训信息', type:'button', value:'新增培训信息'});
-        main_tb.data.add({id:'更新培训结果', type:'button', value:'更新培训结果'});
+        main_tb.data.add({id:'更新培训状态', type:'button', value:'更新培训状态'});
         main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'提交', type:'button', value:'提交'});
         main_tb.data.add({type:'spacer'});
@@ -174,7 +174,7 @@
                     button = '新增培训信息';
                     insert();
                     break;
-                case '更新培训结果':
+                case '更新培训状态':
                     if (csr_guid.length == 0)
                     {
                         alert('请选择相关人员');
@@ -182,7 +182,7 @@
                     }
                     submit_type = 'tran';
                     editable = true;
-                    button = '更新培训结果';
+                    button = '更新培训状态';
                     tran();
                     break;
                 case '提交':
@@ -251,11 +251,11 @@
 
             switch (params.data.表项)
             {
-                case '培训结果':
+                case '培训状态':
                     return {
                         component: 'agSelectCellEditor',
                         params: {
-                            values: ['','在培','通过','未通过','离开','淘汰','转期']
+                            values: ['','通过','未通过','离开','淘汰','转期']
                         },
                     };
                 case '属地':
@@ -289,8 +289,6 @@
                     };
                 case '培训开始日期':
                 case '预计完成日期':
-                case '培训完成日期':
-                case '培训离开日期':
                 case '培训结束日期':
                     return {
                         component: 'datePicker',
@@ -358,11 +356,9 @@
         {
             rowData = 
             [
-                {'表项':'属性', '值':'更新培训结果'},
-                {'表项':'生效日期', '值':''},
-                {'表项':'培训结果', '值':''},
+                {'表项':'属性', '值':'更新培训状态'},
+                {'表项':'培训状态', '值':''},
                 {'表项':'培训结束日期', '值':''},
-                {'表项':'培训离开日期', '值':''},
                 {'表项':'培训离开原因', '值':''},
             ];
 
@@ -383,9 +379,9 @@
             grid_options.api.stopEditing();
             grid_options.api.forEachNode((rowNode, index) =>
             {
-                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '更新培训结果')
+                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '更新培训状态')
                 {
-                    alert('请点选更新培训结果按钮进行更新操作');
+                    alert('请点选更新培训状态按钮进行更新操作');
                     ajax = -1;
                 }
             });
@@ -396,7 +392,7 @@
             }
 
             var arg_obj = {};
-            arg_obj['操作'] = '更新培训结果';
+            arg_obj['操作'] = '更新培训状态';
             arg_obj['人员'] = csr_guid;
 
             grid_options.api.forEachNode((rowNode, index) =>
@@ -404,9 +400,9 @@
                 if (rowNode.data['表项'] != '属性')
                 {
                     arg_obj[rowNode.data['表项']] = rowNode.data['值'];
-                    if (rowNode.data['表项']=='培训结果' && rowNode.data['值'] == '')
+                    if (rowNode.data['表项']=='培训状态' && rowNode.data['值'] == '')
                     {
-                        alert('"参培结果"为空,请补充.');
+                        alert('"培训状态"为空,请补充.');
                         ajax = -1;
                     }
                     if (rowNode.data['表项']=='培训结束日期' && rowNode.data['值'] == '')

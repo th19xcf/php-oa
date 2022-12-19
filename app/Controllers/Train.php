@@ -1,5 +1,5 @@
 <?php
-/* v1.4.1.1.202211061715, from surface*/
+/* v1.4.2.1.202212191615, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -294,6 +294,7 @@ class Train extends Controller
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
 
+        $arg['结束操作时间'] = date('Y-m-d H:m:s');
         $arg['录入时间'] = date('Y-m-d H:m:s');
         $arg['录入人'] = $user_workid;
 
@@ -312,7 +313,7 @@ class Train extends Controller
             }
         }
 
-        if ($arg['培训结果'] == '通过')
+        if ($arg['培训状态'] == '通过')
         {
             // 查询ee_onjob中是否有重复记录,有则报错
             $sql = sprintf('
@@ -358,7 +359,7 @@ class Train extends Controller
 
         $num = $model->exec($sql);
 
-        if ($arg['培训结果'] != '通过')
+        if ($arg['培训状态'] != '通过')
         {
             $this->json_data(200, sprintf('%d条',$num), 0);
             return;
@@ -419,7 +420,7 @@ class Train extends Controller
             ) as t2
             on t1.身份证号=t2.身份证号
             where t1.GUID in (%s)',
-            $arg['生效日期'], $user_workid, $guid_str);
+            $arg['培训结束日期'], $user_workid, $guid_str);
 
         $num = $model->exec($sql);
         $this->json_data(200, sprintf('%d条',$num), 0);
