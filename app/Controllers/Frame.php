@@ -1,5 +1,5 @@
 <?php
-/* v6.1.3.1.202212091520, from office */
+/* v7.1.1.1.202301031330, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1096,9 +1096,9 @@ class Frame extends Controller
             $change_fld_str = $change_fld_str . $row['fld_name'];
         }
 
-        //增加变更表项、录入人、是否有效的处理
+        //增加变更表项、录入人、有效标识的处理
         $set = sprintf('
-            %s,变更表项=\'%s\',录入人=\'%s\',是否有效=\'0\'', 
+            %s,变更表项=\'%s\',录入人=\'%s\',有效标识=\'0\'', 
             $set, $change_fld_str, $user_workid);
 
         $model = new Mcommon();
@@ -1120,9 +1120,9 @@ class Frame extends Controller
                     $fld_str = sprintf('\'%s\' as 录入人', $user_workid);
                     break;
                 }
-                else if ($field == '是否有效')
+                else if ($field == '有效标识')
                 {
-                    $fld_str = sprintf('\'1\' as 是否有效');
+                    $fld_str = sprintf('\'1\' as 有效标识');
                     break;
                 }
 
@@ -1218,7 +1218,7 @@ class Frame extends Controller
             }
         }
 
-        $sql = sprintf('insert into %s (%s,录入人,是否有效) values (%s,"%s","1")',
+        $sql = sprintf('insert into %s (%s,录入人,有效标识) values (%s,"%s","1")',
             $update_table, $flds_str, $values_str, $user_workid);
 
         $model = new Mcommon();
@@ -1276,7 +1276,7 @@ class Frame extends Controller
         $sql_update = sprintf('
             update %s 
             set 变更表项="删除记录",记录结束日期="%s",
-                录入人="%s",录入时间="%s",是否有效="0"
+                录入人="%s",录入时间="%s",有效标识="0"
             where %s',
             $update_table,date('Y-m-d'),$user_workid,
             date('Y-m-d H:i:s'),$where);
