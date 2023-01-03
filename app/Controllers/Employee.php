@@ -1,5 +1,5 @@
 <?php
-/* v2.1.3.1.202210261330, from surface */
+/* v3.1.1.1.202301032220, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -330,7 +330,7 @@ class Employee extends Controller
             //原记录更新
             $sql_update = sprintf('
                 update ee_onjob
-                set 变更表项="%s",记录结束日期="%s",是否有效="0"
+                set 变更表项="%s",记录结束日期="%s",有效标识="0"
                 where GUID in (%s)',
                 $update_str, $arg['生效日期']['值'], $guid_str);
 
