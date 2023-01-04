@@ -1,5 +1,5 @@
 <?php
-/* v3.1.1.1.202301032220, from home */
+/* v3.2.1.1.202301042145, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -303,7 +303,7 @@ class Employee extends Controller
                         $col = '"页面更改" as 录入来源';
                         break;
                     case '录入人':
-                        $col = sprintf('"%s" as 录入来源', $user_workid);
+                        $col = sprintf('"%s" as 录入人', $user_workid);
                         break;
                 }
 
@@ -318,6 +318,7 @@ class Employee extends Controller
                         break;
                     }
                 }
+
                 if ($col_str != '') $col_str = $col_str . ',';
                 $col_str = $col_str . $col;
             }
@@ -334,8 +335,52 @@ class Employee extends Controller
                 where GUID in (%s)',
                 $update_str, $arg['生效日期']['值'], $guid_str);
 
+            // 写日志
+            $model->sql_log('更新', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
+
             $num = $model->exec($sql_insert);
             $num = $model->exec($sql_update);
         }
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 删除信息
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function delete_row($menu_id='', $type='')
+    {
+        $arg = $this->request->getJSON(true);
+
+        $model = new Mcommon();
+
+        $guid_str = '';
+        foreach ($arg['人员'] as $guid)
+        {
+            if ($guid_str == '')
+            {
+                $guid_str = sprintf('"%s"', $guid);
+            }
+            else
+            {
+                $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
+            }
+        }
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
+        //原记录更新
+        $sql_update = sprintf('
+            update ee_onjob
+            set 变更表项="删除",记录结束日期="%s",
+                录入来源="页面删除",录入人="%s",
+                删除标识="1",有效标识="0"
+            where GUID in (%s)',
+            date('Y-m-d H:i:s'), $user_workid, $guid_str);
+
+        // 写日志
+        $model->sql_log('删除', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
+
+        $num = $model->exec($sql_update);
     }
 }

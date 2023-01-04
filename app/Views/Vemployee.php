@@ -1,4 +1,4 @@
-<!-- v2.2.1.1.202210302055, from surface -->
+<!-- v2.3.1.1.202301042145, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -193,13 +193,14 @@
                     }
                     break;
                 case '删除':
-                    if (submit_type == 'upkeep')
+                    if (csr_guid.length == 0)
                     {
-                        upkeep_submit();
+                        alert('请选择相关人员');
+                        return;
                     }
-                    else
+                    if (confirm('请确认是否进行删除操作?') == true)
                     {
-                        alert('请先选择功能按钮进行操作');
+                        delete_submit();
                     }
                     break;
                 case '导入':
@@ -383,6 +384,25 @@
                 alert('修改失败, ' + " " + err.statusText);
             });
         }
+
+        function delete_submit(id)
+        {
+            var ajax = 0;
+
+            var arg_obj = {};
+            arg_obj['操作'] = '删除记录';
+            arg_obj['人员'] = csr_guid;
+
+            dhx.ajax.post('<?php base_url(); ?>/employee/delete_row/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            {
+                alert('删除成功');
+                window.location.reload();
+            }).catch(function (err)
+            {
+                alert('删除失败, ' + " " + err.statusText);
+            });
+        }
+
 
     </script>
 

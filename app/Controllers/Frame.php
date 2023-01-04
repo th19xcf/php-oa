@@ -1,5 +1,5 @@
 <?php
-/* v7.1.1.1.202301031330, from office */
+/* v7.1.2.1.202301042145, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1276,10 +1276,11 @@ class Frame extends Controller
         $sql_update = sprintf('
             update %s 
             set 变更表项="删除记录",记录结束日期="%s",
-                录入人="%s",录入时间="%s",有效标识="0"
+                录入人="%s",录入时间="%s",
+                删除标识="1",有效标识="0"
             where %s',
-            $update_table,date('Y-m-d'),$user_workid,
-            date('Y-m-d H:i:s'),$where);
+            $update_table, date('Y-m-d'), $user_workid,
+            date('Y-m-d H:i:s'), $where);
 
         $model = new Mcommon();
         // 写日志
