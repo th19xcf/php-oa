@@ -1,5 +1,5 @@
 <?php
-/* v1.4.3.1.202301050940, from office */
+/* v1.4.4.1.202301062215, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -369,7 +369,7 @@ class Train extends Controller
                 $guid_str);
 
             $num = $model->exec($sql);
-            $this->json_data(200, sprintf('%d条',$num), 0);
+            $this->json_data(200, sprintf('更新%d条',$num), 0);
             return;
         }
 
@@ -394,8 +394,8 @@ class Train extends Controller
                 离职日期,离职原因,
                 派遣公司,变更表项,
                 记录开始日期,记录结束日期,
-                录入来源,录入人
-                有效标识)
+                录入来源,录入人,
+                删除标识,有效标识)
             select 
                 t1.姓名,t1.身份证号,t1.手机号码,t1.属地,
                 t2.招聘渠道,
@@ -413,7 +413,7 @@ class Train extends Controller
                 "" as 派遣公司,"" as 变更表项,
                 "%s" as 记录开始日期,"" as 记录结束日期,
                 "培训表转入" as 录入来源,"%s" as 录入人,
-                删除标识="0",有效标识="1"
+                "0" as 删除标识,"1" as 有效标识
             from
             (
                 select GUID,姓名,身份证号,手机号码,属地,培训业务,培训状态,
@@ -433,7 +433,7 @@ class Train extends Controller
             $arg['培训结束日期'], $user_workid, $guid_str);
 
         $num = $model->exec($sql);
-        $this->json_data(200, sprintf('%d条',$num), 0);
+        $this->json_data(200, sprintf('更新%d条',$num), 0);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
