@@ -1,4 +1,4 @@
-<!-- v1.3.2.1.202212191555, from home -->
+<!-- v1.3.3.1.202301051005, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -53,12 +53,12 @@
         main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'修改培训信息 (单选)', type:'button', value:'修改培训信息 (单选)'});
         main_tb.data.add({id:'修改培训信息 (多选)', type:'button', value:'修改培训信息 (多选)'});
-        main_tb.data.add({id:'新增培训信息', type:'button', value:'新增培训信息'});
+        //main_tb.data.add({id:'新增培训信息', type:'button', value:'新增培训信息'});
         main_tb.data.add({id:'更新培训状态', type:'button', value:'更新培训状态'});
         main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'提交', type:'button', value:'提交'});
-        main_tb.data.add({type:'spacer'});
-        main_tb.data.add({id:'导入', type:'button', value:'导入'});
+        //main_tb.data.add({type:'spacer'});
+        //main_tb.data.add({id:'导入', type:'button', value:'导入'});
 
         $$('info_box').style.height = document.documentElement.clientHeight * 0.035 + 'px';
         $$('info_box').innerHTML = '&nbsp&nbsp选定人员:';
@@ -446,19 +446,12 @@
                 {'表项':'身份证号', '值':''},
                 {'表项':'手机号码', '值':''},
                 {'表项':'属地', '值':''},
-                {'表项':'招聘渠道', '值':''},
-                {'表项':'实习结束日期', '值':''},
-                {'表项':'渠道名称', '值':''},
-                {'表项':'信息来源', '值':''},
-                {'表项':'面试业务', '值':''},
-                {'表项':'面试岗位', '值':''},
-                {'表项':'面试日期', '值':''},
-                {'表项':'面试结果', '值':''},
-                {'表项':'面试人', '值':''},
-                {'表项':'预约培训日期', '值':''},
-                {'表项':'住宿', '值':''},
-                {'表项':'备注说明', '值':''},
-                {'表项':'参培信息', '值':''},
+                {'表项':'培训业务', '值':''},
+                {'表项':'培训状态', '值':''},
+                {'表项':'培训次数', '值':''},
+                {'表项':'培训老师', '值':''},
+                {'表项':'培训开始日期', '值':''},
+                {'表项':'预计完成日期', '值':''},
             ];
 
             grid_options.api.setRowData(rowData);

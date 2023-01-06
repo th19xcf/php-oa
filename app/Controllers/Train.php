@@ -1,5 +1,5 @@
 <?php
-/* v1.4.2.1.202212191615, from home */
+/* v1.4.3.1.202301050940, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -258,6 +258,9 @@ class Train extends Controller
     {
         $arg = $this->request->getJSON(true);
 
+        $arg['开始操作时间'] = date('Y-m-d H:m:s');
+        $arg['结束操作时间'] = '';
+
         $model = new Mcommon();
 
         $flds_str = '';
@@ -319,7 +322,7 @@ class Train extends Controller
             $sql = sprintf('
                 select 姓名,身份证号
                 from ee_onjob
-                where 删除标识=""
+                where 删除标识!="1"
                     and 身份证号 in
                     (
                         select 身份证号
@@ -340,27 +343,32 @@ class Train extends Controller
                 $this->json_data(400, sprintf('未执行,在人员表中有重复记录,请确认,身份证号{%s}', implode(',', $err_arr)), 0);
                 return;
             }
+
+            // 修改ee_train信息
+            $sql = sprintf('
+                update ee_train
+                set 培训状态="%s",培训完成日期="%s",
+                    结束操作时间="%s",录入时间="%s",录入人="%s" 
+                where GUID in (%s) ',
+                $arg['培训状态'], $arg['培训结束日期'], 
+                $arg['结束操作时间'], $arg['录入时间'], $arg['录入人'], 
+                $guid_str);
+
+            $num = $model->exec($sql);
         }
-
-        // 修改ee_train信息
-        $set_str = '';
-        foreach ($arg as $key => $value)
+        else
         {
-            if ($key=='操作' || $key=='人员' || $key=='生效日期' || $value=='') continue;
+            // 修改ee_train信息
+            $sql = sprintf('
+                update ee_train
+                set 培训状态="%s",培训离开日期="%s",培训离开原因="%s",
+                    结束操作时间="%s",录入时间="%s",录入人="%s" 
+                where GUID in (%s) ',
+                $arg['培训状态'], $arg['培训结束日期'], $arg['培训离开原因'], 
+                $arg['结束操作时间'], $arg['录入时间'], $arg['录入人'], 
+                $guid_str);
 
-            if ($set_str != '') $set_str = $set_str . ',';
-            $set_str = $set_str . sprintf('%s="%s"', $key, $value);
-        }
-
-        $sql = sprintf('
-            update ee_train
-            set %s where GUID in (%s) ',
-            $set_str, $guid_str);
-
-        $num = $model->exec($sql);
-
-        if ($arg['培训状态'] != '通过')
-        {
+            $num = $model->exec($sql);
             $this->json_data(200, sprintf('%d条',$num), 0);
             return;
         }
@@ -386,7 +394,8 @@ class Train extends Controller
                 离职日期,离职原因,
                 派遣公司,变更表项,
                 记录开始日期,记录结束日期,
-                录入来源,录入人)
+                录入来源,录入人
+                有效标识)
             select 
                 t1.姓名,t1.身份证号,t1.手机号码,t1.属地,
                 t2.招聘渠道,
@@ -403,7 +412,8 @@ class Train extends Controller
                 "" as 离职日期,"" as 离职原因,
                 "" as 派遣公司,"" as 变更表项,
                 "%s" as 记录开始日期,"" as 记录结束日期,
-                "培训表转入" as 录入来源,"%s" as 录入人
+                "培训表转入" as 录入来源,"%s" as 录入人,
+                删除标识="0",有效标识="1"
             from
             (
                 select GUID,姓名,身份证号,手机号码,属地,培训业务,培训状态,

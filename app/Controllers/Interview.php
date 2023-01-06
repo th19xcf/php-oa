@@ -1,5 +1,5 @@
 <?php
-/* v1.4.3.1.202210311435, from surface */
+/* v1.4.4.1.202301051005, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -384,14 +384,15 @@ class Interview extends Controller
                     培训开始日期,预计完成日期,培训完成日期,
                     培训离开日期,培训离开原因,面试信息,
                     开始操作时间,结束操作时间,
-                    录入来源,录入人,是否有效)
+                    录入来源,录入人,有效标识)
                 select 姓名,身份证号,手机号码,属地,
                     "%s" as 培训业务,"%s" as 培训状态,
                     "%s" as 培训批次,"%s" as 培训老师,
                     "%s" as 培训开始日期,"%s" as 预计完成日期,"" as 培训完成日期,
                     "" as 培训离开日期,"" as 培训离开原因,"有" as 面试信息,
                     "%s" as 开始操作时间,"" as 结束操作时间,
-                    "面试表转入" as 录入来源,"%s" as 录入人,"1"
+                    "面试表转入" as 录入来源,"%s" as 录入人,
+                    "1" as 有效标识
                 from ee_interview
                 where GUID in (%s)', 
                 $arg['培训业务'],$arg['培训状态'],

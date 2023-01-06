@@ -1,5 +1,5 @@
 <?php
-/* v3.2.1.1.202301042145, from home */
+/* v3.2.1.1.202301052310, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -192,7 +192,7 @@ class Employee extends Controller
         else if ($arr[0] == '人员')
         {
             $sql = sprintf('
-                select 姓名,身份证号,员工状态,一阶段日期,
+                select 姓名,身份证号,员工状态,一阶段日期,二阶段日期,
                     岗位名称,岗位类型,部门名称,班组,离职日期,离职原因
                 from ee_onjob
                 where GUID="%s"', $arr[1]);
@@ -208,6 +208,7 @@ class Employee extends Controller
             array_push($rows_arr, array('表项'=>'班组', '值'=>$results[0]->班组));
             array_push($rows_arr, array('表项'=>'员工状态', '值'=>$results[0]->员工状态));
             array_push($rows_arr, array('表项'=>'一阶段日期', '值'=>$results[0]->一阶段日期));
+            array_push($rows_arr, array('表项'=>'二阶段日期', '值'=>$results[0]->二阶段日期));
             array_push($rows_arr, array('表项'=>'离职日期', '值'=>$results[0]->离职日期));
             array_push($rows_arr, array('表项'=>'离职原因', '值'=>$results[0]->离职原因));
         }
@@ -241,106 +242,113 @@ class Employee extends Controller
             }
         }
 
-        if ($arg['员工状态']['值'] == '离职') //更新所有该员工的记录
+        // 处理离职信息
+        if (array_key_exists('员工状态',$arg))
         {
-            $sql = sprintf('
-                update ee_onjob
-                set 员工状态="%s",离职日期="%s",离职原因="%s"
-                where 身份证号 in
-                    (
-                        select 身份证号
-                        from
+            if ($arg['员工状态']['值'] == '离职')
+            {
+                //更新所有该员工的记录
+                $sql = sprintf('
+                    update ee_onjob
+                    set 员工状态="%s",离职日期="%s",离职原因="%s"
+                    where 身份证号 in
                         (
                             select 身份证号
-                            from ee_onjob
-                            where GUID in (%s)
-                        ) as ta
-                    )',
-                $arg['员工状态']['值'], $arg['离职日期']['值'], 
-                $arg['离职原因']['值'], $guid_str);
+                            from
+                            (
+                                select 身份证号
+                                from ee_onjob
+                                where GUID in (%s)
+                            ) as ta
+                        )',
+                    $arg['员工状态']['值'], $arg['离职日期']['值'], 
+                    $arg['离职原因']['值'], $guid_str);
 
-            $num = $model->exec($sql);
+                $num = $model->exec($sql);
+                $this->json_data(200, sprintf('%d条',$num), 0);
+            }
         }
-        else
+            
+        $update_str = '';
+        foreach ($arg as $key => $value)
         {
-            $update_str = '';
+            if ($key=='操作' || $key=='人员' || $key=='生效日期') continue;
+            if ($value['更改标识'] == '0') continue;
+
+            if ($update_str != '')
+            {
+                $update_str = $update_str . ',';
+            }
+            $update_str = $update_str . $key;
+        }
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
+        //增加新记录
+        $fld_str ='姓名,身份证号,手机号码,属地,招聘渠道,' .
+            '员工类别,部门编码,部门名称,班组,岗位名称,岗位类型,' .
+            '工号1,工号2,实习结束日期,培训信息,培训开始日期,' .
+            '培训完成日期,一阶段日期,二阶段日期,员工状态,员工阶段,' .
+            '离职日期,离职原因,派遣公司,记录开始日期,' .
+            '录入来源,录入人';
+        $fld_arr = explode(',', $fld_str);
+
+        $col_str = '';
+        foreach ($fld_arr as $fld)
+        {
+            $col = $fld;
+
+            switch ($fld)
+            {
+                case '记录开始日期':
+                    $col = sprintf('"%s" as 记录开始日期', $arg['生效日期']['值']);
+                    break;
+                case '录入来源':
+                    $col = '"页面更改" as 录入来源';
+                    break;
+                case '录入人':
+                    $col = sprintf('"%s" as 录入人', $user_workid);
+                    break;
+            }
+
             foreach ($arg as $key => $value)
             {
                 if ($key=='操作' || $key=='人员' || $key=='生效日期') continue;
                 if ($value['更改标识'] == '0') continue;
 
-                if ($update_str != '')
+                if ($fld == $key)
                 {
-                    $update_str = $update_str . ',';
+                    $col = sprintf('"%s" as %s', $value['值'], $key);
+                    break;
                 }
-                $update_str = $update_str . $key;
             }
 
-            // 从session中取出数据
-            $session = \Config\Services::session();
-            $user_workid = $session->get('user_workid');
-
-            //增加新记录
-            $fld_str ='姓名,身份证号,手机号码,属地,招聘渠道,' .
-                '员工类别,部门编码,部门名称,班组,岗位名称,岗位类型,' .
-                '工号1,工号2,实习结束日期,培训信息,培训开始日期,' .
-                '培训完成日期,一阶段日期,二阶段日期,员工状态,员工阶段,' .
-                '离职日期,离职原因,派遣公司,记录开始日期,' .
-                '录入来源,录入人';
-            $fld_arr = explode(',', $fld_str);
-
-            $col_str = '';
-            foreach ($fld_arr as $fld)
-            {
-                $col = $fld;
-
-                switch ($fld)
-                {
-                    case '记录开始日期':
-                        $col = sprintf('"%s" as 记录开始日期', $arg['生效日期']['值']);
-                        break;
-                    case '录入来源':
-                        $col = '"页面更改" as 录入来源';
-                        break;
-                    case '录入人':
-                        $col = sprintf('"%s" as 录入人', $user_workid);
-                        break;
-                }
-
-                foreach ($arg as $key => $value)
-                {
-                    if ($key=='操作' || $key=='人员' || $key=='生效日期') continue;
-                    if ($value['更改标识'] == '0') continue;
-
-                    if ($fld == $key)
-                    {
-                        $col = sprintf('"%s" as %s', $value['值'], $key);
-                        break;
-                    }
-                }
-
-                if ($col_str != '') $col_str = $col_str . ',';
-                $col_str = $col_str . $col;
-            }
-
-            $sql_insert = sprintf('
-                insert into ee_onjob (%s)
-                select %s from ee_onjob
-                where GUID in (%s)', $fld_str, $col_str, $guid_str);
-
-            //原记录更新
-            $sql_update = sprintf('
-                update ee_onjob
-                set 变更表项="%s",记录结束日期="%s",有效标识="0"
-                where GUID in (%s)',
-                $update_str, $arg['生效日期']['值'], $guid_str);
-
-            // 写日志
-            $model->sql_log('更新', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
-
-            $num = $model->exec($sql_insert);
-            $num = $model->exec($sql_update);
+            if ($col_str != '') $col_str = $col_str . ',';
+            $col_str = $col_str . $col;
         }
+
+        $sql_insert = sprintf('
+            insert into ee_onjob (%s,有效标识)
+            select %s,"1" as 有效标识
+            from ee_onjob
+            where GUID in (%s)', $fld_str, $col_str, $guid_str);
+
+        // 原记录更新
+        $sql_update = sprintf('
+            update ee_onjob
+            set 变更表项="%s",记录结束日期="%s",有效标识="0"
+            where GUID in (%s)',
+            $update_str, $arg['生效日期']['值'], $guid_str);
+
+        // 写日志
+        $model->sql_log('更新', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
+
+        $num = $model->exec($sql_insert);
+        $num = $model->exec($sql_update);
+
+        $this->json_data(200, sprintf('%d条',$num), 0);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -382,5 +390,20 @@ class Employee extends Controller
         $model->sql_log('删除', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
 
         $num = $model->exec($sql_update);
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 自定义函数
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function json_data($status=200, $msg='', $count=0)
+    {
+        $res = [
+            'status' => $status,
+            'msg' => $msg,
+            'number' => $count
+        ];
+
+        echo json_encode($res);
+        die;
     }
 }

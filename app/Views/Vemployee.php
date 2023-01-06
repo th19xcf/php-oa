@@ -153,7 +153,7 @@
 
                     var rowNode = grid_options.api.getRowNode(0);
                     rowNode.setDataValue('值', '修改个人信息 (单选)');
-                    submit_type = 'upkeep';
+                    submit_type = 'upkeep_single';
                     editable = true;
                     break;
                 case '修改共性信息 (多选)':
@@ -165,6 +165,7 @@
                             {'表项':'班组', '值':''},
                             {'表项':'员工状态', '值':''},
                             {'表项':'一阶段日期', '值':''},
+                            {'表项':'二阶段日期', '值':''},
                             {'表项':'离职日期', '值':''},
                             {'表项':'离职原因', '值':''},
                         ];
@@ -179,11 +180,11 @@
 
                     var rowNode = grid_options.api.getRowNode(0);
                     rowNode.setDataValue('值', '修改共性信息 (多选)');
-                    submit_type = 'upkeep';
+                    submit_type = 'upkeep_multi';
                     editable = true;
                     break;
                 case '修改提交':
-                    if (submit_type == 'upkeep')
+                    if (submit_type != '')
                     {
                         upkeep_submit();
                     }
@@ -279,6 +280,7 @@
                     };
                 case '生效日期':
                 case '一阶段日期':
+                case '二阶段日期':
                 case '离职日期':
                     return {
                         component: 'datePicker',
@@ -315,23 +317,37 @@
 
             grid_options.api.forEachNode((rowNode, index) =>
             {
-                if (rowNode.data['表项'] != '属性')
+                // 单选
+                if (submit_type == 'upkeep_single')
                 {
-                    for (var jj in value_obj)
+                    if (rowNode.data['表项'] != '属性')
                     {
-                        if (rowNode.data['表项'] != value_obj[jj]['表项']) continue;
+                        for (var jj in value_obj)
+                        {
+                            if (rowNode.data['表项'] != value_obj[jj]['表项']) continue;
 
+                            arg_obj[rowNode.data['表项']] = {};
+                            arg_obj[rowNode.data['表项']]['值'] = rowNode.data['值'];
+                            arg_obj[rowNode.data['表项']]['更改标识'] = '0';
+
+                            if (rowNode.data['值'] != value_obj[jj]['值']) //值有更新
+                            {
+                                arg_obj[rowNode.data['表项']]['更改标识'] = '1';
+                                ajax = 1;
+                            }
+
+                            break;
+                        }
+                    }
+                }
+                else if (submit_type = 'upkeep_multi')
+                {
+                    if (rowNode.data['表项'] != '属性' && rowNode.data['值'] != '')
+                    {
                         arg_obj[rowNode.data['表项']] = {};
                         arg_obj[rowNode.data['表项']]['值'] = rowNode.data['值'];
-                        arg_obj[rowNode.data['表项']]['更改标识'] = '0';
-
-                        if (rowNode.data['值'] != value_obj[jj]['值']) //值有更新
-                        {
-                            arg_obj[rowNode.data['表项']]['更改标识'] = '1';
-                            ajax = 1;
-                        }
-
-                        break;
+                        arg_obj[rowNode.data['表项']]['更改标识'] = '1';
+                        ajax = 1;
                     }
                 }
             });
@@ -379,6 +395,8 @@
             dhx.ajax.post('<?php base_url(); ?>/employee/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert('修改成功');
+                submit_type = '';
+                window.location.reload();
             }).catch(function (err)
             {
                 alert('修改失败, ' + " " + err.statusText);
