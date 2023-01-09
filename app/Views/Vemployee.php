@@ -1,4 +1,4 @@
-<!-- v2.3.1.1.202301042145, from home -->
+<!-- v2.3.2.1.202301092050, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -132,7 +132,7 @@
                 case '修改个人信息 (单选)':
                     if (button != '查询人员信息')
                     {
-                        alert('查询人员信息下, 才能修改');
+                        alert('单击人员, 查询人员信息下, 才能修改');
                         return;
                     }
                     if (csr_guid.length == 0)
@@ -358,34 +358,34 @@
                 return;
             }
 
-            if (arg_obj['生效日期'] == '')
+            if (arg_obj['生效日期']['值'] == '')
             {
                 alert('需要填写生效日期');
                 return;
             }
 
-            if (arg_obj['员工状态'] == '在职')
+            if (arg_obj['员工状态']['值'] == '在职')
             {
-                if (arg_obj['离职日期'] != '')
+                if (arg_obj['离职日期']['值'] != '')
                 {
                     alert('在职,不要填写离职日期');
                     return;
                 }
-                if (arg_obj['离职原因'] != '')
+                if (arg_obj['离职原因']['值'] != '')
                 {
                     alert('在职,不要填写离职原因');
                     return;
                 }
             }
 
-            if (arg_obj['员工状态'] == '离职')
+            if (arg_obj['员工状态']['值'] == '离职')
             {
-                if (arg_obj['离职日期'] == '')
+                if (arg_obj['离职日期']['值'] == '')
                 {
                     alert('离职,请填写离职日期');
                     return;
                 }
-                if (arg_obj['离职原因'] == '')
+                if (arg_obj['离职原因']['值'] == '')
                 {
                     alert('离职,请填写离职原因');
                     return;
