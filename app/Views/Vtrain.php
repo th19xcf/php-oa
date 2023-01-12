@@ -1,4 +1,4 @@
-<!-- v1.3.3.1.202301051005, from office -->
+<!-- v1.4.1.1.202301122315, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -57,6 +57,8 @@
         main_tb.data.add({id:'更新培训状态', type:'button', value:'更新培训状态'});
         main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'提交', type:'button', value:'提交'});
+        main_tb.data.add({type:'separator'});
+        main_tb.data.add({id:'删除', type:'button', value:'删除'});
         //main_tb.data.add({type:'spacer'});
         //main_tb.data.add({id:'导入', type:'button', value:'导入'});
 
@@ -197,6 +199,17 @@
                     else if (submit_type == 'insert')
                     {
                         insert_submit();
+                    }
+                    break;
+                case '删除':
+                    if (csr_guid.length == 0)
+                    {
+                        alert('请选择相关人员');
+                        return;
+                    }
+                    if (confirm('请确认是否进行删除操作?') == true)
+                    {
+                        delete_submit();
                     }
                     break;
                 case '导入':
@@ -505,6 +518,25 @@
             }).catch(function (err)
             {
                 alert('新增记录失败, ' + " " + err.statusText);
+            });
+        }
+
+        // 删除记录提交
+        function delete_submit(id)
+        {
+            var ajax = 0;
+
+            var arg_obj = {};
+            arg_obj['操作'] = '删除记录';
+            arg_obj['人员'] = csr_guid;
+
+            dhx.ajax.post('<?php base_url(); ?>/train/delete_row/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            {
+                alert('删除成功');
+                window.location.reload();
+            }).catch(function (err)
+            {
+                alert('删除失败, ' + " " + err.statusText);
             });
         }
 

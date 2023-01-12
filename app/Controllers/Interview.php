@@ -1,5 +1,5 @@
 <?php
-/* v1.4.4.1.202301051005, from home */
+/* v1.4.5.1.202301122315, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -336,7 +336,8 @@ class Interview extends Controller
         $sql = sprintf('
             select 姓名,身份证号
             from ee_train
-            where 身份证号 in
+            where 删除标识!="1"
+                and 身份证号 in
                 (
                     select 身份证号
                     from ee_interview
@@ -353,7 +354,7 @@ class Interview extends Controller
             {
                 array_push($err_arr, $err['身份证号']);
             }
-            $this->json_data(400, sprintf('未执行,在人员表中有重复记录,请确认,身份证号{%s}', implode(',', $err_arr)), 0);
+            $this->json_data(400, sprintf('未执行,在培训表中有相关的人员记录,请确认,身份证号{%s}', implode(',', $err_arr)), 0);
             return;
         }
 

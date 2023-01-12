@@ -1,5 +1,5 @@
 <?php
-/* v1.4.4.1.202301062215, from home */
+/* v1.5.1.1.202301122315, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -340,7 +340,7 @@ class Train extends Controller
                 {
                     array_push($err_arr, $err['身份证号']);
                 }
-                $this->json_data(400, sprintf('未执行,在人员表中有重复记录,请确认,身份证号{%s}', implode(',', $err_arr)), 0);
+                $this->json_data(400, sprintf('未执行,在人员表中有相关的人员记录,请确认,身份证号{%s}', implode(',', $err_arr)), 0);
                 return;
             }
 
@@ -434,6 +434,47 @@ class Train extends Controller
 
         $num = $model->exec($sql);
         $this->json_data(200, sprintf('更新%d条',$num), 0);
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 删除信息
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function delete_row($menu_id='', $type='')
+    {
+        $arg = $this->request->getJSON(true);
+
+        $model = new Mcommon();
+
+        $guid_str = '';
+        foreach ($arg['人员'] as $guid)
+        {
+            if ($guid_str == '')
+            {
+                $guid_str = sprintf('"%s"', $guid);
+            }
+            else
+            {
+                $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
+            }
+        }
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
+        //原记录更新
+        $sql_update = sprintf('
+            update ee_train
+            set 变更表项="删除",记录结束日期="%s",
+                录入来源="页面删除",录入人="%s",
+                删除标识="1",有效标识="0"
+            where GUID in (%s)',
+            date('Y-m-d H:i:s'), $user_workid, $guid_str);
+
+        // 写日志
+        $model->sql_log('删除', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
+
+        $num = $model->exec($sql_update);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

@@ -1,5 +1,5 @@
 <?php
-/* v3.2.2.1.202301102250, from home */
+/* v3.2.3.1.202301121110, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -47,7 +47,7 @@ class Employee extends Controller
         {
             $ee_arr = [];
             $ee_arr['id'] = sprintf('人员^%s^%s', $row->GUID, $row->姓名);
-            $ee_arr['value'] = sprintf('%s', $row->姓名);
+            $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->岗位名称);
 
             $up1_id = sprintf('班组^%s^%s^%s', $row->员工状态, $row->部门名称, $row->班组);
             if (array_key_exists($up1_id, $up1_arr) == false)
@@ -100,15 +100,15 @@ class Employee extends Controller
         }
 
         $csr_arr = [];
-        $csr_arr['id'] = '0级^在职人员';
-        $csr_arr['value'] = '在职人员';
+        $csr_arr['id'] = '0级^入职人员';
+        $csr_arr['value'] = '入职人员';
         $csr_arr['items'] = [];
         $csr_num = 0;
 
         foreach ($up3_arr as $up3)
         {
             $csr_num += $up3['num'];
-            $csr_arr['value'] = sprintf('在职人员 (%d人)', $csr_num);
+            $csr_arr['value'] = sprintf('入职人员 (%d人)', $csr_num);
             array_push($csr_arr['items'], $up3);
         }
 
