@@ -1,5 +1,5 @@
 <?php
-/* v3.2.1.1.202301052310, from home */
+/* v3.2.2.1.202301102250, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -28,8 +28,11 @@ class Employee extends Controller
                 属地,部门名称,if(班组="","未分班组",班组) as 班组,
                 岗位名称,岗位类型,培训完成日期
             from ee_onjob
-            where 属地="%s" and 变更表项=""
-            order by 员工状态,convert(部门名称 using gbk),convert(班组 using gbk),convert(姓名 using gbk)',
+            where 属地="%s" and 有效标识="1"
+            order by 员工状态,
+                convert(部门名称 using gbk),
+                convert(班组 using gbk),
+                convert(姓名 using gbk)',
             $user_location);
 
         $query = $model->select($sql);
@@ -192,8 +195,12 @@ class Employee extends Controller
         else if ($arr[0] == '人员')
         {
             $sql = sprintf('
-                select 姓名,身份证号,员工状态,一阶段日期,二阶段日期,
-                    岗位名称,岗位类型,部门名称,班组,离职日期,离职原因
+                select 姓名,身份证号,员工状态,
+                    培训开始日期,培训完成日期,
+                    一阶段日期,二阶段日期,
+                    岗位名称,岗位类型,
+                    部门名称,班组,
+                    离职日期,离职原因
                 from ee_onjob
                 where GUID="%s"', $arr[1]);
             $query = $model->select($sql);
@@ -207,6 +214,8 @@ class Employee extends Controller
             array_push($rows_arr, array('表项'=>'部门名称', '值'=>$results[0]->部门名称));
             array_push($rows_arr, array('表项'=>'班组', '值'=>$results[0]->班组));
             array_push($rows_arr, array('表项'=>'员工状态', '值'=>$results[0]->员工状态));
+            array_push($rows_arr, array('表项'=>'培训开始日期', '值'=>$results[0]->培训开始日期));
+            array_push($rows_arr, array('表项'=>'培训完成日期', '值'=>$results[0]->培训完成日期));
             array_push($rows_arr, array('表项'=>'一阶段日期', '值'=>$results[0]->一阶段日期));
             array_push($rows_arr, array('表项'=>'二阶段日期', '值'=>$results[0]->二阶段日期));
             array_push($rows_arr, array('表项'=>'离职日期', '值'=>$results[0]->离职日期));
