@@ -1,4 +1,4 @@
-<!-- v5.1.2.1.202212062300, from home -->
+<!-- v5.1.3.1.202301140005, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1109,7 +1109,7 @@
             {
                 if (params.colDef.field != columns_obj[jj].列名) continue;
 
-                if (columns_obj[jj].提示样式 == '' && columns_obj[jj].提示样式 == '')
+                if (columns_obj[jj].提示样式 == '' && columns_obj[jj].异常样式 == '')
                 {
                     return null;
                 }
