@@ -1,5 +1,5 @@
 <?php
-/* v1.4.5.1.202301122315, from home */
+/* v1.4.5.1.202301161630, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -336,7 +336,8 @@ class Interview extends Controller
         $sql = sprintf('
             select 姓名,身份证号
             from ee_train
-            where 删除标识!="1"
+            where 有效标识!="0"
+                and 删除标识!="1"
                 and 身份证号 in
                 (
                     select 身份证号

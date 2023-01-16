@@ -1,5 +1,5 @@
 <?php
-/* v1.5.1.1.202301122315, from home */
+/* v1.5.2.1.202301161630, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -30,7 +30,7 @@ class Train extends Controller
                 培训开始日期,预计完成日期,培训完成日期,
                 培训离开日期,培训离开原因
             from ee_train
-            where 属地="%s"
+            where 属地="%s" and 有效标识!="0"
             order by if(instr(培训状态,"在培"),"在培",培训状态),
                 培训老师,培训开始日期,convert(姓名 using gbk)',
             $user_location);
@@ -465,11 +465,11 @@ class Train extends Controller
         //原记录更新
         $sql_update = sprintf('
             update ee_train
-            set 变更表项="删除",记录结束日期="%s",
+            set 变更表项="删除",
                 录入来源="页面删除",录入人="%s",
                 删除标识="1",有效标识="0"
             where GUID in (%s)',
-            date('Y-m-d H:i:s'), $user_workid, $guid_str);
+            $user_workid, $guid_str);
 
         // 写日志
         $model->sql_log('删除', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
