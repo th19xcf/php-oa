@@ -1,4 +1,4 @@
-<!-- v5.1.3.1.202301140005, from home -->
+<!-- v5.1.4.1.2023022235, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -225,7 +225,7 @@
             },
             rowData: data_grid_obj,
             rowSelection: 'multiple',
-            onSelectionChanged: onSelectionChanged,
+            //onSelectionChanged: onSelectionChanged,
             pagination: true,
             localeText: AG_GRID_LOCALE_CN
         };
@@ -239,14 +239,10 @@
             data_grid_options.api.paginationSetPageSize(Number(500));
             console.log('datagrid ready');
         }
+
         function onSelectionChanged()
         {
             var row = data_grid_options.api.getSelectedRows();
-            data_last_selected = [];
-            if (row.length>0)
-            {
-                data_last_selected = row[row.length-1];
-            }
         }
 
         // 生成update_grid
@@ -273,6 +269,7 @@
                 {field:'列名'},
                 {field:'字段名', hide:true},
                 {field:'列类型'},
+                {field:'是否可修改'},
                 {field:'取值', width:200, cellEditorSelector:cellEditorSelector}
             ],
             defaultColDef: 
@@ -508,21 +505,24 @@
                         break;
                     }
 
-                    if (update_flag != id)
+                    update_flag = id;
+
+                    if ((id == '单条修改' && rows[0] != data_last_selected) || id == '多条修改')
                     {
-                        update_flag = id;
+                        data_last_selected = rows[0];
 
                         // 清空
                         rowData = [];
                         for (var ii in columns_obj)
                         {
-                            if (columns_obj[ii].可修改 == '0') continue;
-                            if (id == '多条修改' && columns_obj[ii].可修改 == '1') continue;
+                            //if (columns_obj[ii].可修改 == '0') continue;
+                            //if (id == '多条修改' && columns_obj[ii].可修改 == '1') continue;
 
                             var obj = {};
                             obj['列名'] = columns_obj[ii].列名;
                             obj['字段名'] = columns_obj[ii].字段名;
                             obj['列类型'] = columns_obj[ii].类型;
+                            obj['是否可修改'] = columns_obj[ii].可修改 == '0' ? '否' : '是';
                             obj['取值'] = '';
 
                             if (id == '单条修改')
@@ -549,7 +549,7 @@
                     {
                         update_flag = id;
                         // 清空
-                        update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
+                        update_grid_obj = JSON.parse('<?php echo $add_value_json; ?>');
                         update_grid_options.api.setRowData(update_grid_obj);
                     }
 
