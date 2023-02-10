@@ -1,5 +1,5 @@
 <?php
-/* v7.1.2.1.202301042145, from home */
+/* v7.1.3.1.202302101740, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -213,6 +213,7 @@ class Frame extends Controller
         $tb_arr = [];  // 控制菜单栏
 
         $update_value_arr = [];  // 前端update_grid值信息,用于显示
+        $add_value_arr = [];  // 前端add_grid值信息,用于显示
         $cond_value_arr = [];  // 条件设置信息
 
         $tip_column = '';  // 前端foot显示的字段
@@ -323,7 +324,7 @@ class Frame extends Controller
             // 主键不能更改
             if ($row->主键 == 1) continue;
 
-            if ($row->可新增 != 1) continue;
+            if ($row->可修改==0 && $row->可新增==0) continue;
 
             $value_arr = [];
             $value_arr['列名'] = $row->列名;
@@ -352,7 +353,15 @@ class Frame extends Controller
                 }
             }
 
-            array_push($update_value_arr, $value_arr);
+            if ($row->可修改 ==1 || $row->可修改==2)
+            {
+                array_push($update_value_arr, $value_arr);
+            }
+            if ($row->可新增 == 1)
+            {
+                array_push($add_value_arr, $value_arr);
+            }
+
 
             /*
             // 匹配钻取条件
@@ -582,6 +591,7 @@ class Frame extends Controller
         $send['data_value_json'] = json_encode($results);
         $send['update_module'] = $update_module;
         $send['update_value_json'] = json_encode($update_value_arr);
+        $send['add_value_json'] = json_encode($add_value_arr);
         $send['cond_value_json'] = json_encode($cond_value_arr);
         $send['object_json'] = json_encode($object_arr);
         $send['func_id'] = $menu_id;
