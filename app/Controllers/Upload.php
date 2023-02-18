@@ -1,5 +1,5 @@
 <?php
-/* v2.2.2.1.202211281500, from office */
+/* v2.3.1.1.202302181700, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -26,7 +26,7 @@ class Upload extends Controller
 
         $sql = sprintf('
             select 功能编码,导入模块,导入条件,
-                表单变量,模板文件,表头行,数据行
+                表单变量,滤重字段,模板文件,表头行,数据行
             from def_function as t1
             left join def_import_config as t2
             on t1.查询模块=t2.导入模块
@@ -206,76 +206,139 @@ class Upload extends Controller
         //数据校验
         foreach ($results as $row)
         {
-            switch ($row->校验类型)
+            $sql = '';
+            if (strpos($row->校验类型,'固定值'))
             {
-                case '固定值':
-                case '条件':
-                    if ($row->校验类型 == '固定值')
-                    {
-                        $src = '';
-                        if ($row->校验信息 == '')
-                        {
-                            $src = sprintf('
-                                select "%s" as 字段名, %s as 字段值
-                                from %s
-                                group by 字段值',
-                                $row->字段名, $row->字段名, $tmp_table_name);
-                        }
-                        else
-                        {
-                            $src = sprintf('
-                                select "%s" as 字段名, %s as 字段值
-                                from %s
-                                where %s
-                                group by 字段值',
-                                $row->字段名, $row->字段名, $tmp_table_name, $row->校验信息);
-                        }
+                $src = '';
+                if ($row->校验信息 == '')
+                {
+                    $src = sprintf('
+                        select "%s" as 字段名, %s as 字段值
+                        from %s
+                        group by 字段值',
+                        $row->字段名, $row->字段名, $tmp_table_name);
+                }
+                else
+                {
+                    $src = sprintf('
+                        select "%s" as 字段名, %s as 字段值
+                        from %s
+                        where %s
+                        group by 字段值',
+                        $row->字段名, $row->字段名, $tmp_table_name, $row->校验信息);
+                }
 
-                        $sql = sprintf('
-                            select 
-                                t1.字段名 as 字段名,
-                                t1.字段值 as 字段值,
-                                ifnull(t2.对象值,"") as 对象值
-                            from (%s) as t1
-                            left join
-                            (
-                                select 对象名称,对象值
-                                from def_object
-                                where 对象名称="%s"
-                            ) as t2 on t1.字段值=t2.对象值
-                            where t2.对象值 is null',
-                            $src, $row->对象);
+                $sql = sprintf('
+                    select 
+                        t1.字段名 as 字段名,
+                        t1.字段值 as 字段值,
+                        ifnull(t2.对象值,"") as 对象值
+                    from (%s) as t1
+                    left join
+                    (
+                        select 对象名称,对象值
+                        from def_object
+                        where 对象名称="%s"
+                    ) as t2 on t1.字段值=t2.对象值
+                    where t2.对象值 is null',
+                    $src, $row->对象);
+
+                $errs = $model->select($sql)->getResultArray();
+                if (count($errs) != 0)
+                {
+                    $err_arr = [];
+                    foreach ($errs as $err)
+                    {
+                        array_push($err_arr, $err['字段值']);
                     }
-                    else if ($row->校验类型 == '条件')
+                    $this->json_data(400, sprintf('导入失败,列"%s"有不符合固定值的记录 {%s}', $row->列名, implode(',', $err_arr)), 0);
+                    return;
+                }
+            }
+
+            if (strpos($row->校验类型,'条件'))
+            {
+                $sql = sprintf('
+                    select "%s" as 字段名, %s as 字段值 from %s where %s',
+                    $row->列名, $row->列名, $tmp_table_name, $row->校验信息);
+
+                $errs = $model->select($sql)->getResultArray();
+                if (count($errs) != 0)
+                {
+                    $err_arr = [];
+                    foreach ($errs as $err)
                     {
-                        $sql = sprintf('
-                            select "%s" as 字段名, %s as 字段值 from %s where %s',
-                            $row->列名, $row->列名, $tmp_table_name, $row->校验信息);
+                        array_push($err_arr, $err['字段值']);
                     }
+                    $this->json_data(400, sprintf('导入失败,列"%s"有不符合条件的记录 {%s}', $row->列名, implode(',', $err_arr)), 0);
+                    return;
+                }
+            }
 
-                    $errs = $model->select($sql)->getResultArray();
+            if (strpos($row->校验类型,'日期'))
+            {
+                $sql = sprintf('
+                    select "%s" as 字段名, %s as 字段值 from %s',
+                    $row->列名, $row->列名, $tmp_table_name);
 
-                    if (count($errs) != 0)
+                $dates = $model->select($sql)->getResult();
+                foreach ($dates as $date)
+                {
+                    //只判断非空值
+                    if ($date->字段值 == '') continue;
+                    //匹配日期格式,YYYY-mm-dd
+                    $parts = [];
+                    if (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/",$date->字段值,$parts))
                     {
-                        $err_arr = [];
-                        foreach ($errs as $err)
+                        //检测是否为日期
+                        if(checkdate($parts[2],$parts[3],$parts[1]) == false)
                         {
-                            array_push($err_arr, $err['字段值']);
+                            $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录{%s},必须为YYYY-mm-dd (如2023-01-02) 格式', $row->列名,$date->字段值), 0);
+                            return;
                         }
-                        $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录 {%s}', $row->列名, implode(',', $err_arr)), 0);
+                    }
+                    else
+                    {
+                        $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录{%s},必须为YYYY-mm-dd (如2023-01-02) 格式', $row->列名,$date->字段值), 0);
                         return;
                     }
-                    break;
-                case '日期':
-                    #日期格式校验
-                    break;
-                default:
-                    break;
+                }
             }
         }
 
         //是否有重复记录
+        $sql = sprintf('
+            select 表名,导入条件,表单变量,滤重字段
+            from def_import_config
+            where 导入模块="%s"', $import);
 
+        $query = $model->select($sql);
+        $results = $query->getResult();
+
+        $sql = sprintf('
+            select %s from %s
+            where concat(%s) in ( select concat(%s) from %s )', 
+            $results[0]->滤重字段, $results[0]->表名,
+            $results[0]->滤重字段, $results[0]->滤重字段, $tmp_table_name);
+
+        $errs = $model->select($sql)->getResultArray();
+
+        if (count($errs) != 0)
+        {
+            $err_arr = [];
+            foreach ($errs as $err)
+            {
+                $str = '';
+                foreach ($err as $item)
+                {
+                    if ($str!='') $str = $str . '^';
+                    $str = $str . $item;
+                }
+                array_push($err_arr, $str);
+            }
+            $this->json_data(400, sprintf('导入失败,滤重列"%s"有重复记录 {%s}', $results[0]->滤重字段, implode(',', $err_arr)), 0);
+            return;
+        }
 
         // 插入正式表
         $sql = sprintf('
