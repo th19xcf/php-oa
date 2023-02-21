@@ -1,5 +1,5 @@
 <?php
-/* v1.4.5.1.202301161630, from office */
+/* v1.4.6.1.202302201010, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -334,7 +334,7 @@ class Interview extends Controller
 
         // 查询ee_train是否已有相同记录
         $sql = sprintf('
-            select 姓名,身份证号
+            select 姓名,身份证号,max(培训次数) as 培训次数
             from ee_train
             where 有效标识!="0"
                 and 删除标识!="1"
@@ -353,10 +353,16 @@ class Interview extends Controller
             $err_arr = [];
             foreach ($errs as $err)
             {
-                array_push($err_arr, $err['身份证号']);
+                if ((int)$arg['培训次数'] != ($err['培训次数']+1))
+                {
+                    array_push($err_arr, $err['身份证号'].'^培训次数='.$err['培训次数']);
+                }
             }
-            $this->json_data(400, sprintf('未执行,在培训表中有相关的人员记录,请确认,身份证号{%s}', implode(',', $err_arr)), 0);
-            return;
+            if (count($err_arr) != 0)
+            {
+                $this->json_data(400, sprintf('未执行,在培训表中有相关的人员记录,请设置培训次数+1,身份证号{%s}', implode(',', $err_arr)), 0);
+                return;
+            }
         }
 
         // 更新表ee_interview

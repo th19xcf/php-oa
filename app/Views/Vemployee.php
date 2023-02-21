@@ -1,4 +1,4 @@
-<!-- v2.3.3.1.202301102250, from home -->
+<!-- v2.3.4.1.202302201630, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -319,6 +319,13 @@
 
             grid_options.api.forEachNode((rowNode, index) =>
             {
+                // 校验必填项
+                if (rowNode.data['表项'] == '生效日期' && rowNode.data['值'] == '')
+                {
+                    alert('生效日期为必填项,不能为空');
+                    return;
+                }
+
                 // 单选
                 if (submit_type == 'upkeep_single')
                 {
@@ -360,37 +367,38 @@
                 return;
             }
 
-            if (arg_obj['生效日期']['值'] == '')
+            for (var id in arg_obj)
             {
-                alert('需要填写生效日期');
-                return;
-            }
-
-            if (arg_obj['员工状态']['值'] == '在职')
-            {
-                if (arg_obj['离职日期']['值'] != '')
+                switch (id)
                 {
-                    alert('在职,不要填写离职日期');
-                    return;
-                }
-                if (arg_obj['离职原因']['值'] != '')
-                {
-                    alert('在职,不要填写离职原因');
-                    return;
-                }
-            }
-
-            if (arg_obj['员工状态']['值'] == '离职')
-            {
-                if (arg_obj['离职日期']['值'] == '')
-                {
-                    alert('离职,请填写离职日期');
-                    return;
-                }
-                if (arg_obj['离职原因']['值'] == '')
-                {
-                    alert('离职,请填写离职原因');
-                    return;
+                    case '员工状态':
+                        if (arg_obj['员工状态']['值'] == '在职')
+                        {
+                            if (arg_obj['离职日期']['值'] != '')
+                            {
+                                alert('在职,不要填写离职日期');
+                                return;
+                            }
+                            if (arg_obj['离职原因']['值'] != '')
+                            {
+                                alert('在职,不要填写离职原因');
+                                return;
+                            }
+                        }
+                        if (arg_obj['员工状态']['值'] == '离职')
+                        {
+                            if (arg_obj['离职日期']['值'] == '')
+                            {
+                                alert('离职,请填写离职日期');
+                                return;
+                            }
+                            if (arg_obj['离职原因']['值'] == '')
+                            {
+                                alert('离职,请填写离职原因');
+                                return;
+                            }
+                        }
+                        break;
                 }
             }
 

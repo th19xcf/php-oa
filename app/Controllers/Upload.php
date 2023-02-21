@@ -1,5 +1,5 @@
 <?php
-/* v2.3.1.1.202302181700, from home */
+/* v2.3.2.1.202302201050, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -315,29 +315,32 @@ class Upload extends Controller
         $query = $model->select($sql);
         $results = $query->getResult();
 
-        $sql = sprintf('
-            select %s from %s
-            where concat(%s) in ( select concat(%s) from %s )', 
-            $results[0]->滤重字段, $results[0]->表名,
-            $results[0]->滤重字段, $results[0]->滤重字段, $tmp_table_name);
-
-        $errs = $model->select($sql)->getResultArray();
-
-        if (count($errs) != 0)
+        if ($results[0]->滤重字段 != '')
         {
-            $err_arr = [];
-            foreach ($errs as $err)
+            $sql = sprintf('
+                select %s from %s
+                where concat(%s) in ( select concat(%s) from %s )', 
+                $results[0]->滤重字段, $results[0]->表名,
+                $results[0]->滤重字段, $results[0]->滤重字段, $tmp_table_name);
+
+            $errs = $model->select($sql)->getResultArray();
+
+            if (count($errs) != 0)
             {
-                $str = '';
-                foreach ($err as $item)
+                $err_arr = [];
+                foreach ($errs as $err)
                 {
-                    if ($str!='') $str = $str . '^';
-                    $str = $str . $item;
+                    $str = '';
+                    foreach ($err as $item)
+                    {
+                        if ($str!='') $str = $str . '^';
+                        $str = $str . $item;
+                    }
+                    array_push($err_arr, $str);
                 }
-                array_push($err_arr, $str);
+                $this->json_data(400, sprintf('导入失败,滤重列"%s"有重复记录 {%s}', $results[0]->滤重字段, implode(',', $err_arr)), 0);
+                return;
             }
-            $this->json_data(400, sprintf('导入失败,滤重列"%s"有重复记录 {%s}', $results[0]->滤重字段, implode(',', $err_arr)), 0);
-            return;
         }
 
         // 插入正式表
