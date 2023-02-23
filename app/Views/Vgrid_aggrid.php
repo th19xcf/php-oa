@@ -1,4 +1,4 @@
-<!-- v5.1.4.1.2023022235, from home -->
+<!-- v5.2.1.1.202302231525, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -1161,6 +1161,13 @@
 
                 if (columns_obj[jj].类型 == '数值')
                 {
+                    error_field = '';
+                    if (value.search('$') !=-1)
+                    {
+                        error_field = value.replace('$','');
+                        value = params.data[error_field];
+                    }
+
                     switch (opt)
                     {
                         case '>':
