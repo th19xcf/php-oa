@@ -1,5 +1,5 @@
 <?php
-/* v7.1.3.1.202302101740, from home */
+/* v7.1.4.1.202302262300, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1322,7 +1322,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('导出', $menu_id, $query_str);
+        $model->sql_log('导出', $menu_id, str_replace('"','',$query_str));
 
         $query = $model->select($query_str);
 
