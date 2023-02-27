@@ -1,4 +1,4 @@
-<!-- v5.2.1.1.202302231525, from office -->
+<!-- v5.2.2.1.202302272040, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1103,6 +1103,100 @@
             return valueA - valueB;
         }
 
+        // 单元格格式
+        function get_cell_style(params, type, str, style_str, style_default)
+        {
+            opt = '';
+            value = '';
+
+            if (str.search('>=')!=-1 || str.search('<=')!=-1 || str.search('!=')!=-1)
+            {
+                opt = str.substr(0,2);
+                value = str.substr(2);
+            }
+            else if (str.search('>')!=-1 || str.search('<')!=-1 || str.search('=')!=-1)
+            {
+                opt = str.substr(0,1);
+                value = str.substr(1);
+            }
+
+            var style_obj = {};
+
+            if (style_str != '')
+            {
+                var style_arr = style_str.split(',');
+
+                for (var ii in style_arr)
+                {
+                    var item_arr = style_arr[ii].split(':');
+                    style_obj[item_arr[0]] = item_arr[1];
+                }
+            }
+            else
+            {
+                style_obj = style_default;
+            }
+
+            error = false;
+
+            if (type == '数值')
+            {
+                error_field = '';
+                if (value.search('$') !=-1)
+                {
+                    error_field = value.replace('$','');
+                    value = params.data[error_field];
+                }
+
+                val_1 = Number(params.value);
+                val_2 = Number(value);
+
+                switch (opt)
+                {
+                    case '>':
+                        if (val_1 > val_2) error = true;
+                        break;
+                    case '<':
+                        if (val_1 < val_2) error = true;
+                        break;
+                    case '=':
+                        if (val_1 = val_2) error = true;
+                        break;
+                    case '>=':
+                        if (val_1 >= val_2) error = true;
+                        break;
+                    case '<=':
+                        if (val_1 <= val_2) error = true;
+                        break;
+                    case '!=':
+                        if (val_1 != val_2) error = true;
+                        break;
+                }
+            }
+            else
+            {
+                switch (opt)
+                {
+                    case '=':
+                        if (params.value.indexOf(value) != -1) error = true;
+                        break;
+                    case '!=':
+                        if (params.value.indexOf(value) == -1) error = true;
+                        break;
+                }
+            }
+
+            //console.log(params.colDef.field,',type=',type,'pval=',params.value,'val=',value,'opt=',opt, 'rc=', error);
+
+            if (error)
+            {
+                return style_obj;
+            }
+
+            return '';
+        }
+
+
         function set_cell_style(params)
         {
             for (var jj in columns_obj)
@@ -1114,98 +1208,30 @@
                     return null;
                 }
 
-                var str = '';
-                var style_str = '';
+                if (columns_obj[jj].异常条件 != '')
+                {
+                    str = columns_obj[jj].异常条件;
+                    style_str = columns_obj[jj].异常样式;
+                    style_default = {'color':'red','font-weight':'bold','background-color': '#f7acbc'};
+
+                    rc = get_cell_style(params, columns_obj[jj].类型, str, style_str, style_default);
+                    if (rc != '')
+                    {
+                        return rc;
+                    }
+                }
 
                 if (columns_obj[jj].提示条件 != '')
                 {
                     str = columns_obj[jj].提示条件;
                     style_str = columns_obj[jj].提示样式;
                     style_default = {'color':'green','font-weight':'bold'};
-                }
-                if (columns_obj[jj].异常条件 != '')
-                {
-                    str = columns_obj[jj].异常条件;
-                    style_str = columns_obj[jj].异常样式;
-                    style_default = {'color':'red','font-weight':'bold','background-color': '#f7acbc'};
-                }
 
-                if (str.search('>=')!=-1 || str.search('<=')!=-1 || str.search('!=')!=-1)
-                {
-                    opt = str.substr(0,2);
-                    value = str.substr(2);
-                }
-                else if (str.search('>')!=-1 || str.search('<')!=-1 || str.search('=')!=-1)
-                {
-                    opt = str.substr(0,1);
-                    value = str.substr(1);
-                }
-
-                var style_obj = {};
-                if (style_str != '')
-                {
-                    var style_arr = style_str.split(',');
-
-                    for (var ii in style_arr)
+                    rc = get_cell_style(params, columns_obj[jj].类型, str, style_str, style_default);
+                    if (rc != '')
                     {
-                        var item_arr = style_arr[ii].split(':');
-                        style_obj[item_arr[0]] = item_arr[1];
+                        return rc;
                     }
-                }
-                else
-                {
-                    style_obj = style_default;
-                }
-
-                error = false;
-
-                if (columns_obj[jj].类型 == '数值')
-                {
-                    error_field = '';
-                    if (value.search('$') !=-1)
-                    {
-                        error_field = value.replace('$','');
-                        value = params.data[error_field];
-                    }
-
-                    switch (opt)
-                    {
-                        case '>':
-                            if (params.value > value) error = true;
-                            break;
-                        case '<':
-                            if (params.value < value) error = true;
-                            break;
-                        case '=':
-                            if (params.value = value) error = true;
-                            break;
-                        case '>=':
-                            if (params.value >= value) error = true;
-                            break;
-                        case '<=':
-                            if (params.value <= value) error = true;
-                            break;
-                        case '!=':
-                            if (params.value != value) error = true;
-                            break;
-                    }
-                }
-                else
-                {
-                    switch (opt)
-                    {
-                        case '=':
-                            if (params.value.indexOf(value) != -1) error = true;
-                            break;
-                        case '!=':
-                            if (params.value.indexOf(value) == -1) error = true;
-                            break;
-                    }
-                }
-
-                if (error)
-                {
-                    return style_obj;
                 }
             }
 
