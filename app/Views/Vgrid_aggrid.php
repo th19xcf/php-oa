@@ -1,4 +1,4 @@
-<!-- v5.2.2.1.202302272040, from home -->
+<!-- v5.2.3.1.202303012245, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1142,7 +1142,7 @@
             if (type == '数值')
             {
                 error_field = '';
-                if (value.search('$') !=-1)
+                if (value.indexOf('$') !=-1)
                 {
                     error_field = value.replace('$','');
                     value = params.data[error_field];
@@ -1185,8 +1185,6 @@
                         break;
                 }
             }
-
-            //console.log(params.colDef.field,',type=',type,'pval=',params.value,'val=',value,'opt=',opt, 'rc=', error);
 
             if (error)
             {
