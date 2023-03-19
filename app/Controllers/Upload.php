@@ -1,5 +1,5 @@
 <?php
-/* v2.3.2.1.202302201050, from office */
+/* v2.4.1.1.202303191100, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -207,7 +207,7 @@ class Upload extends Controller
         foreach ($results as $row)
         {
             $sql = '';
-            if (strpos($row->校验类型,'固定值'))
+            if (strpos($row->校验类型,'固定值') !== false)
             {
                 $src = '';
                 if ($row->校验信息 == '')
@@ -239,9 +239,10 @@ class Upload extends Controller
                         select 对象名称,对象值
                         from def_object
                         where 对象名称="%s"
+                            and (属地="" or instr(属地,"%s"))
                     ) as t2 on t1.字段值=t2.对象值
                     where t2.对象值 is null',
-                    $src, $row->对象);
+                    $src, $row->对象, $user_location);
 
                 $errs = $model->select($sql)->getResultArray();
                 if (count($errs) != 0)
@@ -256,8 +257,10 @@ class Upload extends Controller
                 }
             }
 
-            if (strpos($row->校验类型,'条件'))
+            if (strpos($row->校验类型,'条件') !== false)
             {
+                if ($row->校验信息 == '') continue;
+
                 $sql = sprintf('
                     select "%s" as 字段名, %s as 字段值 from %s where %s',
                     $row->列名, $row->列名, $tmp_table_name, $row->校验信息);
@@ -275,7 +278,7 @@ class Upload extends Controller
                 }
             }
 
-            if (strpos($row->校验类型,'日期'))
+            if (strpos($row->校验类型,'日期') !== false)
             {
                 $sql = sprintf('
                     select "%s" as 字段名, %s as 字段值 from %s',

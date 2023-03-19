@@ -1,4 +1,4 @@
-<!-- v5.2.3.1.202303012245, from home -->
+<!-- v6.1.1.1.202303191100, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1245,7 +1245,7 @@
                 if (columns_obj[ii].列名 != col_name) continue;
                 switch (columns_obj[ii].赋值类型)
                 {
-                    case '下拉':
+                    case '固定值':
                         return {
                             component: 'agSelectCellEditor',
                             params: {

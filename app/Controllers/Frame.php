@@ -1,5 +1,5 @@
 <?php
-/* v7.1.4.1.202302262300, from home */
+/* v8.1.1.1.202303191100, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -332,7 +332,7 @@ class Frame extends Controller
             $value_arr['列类型'] = $row->列类型;
             $value_arr['取值'] = '';
 
-            if ($row->赋值类型 == '下拉')
+            if ($row->赋值类型 == '固定值')
             {
                 $object_arr[$row->列名] = [];
                 $object_arr[$row->列名][0] = '';
@@ -361,7 +361,6 @@ class Frame extends Controller
             {
                 array_push($add_value_arr, $value_arr);
             }
-
 
             /*
             // 匹配钻取条件
@@ -932,13 +931,13 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $update_module = $session->get($menu_id.'-update_module');
 
-        if ($update_module == '')
+        if ($update_module == '2')
         {
-            $this->update_row_1($menu_id, $row_arr);
+            $this->update_row_2($menu_id, $row_arr);
         }
         else
         {
-            $this->update_row_2($menu_id, $row_arr);
+            $this->update_row_1($menu_id, $row_arr);
         }
     }
 
