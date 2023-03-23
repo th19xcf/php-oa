@@ -1,5 +1,5 @@
 <?php
-/* v1.2.3.1.202210022035, from surface */
+/* v2.1.1.1.202303211515, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -340,9 +340,9 @@ class Store extends Controller
 
         $sql = sprintf('
             update ee_store
-            set 面试信息="%s" 
+            set 面试信息="%s",结束操作时间="%s"
             where GUID in (%s) ',
-            $arg['面试结果'], $guid_str);
+            $arg['面试结果'], date('Y-m-d H:i:s'), $guid_str);
 
         $num = $model->exec($sql);
 
@@ -355,17 +355,24 @@ class Store extends Controller
 
             $sql = sprintf('
                 insert into ee_interview (姓名,身份证号,手机号码,属地,
-                    招聘渠道,渠道名称,信息来源,实习结束日期,
-                    面试业务,面试岗位,一次面试日期,一次面试人,一次面试结果,
-                    预约培训日期,邀约信息,录入来源,录入人)
+                    招聘渠道,渠道类型,渠道名称,信息来源,实习结束日期,
+                    面试业务,面试岗位,
+                    一次面试日期,一次面试人,一次面试结果,
+                    预约培训日期,邀约信息,
+                    开始操作时间,
+                    录入来源,录入人)
                 select 姓名,身份证号,手机号码,属地,
-                    招聘渠道,渠道名称,信息来源,"",
-                    邀约业务,邀约岗位,"%s","%s","%s",
-                    "%s","通过","邀约表转入" as 录入来源,"%s" as 录入人
+                    招聘渠道,渠道类型,渠道名称,信息来源,"" as 实习结束日期,
+                    邀约业务 as 面试业务,邀约岗位 as 面试岗位,
+                    "%s" as 一次面试日期,"%s" as 一次面试人,"%s" as 一次面试结果,
+                    "%s" as 预约培训日期,"通过" as 邀约信息,
+                    "%s" as 开始操作时间,
+                    "邀约表转入" as 录入来源,"%s" as 录入人
                 from ee_store
                 where GUID in (%s)', 
                 $arg['面试日期'], $arg['面试人'], $arg['面试结果'], 
-                $arg['预约培训日期'], $user_workid, $guid_str);
+                $arg['预约培训日期'], date('Y-m-d H:i:s'),
+                $user_workid, $guid_str);
             $num = $model->exec($sql);
         }
     }
