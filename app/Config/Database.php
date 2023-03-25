@@ -1,5 +1,5 @@
 <?php
-/* v1.1.1.1.202203041635, from office */
+/* v1.1.2.1.202303252040, from home */
 
 namespace Config;
 
@@ -81,7 +81,7 @@ class Database extends Config
 		'DSN'      => '',
 		'hostname' => '114.113.154.36',
 		'username' => 'data',
-		'password' => 'mysql.data',
+		'password' => 'MYSQL.data2023',
 		'database' => 'data',
 		'DBDriver' => 'MySQLi',
 		'DBPrefix' => '',
@@ -94,7 +94,7 @@ class Database extends Config
 		'compress' => false,
 		'strictOn' => false,
 		'failover' => [],
-		'port'     => 3666,
+		'port'     => 45608,
 	];
 
 	public $zbgk = [
@@ -114,7 +114,7 @@ class Database extends Config
 		'compress' => false,
 		'strictOn' => false,
 		'failover' => [],
-		'port'     => 3666,
+		'port'     => 3306,
 	];
 
 	//--------------------------------------------------------------------
