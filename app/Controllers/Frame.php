@@ -1,5 +1,5 @@
 <?php
-/* v8.1.1.1.202303191100, from home */
+/* v8.2.1.1.202303301755, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -11,6 +11,9 @@ class Frame extends Controller
         helper(['form', 'url']);
     }
 
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 生成页面
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function index()
     {
         // 从session中取出数据
@@ -28,24 +31,7 @@ class Frame extends Controller
     {
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_role = $session->get('user_role');
-
-        str_replace(' ', '', $user_role);
-        str_replace('，', ',', $user_role);
-        $role_arr = explode(',', $user_role);
-
-        $role_str = '';
-        foreach ($role_arr as $role)
-        {
-            if ($role_str == '')
-            {
-                $role_str = sprintf('"%s"', $role);
-            }
-            else
-            {
-                $role_str = sprintf('%s,"%s"', $role_str ,$role);
-            }
-        }
+        $user_role_str = $session->get('user_role_str');
 
         $sql = sprintf(
             'select 
@@ -66,7 +52,7 @@ class Frame extends Controller
             left join def_query_config as t3 on t2.查询模块=t3.查询模块
             where t1.角色编号 in (%s)
             group by t1.功能赋权
-            order by t2.菜单顺序', $role_str);
+            order by t2.菜单顺序', $user_role_str);
 
         $model = new Mcommon();
         $query = $model->select($sql);
@@ -103,7 +89,6 @@ class Frame extends Controller
 
             // 存入session
             $session_arr = [];
-            $session_arr['user_role_str'] = $role_str;
             $session_arr[$row->功能赋权.'-dept_authz'] = $row->部门赋权;
             $session_arr[$row->功能赋权.'-dept_cond'] = $dept_cond;
             $session_arr[$row->功能赋权.'-dept_fld'] = $row->部门字段;
@@ -151,7 +136,7 @@ class Frame extends Controller
         $dept_cond = $session->get($menu_id.'-dept_cond');
         //$dept_fld = $session->get($menu_id.'-dept_fld');
         $user_role_str = $session->get('user_role');
-        $user_location = $session->get('user_location');
+        $user_location_str = $session->get('user_location_str');
         $add_authz = $session->get($menu_id.'-add_authz');
         $modify_authz = $session->get($menu_id.'-modify_authz');
         $delete_authz = $session->get($menu_id.'-delete_authz');
@@ -180,7 +165,7 @@ class Frame extends Controller
                 $col_arr = explode(';', $caller_func_condition);
                 foreach ($col_arr as $col_str)
                 {
-                    if (strpos($col_str,'^') != false)
+                    if (strpos($col_str,'^') !== false)
                     {
                         $arr = explode('^', $col_str);
                         $caller_col['caller_col'] = $arr[0];
@@ -332,7 +317,7 @@ class Frame extends Controller
             $value_arr['列类型'] = $row->列类型;
             $value_arr['取值'] = '';
 
-            if ($row->赋值类型 == '固定值')
+            if ($row->赋值类型 == '下拉')
             {
                 $object_arr[$row->列名] = [];
                 $object_arr[$row->列名][0] = '';
@@ -341,9 +326,9 @@ class Frame extends Controller
                     select 对象值 
                     from def_object 
                     where 对象名称="%s"
-                        and (属地="" or instr(属地,"%s"))
+                        and (属地="" or 属地 in (%s))
                     order by convert(对象值 using gbk)',
-                    $row->对象, $user_location);
+                    $row->对象, $user_location_str);
 
                 $qry = $model->select($obj_sql);
                 $rslt = $qry->getResult();
@@ -361,6 +346,7 @@ class Frame extends Controller
             {
                 array_push($add_value_arr, $value_arr);
             }
+
 
             /*
             // 匹配钻取条件
@@ -447,7 +433,7 @@ class Frame extends Controller
             $location_fld = $row->属地字段;
 
             $query_where = $row->查询条件;
-            if(strpos($row->查询条件, '$角色') != false)
+            if(strpos($row->查询条件, '$角色') !== false)
             {
                 $query_where = str_replace('$角色', $user_role_str, $row->查询条件);
             }
@@ -503,7 +489,7 @@ class Frame extends Controller
         // 条件语句加上属地条件
         if ($location_fld != '')
         {
-            $location_cond = sprintf('%s="%s"', $location_fld, $user_location);
+            $location_cond = sprintf('%s in (%s)', $location_fld, $user_location_str);
             $where = ($where == '') ? $location_cond : $where . ' and ' . $location_cond;
         }
 
@@ -931,13 +917,13 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $update_module = $session->get($menu_id.'-update_module');
 
-        if ($update_module == '2')
+        if ($update_module == '')
         {
-            $this->update_row_2($menu_id, $row_arr);
+            $this->update_row_1($menu_id, $row_arr);
         }
         else
         {
-            $this->update_row_1($menu_id, $row_arr);
+            $this->update_row_2($menu_id, $row_arr);
         }
     }
 

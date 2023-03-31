@@ -1,6 +1,6 @@
 <?php
 
-/* v2.1.2.1.202209112125, from surface */
+/* v2.2.1.1.202303301755, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -56,7 +56,43 @@ class Login extends Controller
         // 验证属地
         foreach ($results as $row)
         {
-            if ($row->员工属地 != $company_id) continue;
+            if (strpos($row->员工属地,$company_id) === false) continue;
+
+            str_replace(' ', '', $row->角色);
+            str_replace('，', ',', $row->角色);
+
+            $role_arr = explode(',', $row->角色);
+
+            $role_str = '';
+            foreach ($role_arr as $role)
+            {
+                if ($role_str == '')
+                {
+                    $role_str = sprintf('"%s"', $role);
+                }
+                else
+                {
+                    $role_str = sprintf('%s,"%s"', $role_str, $role);
+                }
+            }
+
+            str_replace(' ', '', $row->员工属地);
+            str_replace('，', ',', $row->员工属地);
+
+            $location_arr = explode(',', $row->员工属地);
+
+            $location_str = '';
+            foreach ($location_arr as $location)
+            {
+                if ($location_str == '')
+                {
+                    $location_str = sprintf('"%s"', $location);
+                }
+                else
+                {
+                    $location_str = sprintf('%s,"%s"', $location_str, $location);
+                }
+            }
 
             // 存入session
             $session_arr = [];
@@ -64,12 +100,11 @@ class Login extends Controller
             $session_arr['user_workid'] = $row->工号;
             $session_arr['user_name'] = $row->姓名;
             $session_arr['user_role'] = $row->角色;
+            $session_arr['user_role_str'] = $role_str;
             $session_arr['user_pswd'] = $pswd;
             $session_arr['user_location'] = $row->员工属地;
+            $session_arr['user_location_str'] = $location_str;
 
-            str_replace(' ', '', $session_arr['user_role']);
-            str_replace('，', ',', $session_arr['user_role']);
-    
             $session = \Config\Services::session();
             $session->set($session_arr);
 
