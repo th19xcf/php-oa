@@ -1,5 +1,5 @@
 <?php
-/* v2.4.1.1.202303191100, from home */
+/* v2.5.1.1.202304011115, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -75,6 +75,7 @@ class Upload extends Controller
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
         $user_location = $session->get('user_location');
+        $user_location_str = $session->get('user_location_str');
         $menu_1 = $session->get($menu_id.'-menu_1');
         $menu_2 = $session->get($menu_id.'-menu_2');
         $import = $session->get($menu_id.'-import');
@@ -239,10 +240,10 @@ class Upload extends Controller
                         select 对象名称,对象值
                         from def_object
                         where 对象名称="%s"
-                            and (属地="" or instr(属地,"%s"))
+                            and (属地="" or 属地 in (%s))
                     ) as t2 on t1.字段值=t2.对象值
                     where t2.对象值 is null',
-                    $src, $row->对象, $user_location);
+                    $src, $row->对象, $user_location_str);
 
                 $errs = $model->select($sql)->getResultArray();
                 if (count($errs) != 0)
