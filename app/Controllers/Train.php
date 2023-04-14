@@ -1,5 +1,5 @@
 <?php
-/* v1.5.2.1.202301161630, from office */
+/* v1.6.1.1.202304142000, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -320,9 +320,10 @@ class Train extends Controller
         {
             // 查询ee_onjob中是否有重复记录,有则报错
             $sql = sprintf('
-                select 姓名,身份证号
+                select 姓名,身份证号,入职次数
                 from ee_onjob
-                where 删除标识!="1"
+                where 有效标识="1"
+                    and 删除标识!="1"
                     and 身份证号 in
                     (
                         select 身份证号
@@ -338,10 +339,16 @@ class Train extends Controller
                 $err_arr = [];
                 foreach ($errs as $err)
                 {
-                    array_push($err_arr, $err['身份证号']);
+                    if ((int)$arg['入职次数'] != ($err['入职次数']+1))
+                    {
+                        array_push($err_arr, $err['身份证号'].'^入职次数='.$err['入职次数']);
+                    }
                 }
-                $this->json_data(400, sprintf('未执行,在人员表中有相关的人员记录,请确认,身份证号{%s}', implode(',', $err_arr)), 0);
-                return;
+                if (count($err_arr) != 0)
+                {
+                    $this->json_data(400, sprintf('未执行,在人员表中有相关的人员记录,请设置入职次数+1,身份证号{%s}', implode(',', $err_arr)), 0);
+                    return;
+                }
             }
 
             // 修改ee_train信息
@@ -379,12 +386,13 @@ class Train extends Controller
     
         $sql = sprintf('
             insert into ee_onjob (
-                姓名,身份证号,手机号码,属地,
+                姓名,身份证号,手机号码,属地,入职次数,
                 招聘渠道,
                 员工类别,
                 实习结束日期,
                 部门编码,部门名称,班组,
                 岗位名称,岗位类型,
+                结算类型,
                 工号1,工号2,
                 培训信息,培训开始日期,培训完成日期,
                 一阶段日期,二阶段日期,
@@ -397,12 +405,13 @@ class Train extends Controller
                 录入来源,录入人,
                 删除标识,有效标识)
             select 
-                t1.姓名,t1.身份证号,t1.手机号码,t1.属地,
+                t1.姓名,t1.身份证号,t1.手机号码,t1.属地,%d,
                 t2.招聘渠道,
                 if(t2.招聘渠道="校招","未毕业学生","合同制员工") as 员工类别,
                 t2.实习结束日期,
                 "" as 部门编码,"" as 部门名称,"" as 班组,
-                "客服代表" as 岗位名称,"按量结算" as 岗位类型,
+                "客服代表" as 岗位名称,"%s" as 岗位类型,
+                "%s" as 结算类型,
                 "" as 工号1,"" as 工号2,
                 "有" as 培训信息,培训开始日期,培训完成日期,
                 培训完成日期 as 一阶段日期,"" as 二阶段日期,
@@ -430,7 +439,10 @@ class Train extends Controller
             ) as t2
             on t1.身份证号=t2.身份证号
             where t1.GUID in (%s)',
-            $arg['培训结束日期'], $user_workid, $guid_str);
+            (int)$arg['入职次数'],
+            $arg['岗位类型'], $arg['结算类型'],
+            $arg['培训结束日期'],
+            $user_workid, $guid_str);
 
         $num = $model->exec($sql);
         $this->json_data(200, sprintf('更新%d条',$num), 0);

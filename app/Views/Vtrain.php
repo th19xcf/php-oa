@@ -1,4 +1,4 @@
-<!-- v1.4.1.1.202301122315, from home -->
+<!-- v1.5.1.1.202304142000, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -278,6 +278,20 @@
                             values: ['','北京总公司','河北分公司','四川分公司']
                         },
                     };
+                case '岗位类型':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','生产岗','管理岗']
+                        },
+                    };
+                case '结算类型':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','按量结算','按席结算','无结算']
+                        },
+                    };
                 case '招聘渠道':
                     return {
                         component: 'agSelectCellEditor',
@@ -371,6 +385,9 @@
             [
                 {'表项':'属性', '值':'更新培训状态'},
                 {'表项':'培训状态', '值':''},
+                {'表项':'入职次数', '值':'1'},
+                {'表项':'岗位类型', '值':''},
+                {'表项':'结算类型', '值':''},
                 {'表项':'培训结束日期', '值':''},
                 {'表项':'培训离开原因', '值':''},
             ];
@@ -415,17 +432,32 @@
                     arg_obj[rowNode.data['表项']] = rowNode.data['值'];
                     if (rowNode.data['表项']=='培训状态' && rowNode.data['值'] == '')
                     {
-                        alert('"培训状态"为空,请补充.');
+                        alert('"培训状态"为空,请补充;');
+                        ajax = -1;
+                    }
+                    if (rowNode.data['表项']=='岗位类型' && rowNode.data['值'] == '')
+                    {
+                        alert('"岗位类型"为空,请补充;');
+                        ajax = -1;
+                    }
+                    if (rowNode.data['表项']=='结算类型' && rowNode.data['值'] == '')
+                    {
+                        alert('"结算类型"为空,请补充;');
                         ajax = -1;
                     }
                     if (rowNode.data['表项']=='培训结束日期' && rowNode.data['值'] == '')
                     {
-                        alert('"培训结束日期"为空,请补充.');
+                        alert('"培训结束日期"为空,请补充;');
                         ajax = -1;
                     }
                 }
             });
 
+            if (arg_obj['培训状态'] == '通过' && arg_obj['入职次数'] == '')
+            {
+                alert('"入职次数"为空,请补充;');
+                return;
+            }
             if (ajax == -1)
             {
                 return;
@@ -444,7 +476,7 @@
                 {
                     alert('失败, ' + obj.msg);
                 }
-           }).catch(function (err)
+            }).catch(function (err)
             {
                 alert('失败, ' + " " + err.statusText);
             });

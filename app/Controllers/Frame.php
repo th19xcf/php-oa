@@ -1,5 +1,5 @@
 <?php
-/* v8.2.2.1.202304101710, from office */
+/* v8.3.1.1.202304102105, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -317,7 +317,7 @@ class Frame extends Controller
             $value_arr['列类型'] = $row->列类型;
             $value_arr['取值'] = '';
 
-            if ($row->赋值类型 == '固定值')
+            if (strpos($row->赋值类型,'固定值') !== false)
             {
                 $object_arr[$row->列名] = [];
                 $object_arr[$row->列名][0] = '';
