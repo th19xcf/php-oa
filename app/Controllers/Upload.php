@@ -1,5 +1,5 @@
 <?php
-/* v2.5.1.1.202304011115, from home */
+/* v2.5.2.1.202305012115, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -133,7 +133,7 @@ class Upload extends Controller
 
         $sql = sprintf('
             select 列名,字段名,字段类型,字段长度,
-                校验信息,校验类型,对象,导入类型,系统变量,顺序
+                校验信息,校验类型,对象,系统变量,顺序
             from def_import_column
             where 导入模块="%s" and 系统变量="" and 顺序>0
             order by 顺序', $import);
@@ -210,31 +210,17 @@ class Upload extends Controller
             $sql = '';
             if (strpos($row->校验类型,'固定值') !== false)
             {
-                $src = '';
-                if ($row->校验信息 == '')
-                {
-                    $src = sprintf('
-                        select "%s" as 字段名, %s as 字段值
-                        from %s
-                        group by 字段值',
-                        $row->字段名, $row->字段名, $tmp_table_name);
-                }
-                else
-                {
-                    $src = sprintf('
-                        select "%s" as 字段名, %s as 字段值
-                        from %s
-                        where %s
-                        group by 字段值',
-                        $row->字段名, $row->字段名, $tmp_table_name, $row->校验信息);
-                }
-
                 $sql = sprintf('
                     select 
                         t1.字段名 as 字段名,
                         t1.字段值 as 字段值,
                         ifnull(t2.对象值,"") as 对象值
-                    from (%s) as t1
+                    from
+                    (
+                        select "%s" as 字段名, %s as 字段值
+                        from %s
+                        group by 字段值
+                    ) as t1
                     left join
                     (
                         select 对象名称,对象值
@@ -243,7 +229,8 @@ class Upload extends Controller
                             and (属地="" or 属地 in (%s))
                     ) as t2 on t1.字段值=t2.对象值
                     where t2.对象值 is null',
-                    $src, $row->对象, $user_location_str);
+                    $row->字段名, $row->字段名, $tmp_table_name,
+                    $row->对象, $user_location_str);
 
                 $errs = $model->select($sql)->getResultArray();
                 if (count($errs) != 0)
@@ -367,7 +354,7 @@ class Upload extends Controller
 
         $sql = sprintf('
             select 列名,字段名,字段类型,字段长度,
-                校验类型,对象,导入类型,
+                校验类型,对象,
                 replace(系统变量," ","") as 系统变量,
                 replace(表单变量," ","") as 表单变量
             from def_import_column
