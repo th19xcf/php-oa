@@ -1,5 +1,5 @@
 <?php
-/* v8.3.1.1.202304102105, from home */
+/* v9.1.1.1.202305102250, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -347,7 +347,6 @@ class Frame extends Controller
                 array_push($add_value_arr, $value_arr);
             }
 
-
             /*
             // 匹配钻取条件
             if ($front_id == '') continue;
@@ -393,14 +392,14 @@ class Frame extends Controller
         $next_func_condition = '';
         $import_func_id = '';
         $result_count = '';
-        $update_table = '';
-        $update_module = '';
+        $data_table = '';
+        $data_module = '';
 
         $sql = sprintf('
             select 
                 t1.功能编码,
                 查询表名,
-                更新表名,更新模块,
+                数据表名,数据模式,
                 部门字段,属地字段,
                 查询条件,汇总条件,排序条件,初始条数,
                 钻取模块,钻取条件,
@@ -451,8 +450,8 @@ class Frame extends Controller
             $import_func_id = $row->导入模块;
             $import_func_name = $row->导入名称;
 
-            $update_table = $row->更新表名;
-            $update_module = $row->更新模块;
+            $data_table = $row->数据表名;
+            $data_module = $row->数据模式;
             break;
         }
 
@@ -557,8 +556,8 @@ class Frame extends Controller
 
         $session_arr[$menu_id.'-import_func_id'] = $import_func_id;
         $session_arr[$menu_id.'-import_func_name'] = $import_func_name;
-        $session_arr[$menu_id.'-update_table'] = $update_table;
-        $session_arr[$menu_id.'-update_module'] = $update_module;
+        $session_arr[$menu_id.'-data_table'] = $data_table;
+        $session_arr[$menu_id.'-data_module'] = $data_module;
 
         $session = \Config\Services::session();
         $session->set($session_arr);
@@ -574,7 +573,7 @@ class Frame extends Controller
         $send['columns_json'] = json_encode($send_columns_arr);
         $send['data_col_json'] = json_encode($data_col_arr);
         $send['data_value_json'] = json_encode($results);
-        $send['update_module'] = $update_module;
+        $send['data_module'] = $data_module;
         $send['update_value_json'] = json_encode($update_value_arr);
         $send['add_value_json'] = json_encode($add_value_arr);
         $send['cond_value_json'] = json_encode($cond_value_arr);
@@ -915,61 +914,44 @@ class Frame extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $update_module = $session->get($menu_id.'-update_module');
+        $data_module = $session->get($menu_id.'-data_module');
 
-        if ($update_module == '')
+        switch ($data_module)
         {
-            $this->update_row_1($menu_id, $row_arr);
-        }
-        else
-        {
-            $this->update_row_2($menu_id, $row_arr);
+            case '0': //无额外字段
+                $this->update_row_1($menu_id, $row_arr);
+                break;
+            case '1': //有额外字段,模式1
+                $this->update_row_1($menu_id, $row_arr);
+                break;
+            case '2': //有额外字段,模式2
+                $this->update_row_2($menu_id, $row_arr);
+                break;
+            default:
+                exit(sprintf('更新失败,数据模式[-%d-]错误',$data_module));
+                break;
         }
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 更新记录,原记录更新
+    // 更新记录,模式0,无额外字段
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function update_row_1($menu_id, $arg)
+    public function update_row_0($menu_id, $arg)
     {
         $row_arr = $arg;
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $update_table = $session->get($menu_id.'-update_table');
+        $data_table = $session->get($menu_id.'-data_table');
         $primary_key = $session->get($menu_id.'-primary_key');
-        $user_workid = $session->get('user_workid');
 
         $change_fld_str = ''; //变更表项
 
         $set = '';
-        $where = '';
+        $where = $this->get_where($row_arr, $primary_key);
+
         foreach ($row_arr as $row)
         {
-            if ($row['fld_name'] == $primary_key)
-            {
-                $key_arr = explode(',', $row['value']);
-
-                $key_str = '';
-                foreach ($key_arr as $key)
-                {
-                    if ($key_str == '')
-                    {
-                        $key_str = sprintf('\'%s\'', $key);
-                    }
-                    else
-                    {
-                        $key_str = sprintf('%s,\'%s\'', $key_str, $key);
-                    }
-                }
-
-                $where = sprintf('%s in (%s)', $row['fld_name'], $key_str);
-                continue;
-            }
-
-            // 记录开始日期不拦截
-            if ($row['modified'] == false && $row['fld_name'] != '记录开始日期') continue;
-
             $set_str = '';
             switch ($row['type'])
             {
@@ -983,12 +965,6 @@ class Frame extends Controller
                 default:
                     $set_str = sprintf('%s=\'%s\'', $row['fld_name'], $row['value']);
                     break;
-            }
-
-            // 记录开始日期单独处理
-            if ($row['fld_name'] == '记录开始日期')
-            {
-                $set_str = sprintf('记录结束日期=\'%s\'', $row['value']);
             }
 
             if ($set != '')
@@ -1000,63 +976,37 @@ class Frame extends Controller
             $change_fld_str = $change_fld_str . $row['fld_name'];
         }
 
-        //增加变更表项、录入人的处理
-        $set = sprintf('
-            %s,变更表项=\'%s\',录入人=\'%s\'', 
-            $set, $change_fld_str, $user_workid);
-
-        $sql = sprintf('update %s set %s where %s', $update_table, $set, $where);
+        $sql = sprintf('update %s set %s where %s', $data_table, $set, $where);
 
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('更新', $menu_id, sprintf('sql=%s',str_replace('"','',$sql)));
+        $model->sql_log('更新[0]', $menu_id, sprintf('sql=%s',str_replace('"','',$sql)));
 
-        $num = $model->modify($sql);
-        exit($num);
+        $num = $model->exec($sql);
+        exit(sprintf('更新[0]成功,更新 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 更新记录,原记录不变,增加新记录 
+    // 更新记录,模式1,有额外字段
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function update_row_2($menu_id, $arg)
+    public function update_row_1($menu_id, $arg)
     {
         $row_arr = $arg;
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $update_table = $session->get($menu_id.'-update_table');
+        $data_table = $session->get($menu_id.'-data_table');
         $primary_key = $session->get($menu_id.'-primary_key');
         $user_workid = $session->get('user_workid');
 
-        $change_fld_str = ''; //变更表项
+        $where = $this->get_where($row_arr, $primary_key);
 
-        $set = '';
-        $where = '';
+        $change_fld_str = ''; //变更表项
+        $set = ''; //更新字段
+
         foreach ($row_arr as $row)
         {
-            // 主键处理
-            if ($row['fld_name'] == $primary_key)
-            {
-                $key_arr = explode(',', $row['value']);
-
-                $key_str = '';
-                foreach ($key_arr as $key)
-                {
-                    if ($key_str == '')
-                    {
-                        $key_str = sprintf('\'%s\'', $key);
-                    }
-                    else
-                    {
-                        $key_str = sprintf('%s,\'%s\'', $key_str, $key);
-                    }
-                }
-
-                $where = sprintf('%s in (%s)', $row['fld_name'], $key_str);
-                continue;
-            }
-
             $set_str = '';
 
             // 记录开始日期不拦截
@@ -1076,7 +1026,141 @@ class Frame extends Controller
                     break;
             }
 
-            // 记录开始日期单独处理
+            if ($set != '')
+            {
+                $set = $set . ',';
+                $change_fld_str = $change_fld_str . ',';
+            }
+            $set = $set . $set_str;
+            $change_fld_str = $change_fld_str . $row['fld_name'];
+        }
+
+        // 增加变更表项、录入人、有效标识的处理
+        $set = sprintf('
+            %s,操作记录=\'更新[1],%s\',操作来源=\'页面\',操作人员=\'%s\',
+            有效标识=\'0\'', 
+            $set, $change_fld_str, $user_workid);
+
+        $model = new Mcommon();
+
+        // 读出原记录
+        $read_str = '';
+        $insert_str = '';
+
+        $fields = $model->get_fields($data_table);
+        foreach ($fields as $field)
+        {
+            if ($field == $primary_key || $field == '操作时间') continue;
+
+            $fld_str = $field;
+            foreach ($row_arr as $row)
+            {
+                // 固定字段替换为新值
+                if ($field == '操作人员')
+                {
+                    $fld_str = sprintf('\'%s\' as 操作人员', $user_workid);
+                    break;
+                }
+                else if ($field == '有效标识')
+                {
+                    $fld_str = sprintf('\'1\' as 有效标识');
+                    break;
+                }
+
+                if ($row['fld_name'] != $field) continue;
+
+                if ($row['modified'] == false) break;
+
+                // 要更新字段处理
+                switch ($row['type'])
+                {
+                    case '数值':
+                        $fld_str = sprintf('%s as %s', $row['value'], $row['fld_name']);
+                        break;
+                    case '字符':
+                    case '日期':
+                        $fld_str = sprintf('\'%s\' as %s', $row['value'], $row['fld_name']);
+                        break;
+                    default:
+                        $fld_str = sprintf('\'%s\' as %s', $row['value'], $row['fld_name']);
+                        break;
+                }
+            }
+
+            if ($read_str != '')
+            {
+                $read_str = $read_str . ',';
+            }
+            $read_str = $read_str . $fld_str;
+
+            if ($insert_str != '')
+            {
+                $insert_str = $insert_str . ',';
+            }
+            $insert_str = $insert_str . $field;
+        }
+
+        $sql_select = sprintf('select %s from %s where %s', $read_str, $data_table, $where);
+
+        // 插入新记录
+        $sql_insert = sprintf('
+            insert into %s (%s) %s', 
+            $data_table, $insert_str, $sql_select);
+
+        // 更新旧记录
+        $sql_update = sprintf('update %s set %s where %s', $data_table, $set, $where);
+
+        $model = new Mcommon();
+
+        // 写日志
+        $model->sql_log('更新[1]', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
+
+        $num = $model->exec($sql_insert);
+        $num = $model->exec($sql_update);
+
+        exit(sprintf('更新[1]成功,更新 %d 条',$num));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 更新记录,模式2,有额外字段
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function update_row_2($menu_id, $arg)
+    {
+        $row_arr = $arg;
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $data_table = $session->get($menu_id.'-data_table');
+        $primary_key = $session->get($menu_id.'-primary_key');
+        $user_workid = $session->get('user_workid');
+
+        $where = $this->get_where($row_arr, $primary_key);
+
+        $change_fld_str = ''; //变更表项
+        $set = ''; //更新字段
+
+        foreach ($row_arr as $row)
+        {
+            $set_str = '';
+
+            // 记录开始日期不拦截
+            if ($row['modified'] == false && $row['fld_name'] != '记录开始日期') continue;
+
+            switch ($row['type'])
+            {
+                case '数值':
+                    $set_str = sprintf('%s=%s', $row['fld_name'], $row['value']);
+                    break;
+                case '字符':
+                case '日期':
+                    $set_str = sprintf('%s=\'%s\'', $row['fld_name'], $row['value']);
+                    break;
+                default:
+                    $set_str = sprintf('%s=\'%s\'', $row['fld_name'], $row['value']);
+                    break;
+            }
+
+            // 原记录设置记录结束日期
             if ($row['fld_name'] == '记录开始日期')
             {
                 $set_str = sprintf('记录结束日期=\'%s\'', $row['value']);
@@ -1093,7 +1177,8 @@ class Frame extends Controller
 
         //增加变更表项、录入人、有效标识的处理
         $set = sprintf('
-            %s,变更表项=\'%s\',录入人=\'%s\',有效标识=\'0\'', 
+            %s,操作记录=\'更新[2],%s\',操作来源=\'页面\',操作人员=\'%s\',
+            有效标识=\'0\'', 
             $set, $change_fld_str, $user_workid);
 
         $model = new Mcommon();
@@ -1101,18 +1186,19 @@ class Frame extends Controller
         // 读出原记录
         $read_str = '';
         $insert_str = '';
-        $fields = $model->get_fields($update_table);
+
+        $fields = $model->get_fields($data_table);
         foreach ($fields as $field)
         {
-            if ($field == $primary_key || $field == '录入时间') continue;
+            if ($field == $primary_key || $field == '操作时间') continue;
 
             $fld_str = $field;
             foreach ($row_arr as $row)
             {
-                //直接跳出处理
-                if ($field == '录入人')
+                // 固定字段处理
+                if ($field == '操作人员')
                 {
-                    $fld_str = sprintf('\'%s\' as 录入人', $user_workid);
+                    $fld_str = sprintf('\'%s\' as 操作人员', $user_workid);
                     break;
                 }
                 else if ($field == '有效标识')
@@ -1159,28 +1245,29 @@ class Frame extends Controller
             $insert_str = $insert_str . $field;
         }
 
-        $sql_select = sprintf('select %s from %s where %s', $read_str, $update_table, $where);
+        $sql_select = sprintf('select %s from %s where %s', $read_str, $data_table, $where);
 
         // 插入新记录
         $sql_insert = sprintf('
             insert into %s (%s) %s', 
-            $update_table, $insert_str, $sql_select);
+            $data_table, $insert_str, $sql_select);
 
-        // 更新老记录
-        $sql_update = sprintf('update %s set %s where %s', $update_table, $set, $where);
+        // 更新旧记录
+        $sql_update = sprintf('update %s set %s where %s', $data_table, $set, $where);
 
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('更新', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
+        $model->sql_log('更新[2]', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
 
         $num = $model->exec($sql_insert);
-        $num = $model->modify($sql_update);
-        exit($num);
+        $num = $model->exec($sql_update);
+
+        exit(sprintf('更新[2]成功,更新 %d 条',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 增加新行
+    // 增加记录
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function add_row($menu_id='')
     {
@@ -1188,8 +1275,35 @@ class Frame extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_workid = $session->get('user_workid');
-        $update_table = $session->get($menu_id.'-update_table');
+        $data_module = $session->get($menu_id.'-data_module');
+
+        switch ($data_module)
+        {
+            case '0': // 模式0,无额外字段
+                $this->add_row_0($menu_id, $row_arr);
+                break;
+            case '1': // 模式1,有额外字段
+                $this->add_row_1($menu_id, $row_arr);
+                break;
+            case '2': // 模式2,有额外字段
+                $this->add_row_2($menu_id, $row_arr);
+                break;
+            default:
+                exit(sprintf('新增失败,数据模式[-%d-]错误',$data_module));
+            break;
+        }
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 增加记录,模式0,无额外字段
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function add_row_0($menu_id, $arg)
+    {
+        $row_arr = $arg;
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $data_table = $session->get($menu_id.'-data_table');
 
         $flds_str = '';
         $values_str = '';
@@ -1213,17 +1327,115 @@ class Frame extends Controller
             }
         }
 
-        $sql = sprintf('insert into %s (%s,录入人,有效标识) values (%s,"%s","1")',
-            $update_table, $flds_str, $values_str, $user_workid);
+        $sql = sprintf('insert into %s (%s) values (%s)', $data_table, $flds_str);
 
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('新增', $menu_id, sprintf('sql=%s',str_replace('"','',$sql)));
-
+        $model->sql_log('新增[0]', $menu_id, sprintf('sql=%s',str_replace('"','',$sql)));
+        // 新增
         $num = $model->exec($sql);
 
-        exit($num);
+        exit(sprintf('新增[0]成功,新增 %d 条记录',$num));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 增加记录,模式1,有额外字段
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function add_row_1($menu_id, $arg)
+    {
+        $row_arr = $arg;
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $data_table = $session->get($menu_id.'-data_table');
+        $user_workid = $session->get('user_workid');
+
+        $flds_str = '';
+        $values_str = '';
+        foreach ($row_arr as $row)
+        {
+            if ($flds_str != '')
+            {
+                $flds_str = $flds_str . ',';
+                $values_str = $values_str . ',';
+            }
+            $flds_str = $flds_str . $row['fld_name'];
+            switch ($row['type'])
+            {
+                case '字符':
+                case '日期':
+                    $values_str = sprintf('%s"%s"', $values_str, $row['value']);
+                    break;
+                case '数值':
+                    $values_str = sprintf('%s%.2f', $values_str, $row['value']);
+                    break;
+            }
+        }
+
+        $sql = sprintf('
+            insert into %s (%s,操作记录,操作来源,操作人员,操作时间,校验标识,删除标识,有效标识) 
+            values (%s,"新增[1]","页面","%s","%s","0","0","1")',
+            $data_table, $flds_str, $values_str, $user_workid, date('Y-m-d H:i:s'));
+
+        $model = new Mcommon();
+
+        // 写日志
+        $model->sql_log('新增[1]', $menu_id, sprintf('sql=%s',str_replace('"','',$sql)));
+        // 新增
+        $num = $model->exec($sql);
+
+        exit(sprintf('新增[1]成功,新增 %d 条记录',$num));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 增加记录,模式2,有额外字段
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function add_row_2($menu_id, $arg)
+    {
+        $row_arr = $arg;
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $data_table = $session->get($menu_id.'-data_table');
+        $user_workid = $session->get('user_workid');
+
+        $flds_str = '';
+        $values_str = '';
+        foreach ($row_arr as $row)
+        {
+            if ($flds_str != '')
+            {
+                $flds_str = $flds_str . ',';
+                $values_str = $values_str . ',';
+            }
+            $flds_str = $flds_str . $row['fld_name'];
+            switch ($row['type'])
+            {
+                case '字符':
+                case '日期':
+                    $values_str = sprintf('%s"%s"', $values_str, $row['value']);
+                    break;
+                case '数值':
+                    $values_str = sprintf('%s%.2f', $values_str, $row['value']);
+                    break;
+            }
+        }
+
+        $sql = sprintf('
+            insert into %s (%s,记录开始日期,记录结束日期,操作记录,操作来源,操作人员,操作时间,校验标识,删除标识,有效标识) 
+            values (%s,%s,"","新增[2]","页面","%s","%s","0","0","1")',
+            $data_table, $flds_str, $values_str, 
+            date('Y-m-d'), $user_workid, date('Y-m-d H:i:s'));
+
+        $model = new Mcommon();
+
+        // 写日志
+        $model->sql_log('新增[2]', $menu_id, sprintf('sql=%s',str_replace('"','',$sql)));
+        // 新增
+        $num = $model->exec($sql);
+
+        exit(sprintf('新增[2]成功,新增 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -1235,53 +1447,74 @@ class Frame extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $update_table = $session->get($menu_id.'-update_table');
-        $primary_key = $session->get($menu_id.'-primary_key');
-        $user_workid = $session->get('user_workid');
+        $data_module = $session->get($menu_id.'-data_module');
 
-        $change_fld_str = '删除记录'; //变更表项
-
-        $set = '';
-        $where = '';
-        foreach ($row_arr as $row)
+        switch ($data_module)
         {
-            //主键
-            if ($row['fld_name'] == $primary_key)
-            {
-                $key_arr = explode(',', $row['value']);
-
-                $key_str = '';
-                foreach ($key_arr as $key)
-                {
-                    if ($key_str == '')
-                    {
-                        $key_str = sprintf('\'%s\'', $key);
-                    }
-                    else
-                    {
-                        $key_str = sprintf('%s,\'%s\'', $key_str, $key);
-                    }
-                }
-
-                $where = sprintf('%s in (%s)', $row['fld_name'], $key_str);
-                continue;
-            }
+            case '0': // 模式0,无额外字段
+                $this->delete_row_0($menu_id, $row_arr);
+                break;
+            case '1': // 模式1,有额外字段
+                $this->delete_row_1($menu_id, $row_arr);
+                break;
+            default:
+                exit(sprintf('删除失败,数据模式[-%d-]错误',$data_module));
+                break;
         }
+    }
 
-        $sql_update = sprintf('
-            update %s 
-            set 变更表项="删除记录",记录结束日期="%s",
-                录入人="%s",录入时间="%s",
-                删除标识="1",有效标识="0"
-            where %s',
-            $update_table, date('Y-m-d'), $user_workid,
-            date('Y-m-d H:i:s'), $where);
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 删除记录,模式0,无额外字段
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function delete_row_0($menu_id, $arg)
+    {
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $data_table = $session->get($menu_id.'-data_table');
+        $primary_key = $session->get($menu_id.'-primary_key');
+
+        $where = $this->get_where($arg, $primary_key);
+
+        $sql_delete = sprintf('delete from %s where %s', $data_table, $where);
 
         $model = new Mcommon();
         // 写日志
-        $model->sql_log('删除', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
+        $model->sql_log('删除[0]', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_delete)));
+        // 删除
+        $num = $model->exec($sql_delete);
+        exit(sprintf('删除[0]成功,删除 %d 条',$num));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 删除记录,模式1,有额外字段
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function delete_row_1($menu_id, $arg)
+    {
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $data_table = $session->get($menu_id.'-data_table');
+        $primary_key = $session->get($menu_id.'-primary_key');
+        $user_workid = $session->get('user_workid');
+
+        $where = $this->get_where($arg, $primary_key);
+
+        $sql_update = sprintf('
+            update %s 
+            set 操作记录="删除[1]",操作来源="页面",
+                操作人员="%s",操作时间="%s",
+                删除标识="1",有效标识="0"
+            where %s',
+            $data_table, $user_workid, date('Y-m-d H:i:s'),
+            $where);
+
+        $model = new Mcommon();
+
+        // 写日志
+        $model->sql_log('删除[1]', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
         // 更新
         $num = $model->modify($sql_update);
+
+        exit(sprintf('删除[1]成功,删除 %d 条',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -1364,5 +1597,39 @@ class Frame extends Controller
 
             echo view('Vpassword.php', $send);
         }
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 取出where条件
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function get_where($row_arr, $primary_key)
+    {
+        $where = '';
+        foreach ($row_arr as $row)
+        {
+            //主键
+            if ($row['fld_name'] == $primary_key)
+            {
+                $key_arr = explode(',', $row['value']);
+
+                $key_str = '';
+                foreach ($key_arr as $key)
+                {
+                    if ($key_str == '')
+                    {
+                        $key_str = sprintf('\'%s\'', $key);
+                    }
+                    else
+                    {
+                        $key_str = sprintf('%s,\'%s\'', $key_str, $key);
+                    }
+                }
+
+                $where = sprintf('%s in (%s)', $row['fld_name'], $key_str);
+                continue;
+            }
+        }
+
+        return $where;
     }
 }

@@ -1,4 +1,4 @@
-<!-- v6.1.1.1.202303191100, from home -->
+<!-- v6.1.2.1.202305102250, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -515,9 +515,6 @@
                         rowData = [];
                         for (var ii in columns_obj)
                         {
-                            //if (columns_obj[ii].可修改 == '0') continue;
-                            //if (id == '多条修改' && columns_obj[ii].可修改 == '1') continue;
-
                             var obj = {};
                             obj['列名'] = columns_obj[ii].列名;
                             obj['字段名'] = columns_obj[ii].字段名;
@@ -971,7 +968,7 @@
             {
                 dhx.ajax.post('<?php base_url(); ?>/frame/add_row/<?php echo $func_id; ?>', send_arr).then(function (data)
                 {
-                    alert('新增记录成功');
+                    alert(data);
                 }).catch(function (err)
                 {
                     alert('新增记录错误, ' + ' ' + err.statusText);
@@ -1033,22 +1030,7 @@
                 var url = '<?php base_url(); ?>/frame/update_row/<?php echo $func_id; ?>';
                 dhx.ajax.post(url, send_arr).then(function (data)
                 {
-                    /*
-                    // 更改data_grid的记录(后期改变背景颜色)
-                    var rows = data_grid_options.api.getSelectedRows();
-
-                    for (var ii in rows)
-                    {
-                        for (var jj in send_arr)
-                        {
-                            if (send_arr[jj].type == '主键') continue;
-                            data_grid_obj[rows[ii].序号-1][send_arr[jj].col_name] = send_arr[jj].col_value;
-                        }
-                    }
-
-                    data_grid_options.api.refreshCells();
-                    */
-                    alert('数据更新成功');
+                    alert(data);
                     window.location.reload();
                 }).catch(function (err)
                 {
@@ -1090,7 +1072,7 @@
             var url = '<?php base_url(); ?>/frame/delete_row/<?php echo $func_id; ?>';
             dhx.ajax.post(url, send_arr).then(function (data)
             {
-                alert('数据删除成功');
+                alert(data);
                 window.location.reload();
             }).catch(function (err)
             {
