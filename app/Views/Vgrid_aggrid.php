@@ -1,4 +1,4 @@
-<!-- v6.1.2.1.202305102250, from home -->
+<!-- v6.1.3.1.202305122350, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1175,7 +1175,6 @@
 
             return '';
         }
-
 
         function set_cell_style(params)
         {

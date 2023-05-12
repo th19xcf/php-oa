@@ -1,4 +1,4 @@
-<!-- v1.5.1.1.202304142000, from home -->
+<!-- v2.1.1.1.202305122350, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -221,7 +221,11 @@
         //tree event
         tree.events.on('itemClick', function(id, e)
         {
-            dhx.ajax.post('<?php base_url(); ?>/train/ajax/<?php echo $func_id; ?>', id).then(function (data)
+            var arg_obj = {};
+            arg_obj['操作'] = '查询';
+            arg_obj['id'] = id;
+
+            dhx.ajax.post('<?php base_url(); ?>/train/ajax/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 grid_obj = JSON.parse(data);
                 grid_options.api.setRowData(grid_obj);
@@ -231,7 +235,6 @@
                 csr_guid_query = item[1];
             }).catch(function (err)
             {
-                console.log('err=', err);
                 alert('失败, ' + " " + err.statusText);
             });
         });
@@ -370,7 +373,7 @@
 
             dhx.ajax.post('<?php base_url(); ?>/train/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('修改成功',data);
+                alert(data);
                 window.location.reload();
             }).catch(function (err)
             {
@@ -411,7 +414,7 @@
             {
                 if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '更新培训状态')
                 {
-                    alert('请点选更新培训状态按钮进行更新操作');
+                    alert('请点选`更新培训状态`按钮进行更新操作');
                     ajax = -1;
                 }
             });
@@ -465,17 +468,8 @@
 
             dhx.ajax.post('<?php base_url(); ?>/train/tran/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                var obj = JSON.parse(data);
-
-                if (obj['status'] == '200')
-                {
-                    alert('成功');
-                    window.location.reload();
-                }
-                else
-                {
-                    alert('失败, ' + obj.msg);
-                }
+                alert(data);
+                window.location.reload();
             }).catch(function (err)
             {
                 alert('失败, ' + " " + err.statusText);
@@ -512,7 +506,7 @@
             {
                 if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '新增培训信息')
                 {
-                    alert('请点选新增培训信息选项进行相关操作');
+                    alert('请点选`新增培训信息`选项进行相关操作');
                     ajax = -1;
                 }
             });
@@ -545,7 +539,7 @@
 
             dhx.ajax.post('<?php base_url(); ?>/train/insert/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('新增记录成功');
+                alert(data);
                 window.location.reload();
             }).catch(function (err)
             {
@@ -564,7 +558,7 @@
 
             dhx.ajax.post('<?php base_url(); ?>/train/delete_row/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('删除成功');
+                alert(data);
                 window.location.reload();
             }).catch(function (err)
             {

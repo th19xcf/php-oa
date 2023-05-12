@@ -1,6 +1,5 @@
 <?php
-/* v2.1.1.1.202303211515, from office */
-
+/* v3.1.1.1.202305122350, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -22,18 +21,20 @@ class Store extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $user_location = $session->get('user_location');
+        $user_location_str = $session->get('user_location_str');
 
         $sql = sprintf('
-            select GUID,姓名,身份证号,性别,年龄,手机号码,
+            select 
+                GUID,姓名,身份证号,性别,年龄,手机号码,
                 学校,专业,现住址,属地,
                 邀约结果,招聘渠道,信息来源,邀约日期,邀约人,
                 邀约业务,邀约岗位,预约面试日期,
                 if(面试信息="","待面试",面试信息) as 面试信息,
-                录入来源,录入人,录入时间
+                操作来源,操作人员,操作时间
             from ee_store
-            where 属地="%s"
+            where 属地 in (%s)
             order by 邀约结果,面试信息,预约面试日期,招聘渠道,convert(姓名 using gbk)',
-            $user_location);
+            $user_location_str);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -139,29 +140,15 @@ class Store extends Controller
 
         // 直接给一些固定变量赋值
         $object_arr = []; 
-        $channel = '';
 
         $object_arr['渠道名称'] = [];
         $object_arr['渠道名称'][0] = '';
 
-        switch ($user_location)
-        {
-            case '北京总公司':
-                $channel = '北京渠道名称';
-                break;
-            case '河北分公司':
-                $channel = '北一渠道名称';
-                break;
-            case '四川分公司':
-                $channel = '南一渠道名称';
-                break;
-        }
-
         $sql = sprintf('
             select 对象值 
             from def_object 
-            where 对象名称="%s"
-            order by 对象值', $channel);
+            where 对象名称="渠道名称" and 属地 in (%s)
+            order by convert(对象值 using gbk)', $user_location_str);
 
         $query = $model->select($sql);
         $result = $query->getResult();
@@ -187,17 +174,17 @@ class Store extends Controller
     {
         $arg = $this->request->getJSON(true);
 
-        $arr = explode('^', $arg);
-
-        // 读出数据
         $model = new Mcommon();
+
+        $arr = explode('^', $arg['id']);
         $rows_arr = [];
 
         if ($arr[0] == '人员')
         {
             $sql = sprintf('
                 select 姓名,身份证号,性别,年龄,手机号码,
-                    学校,专业,现住址,属地,招聘渠道,渠道名称,信息来源,
+                    学校,专业,现住址,属地,
+                    招聘渠道,渠道类型,渠道名称,信息来源,
                     邀约业务,邀约岗位,邀约日期,邀约人,
                     预约面试日期,邀约结果,面试信息
                 from ee_store
@@ -216,6 +203,7 @@ class Store extends Controller
             array_push($rows_arr, array('表项'=>'现住址', '值'=>$results[0]->现住址));
             array_push($rows_arr, array('表项'=>'属地', '值'=>$results[0]->属地));
             array_push($rows_arr, array('表项'=>'招聘渠道', '值'=>$results[0]->招聘渠道));
+            array_push($rows_arr, array('表项'=>'渠道类型', '值'=>$results[0]->渠道类型));
             array_push($rows_arr, array('表项'=>'渠道名称', '值'=>$results[0]->渠道名称));
             array_push($rows_arr, array('表项'=>'信息来源', '值'=>$results[0]->信息来源));
             array_push($rows_arr, array('表项'=>'邀约业务', '值'=>$results[0]->邀约业务));
@@ -224,11 +212,11 @@ class Store extends Controller
             array_push($rows_arr, array('表项'=>'邀约人', '值'=>$results[0]->邀约人));
             array_push($rows_arr, array('表项'=>'预约面试日期', '值'=>$results[0]->预约面试日期));
             array_push($rows_arr, array('表项'=>'邀约结果', '值'=>$results[0]->邀约结果));
-            #array_push($rows_arr, array('表项'=>'面试信息', '值'=>$results[0]->面试信息));
+            array_push($rows_arr, array('表项'=>'面试信息', '值'=>$results[0]->面试信息));
         }
         else
         {
-            array_push($rows_arr, array('表项'=>'属性', '值'=>''));
+            array_push($rows_arr, array('表项'=>'属性', '值'=>'查询邀约信息 - 请选择人员'));
         }
 
         exit(json_encode($rows_arr));
@@ -241,7 +229,15 @@ class Store extends Controller
     {
         $arg = $this->request->getJSON(true);
 
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
         $model = new Mcommon();
+
+        $arg['操作来源'] = '页面修改';
+        $arg['操作人员'] = $user_workid;
+        $arg['操作时间'] = date('Y-m-d H:m:s');
 
         $guid_str = '';
         foreach ($arg['人员'] as $guid)
@@ -252,25 +248,30 @@ class Store extends Controller
             }
             else
             {
-                $guid_str = sprintf('%s,"%s"', $guid_str, $guid);
+                $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
             }
         }
 
-        // 写日志
-        $model->sql_log('更新', $menu_id, sprintf('表名=ee_store,GUID="%s"', $guid_str));
+        $set_str = '';
+        foreach ($arg as $key => $value)
+        {
+            if ($key=='操作' || $key=='人员' || $value=='') continue;
+
+            if ($set_str != '') $set_str = $set_str . ',';
+            $set_str = $set_str . sprintf('%s="%s"', $key, $value);
+        }
 
         $sql = sprintf('
-            update ee_store 
-            set 姓名="%s",身份证号="%s",性别="%s",年龄=%d,
-                手机号码="%s",学校="%s",专业="%s",现住址="%s",
-                招聘渠道="%s",渠道名称="%s",信息来源="%s"
-            where GUID in (%s) ',
-            $arg['姓名'],$arg['身份证号'],$arg['性别'],$arg['年龄'],
-            $arg['手机号码'],$arg['学校'],$arg['专业'],$arg['现住址'],
-            $arg['招聘渠道'],$arg['渠道名称'],$arg['信息来源'],
-            $guid_str);
+            update ee_store
+            set %s where GUID in (%s) ',
+            $set_str, $guid_str);
 
+        // 写日志
+        $model->sql_log('页面修改', $menu_id, sprintf('表名=ee_store,GUID="%s"', $guid_str));
+        // 更新
         $num = $model->exec($sql);
+
+        exit(sprintf('`修改邀约信息`成功,修改 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -280,7 +281,17 @@ class Store extends Controller
     {
         $arg = $this->request->getJSON(true);
 
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
         $model = new Mcommon();
+
+        $arg['操作来源'] = '页面新增';
+        $arg['操作人员'] = $user_workid;
+        $arg['开始操作时间'] = date('Y-m-d H:m:s');
+        $arg['结束操作时间'] = '';
+        $arg['操作时间'] = date('Y-m-d H:m:s');
 
         $flds_str = '';
         $values_str = '';
@@ -301,15 +312,22 @@ class Store extends Controller
             insert into ee_store (%s) values (%s)',
             $flds_str, $values_str);
 
+        // 新增
         $num = $model->exec($sql);
+
+        exit(sprintf('`新增邀约信息`成功,新增 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 更新面试标识,转面试
+    // 更新面试信息,转面试表
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function tran($menu_id='', $type='')
     {
         $arg = $this->request->getJSON(true);
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
 
         $model = new Mcommon();
 
@@ -336,38 +354,42 @@ class Store extends Controller
             case '未面试':
                 $interview = '未面试';
                 break;
+            default:
+                $interview = '待面试';
+                break;
         }
 
         $sql = sprintf('
             update ee_store
-            set 面试信息="%s",结束操作时间="%s"
+            set 面试信息="%s",
+                操作来源="%s",操作人员="%s",
+                结束操作时间="%s",操作时间="%s"
             where GUID in (%s) ',
-            $arg['面试结果'], date('Y-m-d H:i:s'), $guid_str);
+            $interview,
+            '页面转面试', $user_workid,
+            date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $guid_str);
 
         $num = $model->exec($sql);
 
         // 面试的邀约记录导入面试表ee_interview
         if ($arg['面试结果'] == '通过' || $arg['面试结果'] == '未通过')
         {
-            // 从session中取出数据
-            $session = \Config\Services::session();
-            $user_workid = $session->get('user_workid');
-
             $sql = sprintf('
-                insert into ee_interview (姓名,身份证号,手机号码,属地,
+                insert into ee_interview (
+                    姓名,身份证号,手机号码,属地,
                     招聘渠道,渠道类型,渠道名称,信息来源,实习结束日期,
                     面试业务,面试岗位,
                     一次面试日期,一次面试人,一次面试结果,
                     预约培训日期,邀约信息,
                     开始操作时间,
-                    录入来源,录入人)
+                    操作来源,操作人员)
                 select 姓名,身份证号,手机号码,属地,
                     招聘渠道,渠道类型,渠道名称,信息来源,"" as 实习结束日期,
                     邀约业务 as 面试业务,邀约岗位 as 面试岗位,
                     "%s" as 一次面试日期,"%s" as 一次面试人,"%s" as 一次面试结果,
                     "%s" as 预约培训日期,"通过" as 邀约信息,
                     "%s" as 开始操作时间,
-                    "邀约表转入" as 录入来源,"%s" as 录入人
+                    "邀约表转入" as 操作来源,"%s" as 操作人员
                 from ee_store
                 where GUID in (%s)', 
                 $arg['面试日期'], $arg['面试人'], $arg['面试结果'], 
@@ -375,5 +397,50 @@ class Store extends Controller
                 $user_workid, $guid_str);
             $num = $model->exec($sql);
         }
+
+        exit(sprintf('更新面试信息成功,更新 %d 条记录',$num));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 删除邀约信息
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function delete_row($menu_id='', $type='')
+    {
+        $arg = $this->request->getJSON(true);
+
+        $model = new Mcommon();
+
+        $guid_str = '';
+        foreach ($arg['人员'] as $guid)
+        {
+            if ($guid_str == '')
+            {
+                $guid_str = sprintf('"%s"', $guid);
+            }
+            else
+            {
+                $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
+            }
+        }
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
+        //原记录更新
+        $sql_update = sprintf('
+            update ee_store
+            set 结束操作时间="%s",操作时间="%s",
+                操作来源="页面删除",操作人员="%s",
+                删除标识="1",有效标识="0"
+            where GUID in (%s)',
+            date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $user_workid, $guid_str);
+
+        // 写日志
+        $model->sql_log('页面删除', $menu_id, sprintf('表名=ee_store,GUID="%s"', $guid_str));
+        // 删除
+        $num = $model->exec($sql_update);
+
+        exit(sprintf('删除成功,删除 %d 条记录',$num));
     }
 }

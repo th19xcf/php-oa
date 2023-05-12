@@ -1,5 +1,5 @@
 <?php
-/* v4.1.2.1.202302032350, from home */
+/* v5.1.1.1.202305122350, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -138,7 +138,7 @@ class Employee extends Controller
     {
         $arg = $this->request->getJSON(true);
 
-        $arr = explode('^', $arg);
+        $arr = explode('^', $arg['id']);
 
         // 读出数据
         $model = new Mcommon();
@@ -199,7 +199,7 @@ class Employee extends Controller
                     培训开始日期,培训完成日期,
                     一阶段日期,二阶段日期,
                     岗位名称,岗位类型,结算类型,
-                    部门名称,班组,
+                    部门名称,班组,工号1,
                     离职日期,离职原因
                 from ee_onjob
                 where GUID="%s"', $arr[1]);
@@ -214,6 +214,7 @@ class Employee extends Controller
             array_push($rows_arr, array('表项'=>'结算类型', '值'=>$results[0]->结算类型));
             array_push($rows_arr, array('表项'=>'部门名称', '值'=>$results[0]->部门名称));
             array_push($rows_arr, array('表项'=>'班组', '值'=>$results[0]->班组));
+            array_push($rows_arr, array('表项'=>'工号1', '值'=>$results[0]->工号1));
             array_push($rows_arr, array('表项'=>'员工状态', '值'=>$results[0]->员工状态));
             array_push($rows_arr, array('表项'=>'培训开始日期', '值'=>$results[0]->培训开始日期));
             array_push($rows_arr, array('表项'=>'培训完成日期', '值'=>$results[0]->培训完成日期));
@@ -275,7 +276,7 @@ class Employee extends Controller
                     $arg['离职原因']['值'], $guid_str);
 
                 $num = $model->exec($sql);
-                $this->json_data(200, sprintf('%d条',$num), 0);
+                exit(sprintf('处理离职信息,修改 %d 条记录',$num));
             }
         }
             
@@ -304,7 +305,7 @@ class Employee extends Controller
             '培训信息,培训开始日期,培训完成日期,' .
             '一阶段日期,二阶段日期,员工阶段,员工状态,' .
             '离职日期,离职原因,派遣公司,记录开始日期,' .
-            '录入来源,录入人,校验标识,删除标识';
+            '操作来源,操作人员,校验标识,删除标识';
         $fld_arr = explode(',', $fld_str);
 
         $col_str = '';
@@ -317,11 +318,11 @@ class Employee extends Controller
                 case '记录开始日期':
                     $col = sprintf('"%s" as 记录开始日期', $arg['生效日期']['值']);
                     break;
-                case '录入来源':
-                    $col = '"页面更改" as 录入来源';
+                case '操作来源':
+                    $col = '"页面更改" as 操作来源';
                     break;
-                case '录入人':
-                    $col = sprintf('"%s" as 录入人', $user_workid);
+                case '操作人员':
+                    $col = sprintf('"%s" as 操作人员', $user_workid);
                     break;
             }
 
@@ -350,17 +351,17 @@ class Employee extends Controller
         // 原记录更新
         $sql_update = sprintf('
             update ee_onjob
-            set 变更表项="%s",记录结束日期="%s",有效标识="0"
+            set 操作记录="%s",记录结束日期="%s",有效标识="0"
             where GUID in (%s)',
             $update_str, $arg['生效日期']['值'], $guid_str);
 
         // 写日志
-        $model->sql_log('更新', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
+        $model->sql_log('页面修改', $menu_id, sprintf('表名=ee_onjob,GUID="%s"', $guid_str));
 
         $num = $model->exec($sql_insert);
         $num = $model->exec($sql_update);
 
-        $this->json_data(200, sprintf('%d条',$num), 0);
+        exit(sprintf('修改成功,修改 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -392,30 +393,17 @@ class Employee extends Controller
         //原记录更新
         $sql_update = sprintf('
             update ee_onjob
-            set 变更表项="删除",记录结束日期="%s",
-                录入来源="页面删除",录入人="%s",
+            set 操作记录="删除",记录结束日期="%s",
+                操作来源="页面删除",操作人员="%s",
                 删除标识="1",有效标识="0"
             where GUID in (%s)',
             date('Y-m-d H:i:s'), $user_workid, $guid_str);
 
         // 写日志
         $model->sql_log('删除', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
-
+        // 删除
         $num = $model->exec($sql_update);
-    }
 
-    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 自定义函数
-    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function json_data($status=200, $msg='', $count=0)
-    {
-        $res = [
-            'status' => $status,
-            'msg' => $msg,
-            'number' => $count
-        ];
-
-        echo json_encode($res);
-        die;
+        exit(sprintf('删除成功,删除 %d 条记录',$num));
     }
 }

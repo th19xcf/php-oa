@@ -1,4 +1,4 @@
-<!-- v2.3.4.1.202302201630, from office -->
+<!-- v3.1.1.1.202305122350, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -213,7 +213,11 @@
         //tree event
         tree.events.on('itemClick', function(id, e)
         {
-            dhx.ajax.post('<?php base_url(); ?>/employee/ajax/<?php echo $func_id; ?>', id).then(function (data)
+            var arg_obj = {};
+            arg_obj['操作'] = '查询';
+            arg_obj['id'] = id;
+
+            dhx.ajax.post('<?php base_url(); ?>/employee/ajax/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 value_obj = JSON.parse(data);  //原记录
                 grid_obj = JSON.parse(data);
@@ -404,7 +408,7 @@
 
             dhx.ajax.post('<?php base_url(); ?>/employee/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('修改成功');
+                alert(data);
                 submit_type = '';
                 window.location.reload();
             }).catch(function (err)
@@ -423,14 +427,13 @@
 
             dhx.ajax.post('<?php base_url(); ?>/employee/delete_row/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('删除成功');
+                alert(data);
                 window.location.reload();
             }).catch(function (err)
             {
                 alert('删除失败, ' + " " + err.statusText);
             });
         }
-
 
     </script>
 

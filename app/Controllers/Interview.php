@@ -1,5 +1,5 @@
 <?php
-/* v1.4.6.1.202302201010, from office */
+/* v2.1.1.1.202305122350, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -22,6 +22,7 @@ class Interview extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $user_location = $session->get('user_location');
+        $user_location_str = $session->get('user_location_str');
 
         $sql = sprintf('
             select GUID,姓名,身份证号,手机号码,招聘渠道,
@@ -138,11 +139,27 @@ class Interview extends Controller
 
         // 直接给一些固定变量赋值
         $object_arr = []; 
-        $value = '';
+
+        $object_arr['渠道名称'] = [];
+        $object_arr['渠道名称'][0] = '';
+
+        $sql = sprintf('
+            select 对象值 
+            from def_object 
+            where 对象名称="渠道名称" and 属地 in (%s)
+            order by convert(对象值 using gbk)', $user_location_str);
+
+        $query = $model->select($sql);
+        $result = $query->getResult();
+        foreach($result as $val)
+        {
+            array_push($object_arr['渠道名称'], $val->对象值);
+        }
 
         $object_arr['培训业务'] = [];
         $object_arr['培训业务'][0] = '';
 
+        $value = '';
         switch ($user_location)
         {
             case '北京总公司':
@@ -186,17 +203,16 @@ class Interview extends Controller
     {
         $arg = $this->request->getJSON(true);
 
-        $arr = explode('^', $arg);
-
-        // 读出数据
         $model = new Mcommon();
+
+        $arr = explode('^', $arg['id']);
         $rows_arr = [];
 
         if ($arr[0] == '人员')
         {
             $sql = sprintf('
                 select 姓名,身份证号,手机号码,属地,
-                    招聘渠道,实习结束日期,渠道名称,信息来源,
+                    招聘渠道,渠道类型,渠道名称,信息来源,实习结束日期,
                     面试业务,面试岗位,一次面试日期 as 面试日期,
                     一次面试结果 as 面试结果,一次面试人 as 面试人,
                     预约培训日期,住宿,备注说明,参培信息
@@ -211,6 +227,7 @@ class Interview extends Controller
             array_push($rows_arr, array('表项'=>'手机号码', '值'=>$results[0]->手机号码));
             array_push($rows_arr, array('表项'=>'属地', '值'=>$results[0]->属地));
             array_push($rows_arr, array('表项'=>'招聘渠道', '值'=>$results[0]->招聘渠道));
+            array_push($rows_arr, array('表项'=>'渠道类型', '值'=>$results[0]->渠道类型));
             array_push($rows_arr, array('表项'=>'实习结束日期', '值'=>$results[0]->实习结束日期));
             array_push($rows_arr, array('表项'=>'渠道名称', '值'=>$results[0]->渠道名称));
             array_push($rows_arr, array('表项'=>'信息来源', '值'=>$results[0]->信息来源));
@@ -226,7 +243,7 @@ class Interview extends Controller
         }
         else
         {
-            array_push($rows_arr, array('表项'=>'属性', '值'=>''));
+            array_push($rows_arr, array('表项'=>'属性', '值'=>'查询面试信息 - 请选择人员'));
         }
 
         exit(json_encode($rows_arr));
@@ -239,7 +256,15 @@ class Interview extends Controller
     {
         $arg = $this->request->getJSON(true);
 
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
         $model = new Mcommon();
+
+        $arg['操作来源'] = '页面修改';
+        $arg['操作人员'] = $user_workid;
+        $arg['操作时间'] = date('Y-m-d H:m:s');
 
         $guid_str = '';
         foreach ($arg['人员'] as $guid)
@@ -250,32 +275,30 @@ class Interview extends Controller
             }
             else
             {
-                $guid_str = sprintf('%s,"%s"', $guid_str, $guid);
+                $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
             }
         }
 
-        // 写日志
-        $model->sql_log('更新', $menu_id, sprintf('表名=ee_interview,GUID="%s"', $guid_str));
+        $set_str = '';
+        foreach ($arg as $key => $value)
+        {
+            if ($key=='操作' || $key=='人员' || $value=='') continue;
+
+            if ($set_str != '') $set_str = $set_str . ',';
+            $set_str = $set_str . sprintf('%s="%s"', $key, $value);
+        }
 
         $sql = sprintf('
             update ee_interview
-            set 姓名="%s",身份证号="%s",手机号码="%s",属地="%s",
-                招聘渠道="%s",实习结束日期="%s",
-                渠道名称="%s",信息来源="%s",
-                面试业务="%s",面试岗位="%s",
-                一次面试日期="%s",一次面试人="%s",预约培训日期="%s",
-                住宿="%s",备注说明="%s",参培信息="%s"
-            where GUID in (%s) ',
-            $arg['姓名'],$arg['身份证号'],$arg['手机号码'],$arg['属地'],
-            $arg['招聘渠道'],$arg['实习结束日期'],
-            $arg['渠道名称'],$arg['信息来源'],
-            $arg['面试业务'],$arg['面试岗位'],
-            $arg['面试日期'],$arg['面试人'],$arg['预约培训日期'],
-            $arg['住宿'],$arg['备注说明'],$arg['参培信息'],
-            $guid_str);
+            set %s where GUID in (%s) ',
+            $set_str, $guid_str);
 
+        // 写日志
+        $model->sql_log('页面修改', $menu_id, sprintf('表名=ee_interview,GUID="%s"', $guid_str));
+        // 更新
         $num = $model->exec($sql);
-        $this->json_data(200, sprintf('%d条',$num), 0);
+
+        exit(sprintf('`修改面试信息`成功,修改 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -285,7 +308,17 @@ class Interview extends Controller
     {
         $arg = $this->request->getJSON(true);
 
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
         $model = new Mcommon();
+
+        $arg['操作来源'] = '页面新增';
+        $arg['操作人员'] = $user_workid;
+        $arg['开始操作时间'] = date('Y-m-d H:m:s');
+        $arg['结束操作时间'] = '';
+        $arg['操作时间'] = date('Y-m-d H:m:s');
 
         $flds_str = '';
         $values_str = '';
@@ -306,16 +339,22 @@ class Interview extends Controller
             insert into ee_interview (%s) values (%s)',
             $flds_str, $values_str);
 
+        // 新增
         $num = $model->exec($sql);
-        $this->json_data(200, sprintf('%d条',$num), 0);
+
+        exit(sprintf('`新增面试信息`成功,新增 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 转参培
+    // 更新培训信息,转培训表
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function tran($menu_id='', $type='')
     {
         $arg = $this->request->getJSON(true);
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
 
         $model = new Mcommon();
 
@@ -360,17 +399,20 @@ class Interview extends Controller
             }
             if (count($err_arr) != 0)
             {
-                $this->json_data(400, sprintf('未执行,在培训表中有相关的人员记录,请设置培训次数+1,身份证号{%s}', implode(',', $err_arr)), 0);
-                return;
+                exit(sprintf('未执行,在培训表中有相关的人员记录,请设置培训次数+1,身份证号{%s}', implode(',', $err_arr)));
             }
         }
 
         // 更新表ee_interview
         $sql = sprintf('
             update ee_interview
-            set 参培信息="%s",结束操作时间="%s"
+            set 参培信息="%s",
+                操作来源="%s",操作人员="%s",
+                结束操作时间="%s",操作时间="%s"
             where GUID in (%s) ',
-            $arg['参培信息'], date('Y-m-d H:m:s'), $guid_str);
+            $arg['参培信息'], 
+            '页面转面试', $user_workid,
+            date('Y-m-d H:m:s'), date('Y-m-d H:m:s'), $guid_str);
 
         $num = $model->exec($sql);
 
@@ -392,14 +434,14 @@ class Interview extends Controller
                     培训开始日期,预计完成日期,培训完成日期,
                     培训离开日期,培训离开原因,面试信息,
                     开始操作时间,结束操作时间,
-                    录入来源,录入人,有效标识)
+                    操作来源,操作人员,有效标识)
                 select 姓名,身份证号,手机号码,属地,
                     "%s" as 培训业务,"%s" as 培训状态,
                     "%s" as 培训批次,"%s" as 培训老师,
                     "%s" as 培训开始日期,"%s" as 预计完成日期,"" as 培训完成日期,
                     "" as 培训离开日期,"" as 培训离开原因,"有" as 面试信息,
                     "%s" as 开始操作时间,"" as 结束操作时间,
-                    "面试表转入" as 录入来源,"%s" as 录入人,
+                    "面试表转入" as 操作来源,"%s" as 操作人员,
                     "1" as 有效标识
                 from ee_interview
                 where GUID in (%s)', 
@@ -411,21 +453,49 @@ class Interview extends Controller
             $num = $model->exec($sql);
         }
 
-        $this->json_data(200, sprintf('%d条',$num), 0);
+        exit(sprintf('`更新参培信息`成功,更新 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 自定义函数
+    // 删除面试信息
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function json_data($status=200, $msg='', $count=0)
+    public function delete_row($menu_id='', $type='')
     {
-        $res = [
-            'status' => $status,
-            'msg' => $msg,
-            'number' => $count
-        ];
+        $arg = $this->request->getJSON(true);
 
-        echo json_encode($res);
-        die;
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
+        $model = new Mcommon();
+
+        $guid_str = '';
+        foreach ($arg['人员'] as $guid)
+        {
+            if ($guid_str == '')
+            {
+                $guid_str = sprintf('"%s"', $guid);
+            }
+            else
+            {
+                $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
+            }
+        }
+
+        //原记录更新
+        $sql_update = sprintf('
+            update ee_interview
+            set 结束操作时间="%s",操作时间="%s",
+                操作来源="页面删除",操作人员="%s",
+                删除标识="1",有效标识="0"
+            where GUID in (%s)',
+            date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $user_workid, $guid_str);
+
+        // 写日志
+        $model->sql_log('页面删除', $menu_id, sprintf('表名=ee_interview,GUID="%s"', $guid_str));
+        // 删除
+        $num = $model->exec($sql_update);
+
+        exit(sprintf('删除成功,删除 %d 条记录',$num));
     }
 }

@@ -1,4 +1,4 @@
-<!-- v1.3.1.1.202302201010, from home -->
+<!-- v2.1.1.1.202305122350, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -51,11 +51,13 @@
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         main_tb.data.add({type:'separator'});
-        main_tb.data.add({id:'修改面试信息', type:'button', value:'修改面试信息'});
         main_tb.data.add({id:'新增面试信息', type:'button', value:'新增面试信息'});
+        main_tb.data.add({id:'修改面试信息', type:'button', value:'修改面试信息'});
         main_tb.data.add({id:'更新参培信息', type:'button', value:'更新参培信息'});
         main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'提交', type:'button', value:'提交'});
+        main_tb.data.add({type:'separator'});
+        main_tb.data.add({id:'删除', type:'button', value:'删除'});
         main_tb.data.add({type:'spacer'});
         main_tb.data.add({id:'导入', type:'button', value:'导入'});
 
@@ -176,6 +178,16 @@
                         insert_submit();
                     }
                     break;
+                case '删除':
+                    if (csr_guid.length == 0)
+                    {
+                        alert('请选择相关人员');
+                        return;
+                    }
+                    submit_type = 'delete';
+                    editable = false;
+                    delete_row();
+                    break;
                 case '导入':
                     parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','Upload/init/<?php echo $import_func_id; ?>');
                     break;
@@ -185,7 +197,11 @@
         //tree event
         tree.events.on('itemClick', function(id, e)
         {
-            dhx.ajax.post('<?php base_url(); ?>/interview/ajax/<?php echo $func_id; ?>', id).then(function (data)
+            var arg_obj = {};
+            arg_obj['操作'] = '查询';
+            arg_obj['id'] = id;
+
+            dhx.ajax.post('<?php base_url(); ?>/interview/ajax/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 grid_obj = JSON.parse(data);
                 grid_options.api.setRowData(grid_obj);
@@ -195,8 +211,7 @@
                 csr_guid_query = item[1];
             }).catch(function (err)
             {
-                console.log('err=', err);
-                alert('失败, ' + " " + err.statusText);
+                alert('查询信息失败, ' + " " + err.statusText);
             });
         });
 
@@ -249,6 +264,21 @@
                             values: ['','校招','社招']
                         },
                     };
+                case '渠道类型':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','自招','内荐','渠道']
+                        },
+                    };
+                case '渠道名称':
+                    var object_obj = JSON.parse('<?php echo $object_json; ?>');
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: object_obj['渠道名称']
+                        },
+                    };
                 case '培训业务':
                     var object_obj = JSON.parse('<?php echo $object_json; ?>');
                     return {
@@ -296,7 +326,7 @@
             {
                 if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '修改面试信息')
                 {
-                    alert('请点选修改面试信息选项进行相关操作');
+                    alert('请点选`修改面试信息`选项进行相关操作');
                     ajax = -1;
                 }
             });
@@ -330,10 +360,11 @@
 
             dhx.ajax.post('<?php base_url(); ?>/interview/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('修改成功');
+                alert(data);
+                window.location.reload();
             }).catch(function (err)
             {
-                alert('修改失败, ' + " " + err.statusText);
+                alert('修改面试信息失败, ' + " " + err.statusText);
             });
         }
 
@@ -405,20 +436,11 @@
 
             dhx.ajax.post('<?php base_url(); ?>/interview/tran/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                var obj = JSON.parse(data);
-
-                if (obj['status'] == '200')
-                {
-                    alert('成功');
-                    window.location.reload();
-                }
-                else
-                {
-                    alert('失败, ' + obj.msg);
-                }
+                alert(data);
+                window.location.reload();
             }).catch(function (err)
             {
-                alert('失败, ' + " " + err.statusText);
+                alert('更新参培信息失败, ' + " " + err.statusText);
             });
         }
 
@@ -432,9 +454,10 @@
                 {'表项':'手机号码', '值':''},
                 {'表项':'属地', '值':''},
                 {'表项':'招聘渠道', '值':''},
-                {'表项':'实习结束日期', '值':''},
+                {'表项':'渠道类型', '值':''},
                 {'表项':'渠道名称', '值':''},
                 {'表项':'信息来源', '值':''},
+                {'表项':'实习结束日期', '值':''},
                 {'表项':'面试业务', '值':''},
                 {'表项':'面试岗位', '值':''},
                 {'表项':'面试日期', '值':''},
@@ -492,11 +515,29 @@
 
             dhx.ajax.post('<?php base_url(); ?>/interview/insert/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('新增记录成功');
+                alert(data);
                 window.location.reload();
             }).catch(function (err)
             {
-                alert('新增记录失败, ' + " " + err.statusText);
+                alert('新增面试信息失败, ' + " " + err.statusText);
+            });
+        }
+
+        function delete_row(id)
+        {
+            var ajax = 0;
+
+            var arg_obj = {};
+            arg_obj['操作'] = '删除记录';
+            arg_obj['人员'] = csr_guid;
+
+            dhx.ajax.post('<?php base_url(); ?>/store/delete_row/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            {
+                alert(data);
+                window.location.reload();
+            }).catch(function (err)
+            {
+                alert('删除面试信息失败, ' + " " + err.statusText);
             });
         }
 

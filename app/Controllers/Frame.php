@@ -1,5 +1,5 @@
 <?php
-/* v9.1.1.1.202305102250, from home */
+/* v9.1.2.1.202305122350, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -605,7 +605,7 @@ class Frame extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 通用条件查询模块
+    // 前端设置条件
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function set_condition($menu_id='')
     {
@@ -1374,9 +1374,9 @@ class Frame extends Controller
         }
 
         $sql = sprintf('
-            insert into %s (%s,操作记录,操作来源,操作人员,操作时间,校验标识,删除标识,有效标识) 
+            insert into %s (%s,操作记录,操作来源,操作人员,开始操作时间,操作时间,校验标识,删除标识,有效标识) 
             values (%s,"新增[1]","页面","%s","%s","0","0","1")',
-            $data_table, $flds_str, $values_str, $user_workid, date('Y-m-d H:i:s'));
+            $data_table, $flds_str, $values_str, $user_workid, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'));
 
         $model = new Mcommon();
 
@@ -1423,10 +1423,10 @@ class Frame extends Controller
         }
 
         $sql = sprintf('
-            insert into %s (%s,记录开始日期,记录结束日期,操作记录,操作来源,操作人员,操作时间,校验标识,删除标识,有效标识) 
+            insert into %s (%s,记录开始日期,记录结束日期,操作记录,操作来源,操作人员,开始操作时间,操作时间,校验标识,删除标识,有效标识) 
             values (%s,%s,"","新增[2]","页面","%s","%s","0","0","1")',
             $data_table, $flds_str, $values_str, 
-            date('Y-m-d'), $user_workid, date('Y-m-d H:i:s'));
+            date('Y-m-d'), $user_workid, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'));
 
         $model = new Mcommon();
 
@@ -1500,11 +1500,12 @@ class Frame extends Controller
 
         $sql_update = sprintf('
             update %s 
-            set 操作记录="删除[1]",操作来源="页面",
-                操作人员="%s",操作时间="%s",
+            set 操作记录="删除[1]",操作来源="页面",操作人员="%s",
+                结束操作时间="%s",操作时间="%s",
                 删除标识="1",有效标识="0"
             where %s',
-            $data_table, $user_workid, date('Y-m-d H:i:s'),
+            $data_table, $user_workid, 
+            date('Y-m-d H:i:s'), date('Y-m-d H:i:s'),
             $where);
 
         $model = new Mcommon();
@@ -1600,7 +1601,7 @@ class Frame extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 取出where条件
+    // 内部函数,取出where条件
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function get_where($row_arr, $primary_key)
     {

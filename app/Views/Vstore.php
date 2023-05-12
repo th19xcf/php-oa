@@ -1,4 +1,4 @@
-<!-- v1.2.3.1.202209171725, from surface -->
+<!-- v2.1.1.1.202305122350, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -51,11 +51,13 @@
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         main_tb.data.add({type:'separator'});
-        main_tb.data.add({id:'修改邀约信息', type:'button', value:'修改邀约信息'});
         main_tb.data.add({id:'新增邀约信息', type:'button', value:'新增邀约信息'});
-        main_tb.data.add({id:'更新面试标识', type:'button', value:'更新面试标识'});
+        main_tb.data.add({id:'修改邀约信息', type:'button', value:'修改邀约信息'});
+        main_tb.data.add({id:'更新面试信息', type:'button', value:'更新面试信息'});
         main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'提交', type:'button', value:'提交'});
+        main_tb.data.add({type:'separator'});
+        main_tb.data.add({id:'删除', type:'button', value:'删除'});
         main_tb.data.add({type:'spacer'});
         main_tb.data.add({id:'导入', type:'button', value:'导入'});
 
@@ -151,7 +153,7 @@
                     button = '新增邀约信息';
                     insert();
                     break;
-                case '更新面试标识':
+                case '更新面试信息':
                     if (csr_guid.length == 0)
                     {
                         alert('请选择相关人员');
@@ -159,7 +161,7 @@
                     }
                     submit_type = 'tran';
                     editable = true;
-                    button = '更新面试标识';
+                    button = '更新面试信息';
                     tran();
                     break;
                 case '提交':
@@ -176,6 +178,16 @@
                         insert_submit();
                     }
                     break;
+                case '删除':
+                    if (csr_guid.length == 0)
+                    {
+                        alert('请选择相关人员');
+                        return;
+                    }
+                    submit_type = 'delete';
+                    editable = false;
+                    delete_row();
+                    break;
                 case '导入':
                     parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','Upload/init/<?php echo $import_func_id; ?>');
                     break;
@@ -185,7 +197,11 @@
         //tree event
         tree.events.on('itemClick', function(id, e)
         {
-            dhx.ajax.post('<?php base_url(); ?>/Store/ajax/<?php echo $func_id; ?>', id).then(function (data)
+            var arg_obj = {};
+            arg_obj['操作'] = '查询信息';
+            arg_obj['id'] = id;
+
+            dhx.ajax.post('<?php base_url(); ?>/Store/ajax/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 grid_obj = JSON.parse(data);
                 grid_options.api.setRowData(grid_obj);
@@ -195,8 +211,7 @@
                 csr_guid_query = item[1];
             }).catch(function (err)
             {
-                console.log('err=', err);
-                alert('失败, ' + " " + err.statusText);
+                alert('查询信息失败, ' + " " + err.statusText);
             });
         });
 
@@ -249,6 +264,13 @@
                             values: ['','校招','社招']
                         },
                     };
+                case '渠道类型':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','自招','内荐','渠道']
+                        },
+                    };
                 case '渠道名称':
                     var object_obj = JSON.parse('<?php echo $object_json; ?>');
                     return {
@@ -275,7 +297,7 @@
                     return {
                         component: 'agSelectCellEditor',
                         params: {
-                            values: ['','到面','未到面','考虑']
+                            values: ['','通过','未通过','考虑','拒绝']
                         },
                     };
             }
@@ -313,7 +335,7 @@
             }
 
             var arg_obj = {};
-            arg_obj['操作'] = '修改记录';
+            arg_obj['操作'] = '修改邀约信息';
             arg_obj['人员'] = csr_guid;
 
             grid_options.api.forEachNode((rowNode, index) =>
@@ -336,11 +358,11 @@
 
             dhx.ajax.post('<?php base_url(); ?>/store/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('修改成功');
-                //window.location.reload();
+                alert(data);
+                window.location.reload();
             }).catch(function (err)
             {
-                alert('修改失败, ' + " " + err.statusText);
+                alert('修改邀约信息失败, ' + " " + err.statusText);
             });
         }
 
@@ -349,7 +371,7 @@
         {
             rowData = 
             [
-                {'表项':'属性', '值':'更新面试标识'},
+                {'表项':'属性', '值':'更新面试信息'},
                 {'表项':'面试日期', '值':''},
                 {'表项':'面试人', '值':''},
                 {'表项':'面试结果', '值':''},
@@ -373,7 +395,7 @@
             grid_options.api.stopEditing();
             grid_options.api.forEachNode((rowNode, index) =>
             {
-                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '更新面试标识')
+                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '更新面试信息')
                 {
                     alert('请点选面试标识按钮相关操作');
                     ajax = -1;
@@ -386,7 +408,7 @@
             }
 
             var arg_obj = {};
-            arg_obj['操作'] = '更新面试标识';
+            arg_obj['操作'] = '更新面试信息';
             arg_obj['人员'] = csr_guid;
 
             grid_options.api.forEachNode((rowNode, index) =>
@@ -409,14 +431,15 @@
 
             dhx.ajax.post('<?php base_url(); ?>/store/tran/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('修改成功');
+                alert(data);
                 window.location.reload();
             }).catch(function (err)
             {
-                alert('修改失败, ' + " " + err.statusText);
+                alert('更新面试信息失败, ' + " " + err.statusText);
             });
         }
 
+        // 新增邀约信息
         function insert()
         {
             rowData = 
@@ -432,6 +455,7 @@
                 {'表项':'现住址', '值':''},
                 {'表项':'属地', '值':''},
                 {'表项':'招聘渠道', '值':''},
+                {'表项':'渠道类型', '值':''},
                 {'表项':'渠道名称', '值':''},
                 {'表项':'信息来源', '值':''},
                 {'表项':'邀约业务', '值':''},
@@ -454,9 +478,9 @@
             grid_options.api.stopEditing();
             grid_options.api.forEachNode((rowNode, index) =>
             {
-                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '新增记录')
+                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '新增邀约信息')
                 {
-                    alert('请点选新增邀约信息选项进行相关操作');
+                    alert('请点选`新增邀约信息`选项进行相关操作');
                     ajax = -1;
                 }
             });
@@ -467,7 +491,7 @@
             }
 
             var arg_obj = {};
-            arg_obj['操作'] = '新增记录';
+            arg_obj['操作'] = '新增邀约信息';
 
             grid_options.api.forEachNode((rowNode, index) =>
             {
@@ -483,17 +507,35 @@
 
             if (ajax == 0)
             {
-                alert('请输入新增记录相关信息');
+                alert('请输入`新增邀约信息`的相关表项信息');
                 return;
             }
 
             dhx.ajax.post('<?php base_url(); ?>/store/insert/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('新增记录成功');
+                alert(data);
                 window.location.reload();
             }).catch(function (err)
             {
-                alert('新增记录失败, ' + " " + err.statusText);
+                alert('新增邀约信息失败, ' + " " + err.statusText);
+            });
+        }
+
+        function delete_row(id)
+        {
+            var ajax = 0;
+
+            var arg_obj = {};
+            arg_obj['操作'] = '删除信息';
+            arg_obj['人员'] = csr_guid;
+
+            dhx.ajax.post('<?php base_url(); ?>/store/delete_row/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            {
+                alert(data);
+                window.location.reload();
+            }).catch(function (err)
+            {
+                alert('删除邀约信息失败, ' + " " + err.statusText);
             });
         }
 

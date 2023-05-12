@@ -1,5 +1,5 @@
 <?php
-/* v1.6.1.1.202304142000, from home */
+/* v2.1.1.1.202305122350, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -172,7 +172,10 @@ class Train extends Controller
     {
         $arg = $this->request->getJSON(true);
 
-        $arr = explode('^', $arg);
+        $model = new Mcommon();
+
+        $arr = explode('^', $arg['id']);
+        $rows_arr = [];
 
         // 读出数据
         $model = new Mcommon();
@@ -199,7 +202,7 @@ class Train extends Controller
         }
         else
         {
-            array_push($rows_arr, array('表项'=>'属性', '值'=>''));
+            array_push($rows_arr, array('表项'=>'属性', '值'=>'查询培训信息 - 请选择人员'));
         }
 
         exit(json_encode($rows_arr));
@@ -216,8 +219,9 @@ class Train extends Controller
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
 
-        $arg['录入时间'] = date('Y-m-d H:m:s');
-        $arg['录入人'] = $user_workid;
+        $arg['操作来源'] = '页面修改';
+        $arg['操作人员'] = $user_workid;
+        $arg['操作时间'] = date('Y-m-d H:m:s');
 
         $model = new Mcommon();
 
@@ -248,18 +252,29 @@ class Train extends Controller
             set %s where GUID in (%s) ',
             $set_str, $guid_str);
 
+        // 写日志
+        $model->sql_log('页面修改', $menu_id, sprintf('表名=ee_train,GUID="%s"', $guid_str));
+
         $num = $model->exec($sql);
+        exit(sprintf('`修改培训信息`成功,修改 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 新增培训人员信息
+    // 新增培训信息
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function insert($menu_id='', $type='')
     {
         $arg = $this->request->getJSON(true);
 
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
+        $arg['操作来源'] = '页面新增';
+        $arg['操作人员'] = $user_workid;
         $arg['开始操作时间'] = date('Y-m-d H:m:s');
         $arg['结束操作时间'] = '';
+        $arg['操作时间'] = date('Y-m-d H:m:s');
 
         $model = new Mcommon();
 
@@ -279,15 +294,15 @@ class Train extends Controller
         }
 
         $sql = sprintf('
-            insert into ee_onjob (%s) values (%s)',
+            insert into ee_train (%s) values (%s)',
             $flds_str, $values_str);
 
         $num = $model->exec($sql);
-        $this->json_data(200, sprintf('%d条',$num), 0);
+        exit(sprintf('`新增培训信息`成功,新增 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 更新参培状态
+    // 更新参培信息,转人员表
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function tran($menu_id='', $type='')
     {
@@ -298,8 +313,8 @@ class Train extends Controller
         $user_workid = $session->get('user_workid');
 
         $arg['结束操作时间'] = date('Y-m-d H:m:s');
-        $arg['录入时间'] = date('Y-m-d H:m:s');
-        $arg['录入人'] = $user_workid;
+        $arg['操作时间'] = date('Y-m-d H:m:s');
+        $arg['操作人员'] = $user_workid;
 
         $model = new Mcommon();
 
@@ -355,10 +370,10 @@ class Train extends Controller
             $sql = sprintf('
                 update ee_train
                 set 培训状态="%s",培训完成日期="%s",
-                    结束操作时间="%s",录入时间="%s",录入人="%s" 
+                    结束操作时间="%s",操作时间="%s",操作人员="%s" 
                 where GUID in (%s) ',
                 $arg['培训状态'], $arg['培训结束日期'], 
-                $arg['结束操作时间'], $arg['录入时间'], $arg['录入人'], 
+                $arg['结束操作时间'], $arg['操作时间'], $arg['操作人员'], 
                 $guid_str);
 
             $num = $model->exec($sql);
@@ -369,10 +384,10 @@ class Train extends Controller
             $sql = sprintf('
                 update ee_train
                 set 培训状态="%s",培训离开日期="%s",培训离开原因="%s",
-                    结束操作时间="%s",录入时间="%s",录入人="%s" 
+                    结束操作时间="%s",操作时间="%s",操作人员="%s" 
                 where GUID in (%s) ',
                 $arg['培训状态'], $arg['培训结束日期'], $arg['培训离开原因'], 
-                $arg['结束操作时间'], $arg['录入时间'], $arg['录入人'], 
+                $arg['结束操作时间'], $arg['操作时间'], $arg['操作人员'], 
                 $guid_str);
 
             $num = $model->exec($sql);
@@ -402,7 +417,7 @@ class Train extends Controller
                 离职日期,离职原因,
                 派遣公司,变更表项,
                 记录开始日期,记录结束日期,
-                录入来源,录入人,
+                操作来源,操作人员,
                 删除标识,有效标识)
             select 
                 t1.姓名,t1.身份证号,t1.手机号码,t1.属地,%d,
@@ -421,14 +436,14 @@ class Train extends Controller
                 "" as 离职日期,"" as 离职原因,
                 "" as 派遣公司,"" as 变更表项,
                 "%s" as 记录开始日期,"" as 记录结束日期,
-                "培训表转入" as 录入来源,"%s" as 录入人,
+                "培训表转入" as 操作来源,"%s" as 操作人员,
                 "0" as 删除标识,"1" as 有效标识
             from
             (
                 select GUID,姓名,身份证号,手机号码,属地,培训业务,培训状态,
                     培训批次,培训老师,培训开始日期,预计完成日期,
                     培训完成日期,培训离开日期,培训离开原因,面试信息,
-                    开始操作时间,结束操作时间,录入来源,录入时间,录入人
+                    开始操作时间,结束操作时间,操作来源,操作时间,操作人员
                 from ee_train
             ) as t1
             left join
@@ -445,7 +460,7 @@ class Train extends Controller
             $user_workid, $guid_str);
 
         $num = $model->exec($sql);
-        $this->json_data(200, sprintf('更新%d条',$num), 0);
+        exit(sprintf('`更新培训状态`成功,更新 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -478,7 +493,7 @@ class Train extends Controller
         $sql_update = sprintf('
             update ee_train
             set 变更表项="删除",
-                录入来源="页面删除",录入人="%s",
+                操作来源="页面删除",操作人员="%s",
                 删除标识="1",有效标识="0"
             where GUID in (%s)',
             $user_workid, $guid_str);
