@@ -1,10 +1,10 @@
-<!-- v1.2.1.0.202207031215, from home -->
+<!-- v2.1.1.0.202305141720, from home -->
 <!DOCTYPE html>
 <html>
 
 <head>
     <meta charset='utf-8'>
-    <title>部门架构</title>
+    <title>部门维护</title>
 
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/dhtmlx/codebase/suite.css'>
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
@@ -14,12 +14,14 @@
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-locale-cn.js'></script>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-community.noStyle.js'></script>
 
+    <script src='<?php base_url(); ?>/assets/js/datepicker_brower.js'></script>
+
     <style type='text/css'>
         div.float_box
         {
-            width: 46%;
-            height: 600px;
-            margin: 10px;
+            width: 47%;
+            height: 510px;
+            margin: 4px;
             background-color: #f9f9f9;
             border: 1px solid #D0D0D0;
             box-sizing: border-box;
@@ -30,6 +32,7 @@
 
 <body>
     <div id='main_tb' ></div>
+    <div id='info_box' style='width:100%; height:10px; margin-bottom:3px; background-color: lightblue;'></div>
     <div class='float_box'>
         <div id='tree_box' style='height:100%;'></div>
     </div>
@@ -44,52 +47,63 @@
             return document.getElementById(id);
         }
 
-        // 变量
-        var selected_id = '';
-
         // tree视图
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
-        /*
         main_tb.data.add({type:'separator'});
-        main_tb.data.add({id:'修改部门名称', type:'button', value:'修改部门名称'});
         main_tb.data.add({id:'新增下级部门', type:'button', value:'新增下级部门'});
-        main_tb.data.add({id:'删除部门', type:'button', value:'删除部门'});
-        main_tb.data.add({type:'separator'});
+        main_tb.data.add({id:'修改部门信息', type:'button', value:'修改部门信息'});
         main_tb.data.add({id:'提交', type:'button', value:'提交'});
-        */
+        main_tb.data.add({type:'separator'});
+        main_tb.data.add({id:'删除部门', type:'button', value:'删除部门'});
 
-        var dept_obj = JSON.parse('<?php echo $dept_json; ?>');
-        var dept_tree = new dhx.Tree('tree_box');
-        dept_tree.data.parse(dept_obj);
+        $$('info_box').style.height = document.documentElement.clientHeight * 0.035 + 'px';
+        $$('info_box').innerHTML = '&nbsp&nbsp选定人员:';
+
+        var dept_str = '';
+        var guid_selected = [];
+        var guid_query = '';
+        var submit_type = '';
+        var editable = false;
+        var button = '';
+
+        var tree_obj = JSON.parse('<?php echo $dept_json; ?>');
+        var tree = new dhx.Tree('tree_box', {checkbox: true});
+        tree.data.parse(tree_obj);
 
         //grid视图
+        var value_obj = [];
+
         const grid_options = 
         {
             columnDefs: 
             [
-                {field:'表项'},
-                {field:'值', width:200}
+                {field:'表项', width:130, editable:false},
+                {field:'值', width:280, cellEditorSelector:cellEditorSelector}
             ],
             defaultColDef: 
             {
                 resizable: true,
                 editable: (params) =>
                 {
+                    if (editable == false) return false;
+
                     // 根据配置判断是否可以修改
-                    if (params.data.表项 == '部门名称') return true;
-                    return false;
+                    switch (params.data.表项)
+                    {
+                        case '属性':
+                        case '部门编码':
+                            return false;
+                        default:
+                            return true;
+                    }
                 },
             },
-            rowData:
-            [
-                {'表项':'部门编码', '值':''},
-                {'表项':'部门名称', '值':''},
-                {'表项':'部门级别', '值':''},
-                {'表项':'上级部门', '值':''},
-                {'表项':'下级部门', '值':''},
-            ],
-            //getRowNodeId: (params) => params.data.表项,
+            components:
+            {
+                datePicker: get_date_picker(),
+            },
+            //rowData: grid_obj,
         };
 
         new agGrid.Grid($$('grid_box'), grid_options);
@@ -101,102 +115,326 @@
             {
                 case '刷新':
                     window.location.reload();
+                    editable = false;
+                    button = '';
+                    break;
+                case '修改部门信息':
+                    if (button != '查询部门信息')
+                    {
+                        alert('属性=`查询部门信息`, 才能修改');
+                        return;
+                    }
+                    if (guid_selected.length == 0)
+                    {
+                        alert('请选择相关部门');
+                        return;
+                    }
+                    else if (guid_selected.length > 1)
+                    {
+                        alert('只能选择一个部门');
+                        return;
+                    }
+
+                    if (guid_selected[0] != guid_query)
+                    {
+                        alert('选择的部门和查询的部门不符, 请重新选择');
+                        return;
+                    }
+
+                    button = '修改部门信息';
+
+                    var rowNode = grid_options.api.getRowNode(0);
+                    rowNode.setDataValue('值', '修改部门信息');
+                    submit_type = 'upkeep';
+                    editable = true;
+                    break;
+                case '新增下级部门':
+                    if (button != '查询部门信息')
+                    {
+                        alert('属性=`查询部门信息`, 才能修改');
+                        return;
+                    }
+                    if (guid_selected.length == 0)
+                    {
+                        alert('请选择相关部门');
+                        return;
+                    }
+                    else if (guid_selected.length > 1)
+                    {
+                        alert('只能选择一个部门');
+                        return;
+                    }
+
+                    if (guid_selected[0] != guid_query)
+                    {
+                        alert('选择的部门和查询的部门不符, 请重新选择');
+                        return;
+                    }
+
+                    button = '新增下级部门';
+
+                    submit_type = 'insert';
+                    editable = true;
+                    insert(guid_selected[0]);
                     break;
                 case '提交':
-                    upkeep_submit();
+                    if (submit_type == 'upkeep')
+                    {
+                        upkeep_submit();
+                    }
+                    else if (submit_type == 'insert')
+                    {
+                        insert_submit();
+                    }
                     break;
-                case '修改部门名称':
-                    rename_item();
+                case '删除':
+                    if (guid_selected.length == 0)
+                    {
+                        alert('请选择相关部门');
+                        return;
+                    }
+                    submit_type = 'delete';
+                    editable = false;
+                    delete_row();
                     break;
-                    case '删除部门':
-                    console.log('id=', selected_id);
-                    delete_item();
+                default:
+                    alert('功能正在开发中...');
                     break;
             }
         });
 
-        //修改名称
-        function rename_item()
+        //tree event
+        tree.events.on('itemClick', function(id, e)
         {
-            var cond_obj = {};
-            cond_obj['操作'] = '修改部门名称';
+            var arg_obj = {};
+            arg_obj['操作'] = '查询部门信息';
+            var item = id.split('^');
+            arg_obj['id'] = item[1];
+
+            dhx.ajax.post('<?php base_url(); ?>/dept/ajax/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            {
+                value_obj = JSON.parse(data);
+                grid_obj = JSON.parse(data);
+                grid_options.api.setRowData(grid_obj);
+                editable = false;
+                button = '查询部门信息';
+                var item = id.split('^');
+                guid_query = item[1];
+            }).catch(function (err)
+            {
+                alert('`查询部门信息`失败, ' + " " + err.statusText);
+            });
+        });
+
+        tree.events.on('afterCheck', function (index, id, value)
+        {
+            dept_str = '';
+
+            item = [];
+            selected_arr = tree.getChecked();
+            for (var ii in selected_arr)
+            {
+                console.log('selected_arr[' + ii + ']=' + selected_arr[ii] + '\n');
+                item = selected_arr[ii].split('^');
+                if (dept_str!='') dept_str = dept_str + ',';
+                dept_str = dept_str + item[3];
+                guid_selected.push(item[1]);
+            }
+            $$('info_box').innerHTML = '&nbsp&nbsp选定部门 : ' + dept_str;
+        });
+
+        //grid event
+        function cellEditorSelector(params)
+        {
+            var col_name = params.data.列名;
+
+            switch (params.data.表项)
+            {
+                case '属地':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','北京总公司','河北分公司','四川分公司']
+                        },
+                    };
+                case '下级部门':
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','有','无']
+                        },
+                    };
+                case '生效日期':
+                case '记录开始日期':
+                case '记录结束日期':
+                    return {
+                        component: 'datePicker',
+                    };
+            }
+        }
+
+        // 修改部门信息
+        function upkeep_submit(id)
+        {
+            var ajax = 0;
+
+            grid_options.api.stopEditing();
+            grid_options.api.forEachNode((rowNode, index) =>
+            {
+                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '修改部门信息')
+                {
+                    alert('请点选`修改部门信息`选项进行相关操作');
+                    ajax = -1;
+                }
+
+                // 校验必填项
+                if (rowNode.data['表项'] == '生效日期' && rowNode.data['值'] == '')
+                {
+                    alert('`生效日期`为必填项,不能为空');
+                    return;
+                }
+            });
+
+            if (ajax == -1)
+            {
+                return;
+            }
+
+            var arg_obj = {};
+            arg_obj['操作'] = '修改部门信息';
+            arg_obj['部门'] = guid_selected;
 
             grid_options.api.forEachNode((rowNode, index) =>
             {
-                if (rowNode.data['表项'] == '部门编码')
+                if (rowNode.data['表项'] != '属性')
                 {
-                    cond_obj['部门编码'] = rowNode.data['值'];
-                }
-                if (rowNode.data['表项'] == '部门名称')
-                {
-                    cond_obj['部门名称'] = rowNode.data['值'];
+                    for (var jj in value_obj)
+                    {
+                        if (rowNode.data['表项'] != value_obj[jj]['表项']) continue;
+
+                        arg_obj[rowNode.data['表项']] = {};
+                        arg_obj[rowNode.data['表项']]['值'] = rowNode.data['值'];
+                        arg_obj[rowNode.data['表项']]['更改标识'] = '0';
+
+                        if (rowNode.data['值'] != value_obj[jj]['值']) //值有更新
+                        {
+                            arg_obj[rowNode.data['表项']]['更改标识'] = '1';
+                            if (rowNode.data['表项'] != '生效日期') //其他字段有更新
+                            {
+                                ajax = 1;
+                            }
+                        }
+
+                        break;
+                    }
                 }
             });
 
-            dhx.ajax.post('<?php base_url(); ?>/Dept/upkeep/<?php echo $func_id; ?>', cond_obj).then(function (data)
+            if (ajax == 0)
             {
-                alert('修改成功, ' + " " + err.statusText);
-                dept_tree.paint();
+                alert('请输入要更改的信息');
+                return;
+            }
+
+            dhx.ajax.post('<?php base_url(); ?>/dept/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            {
+                alert(data);
+                window.location.reload();
             }).catch(function (err)
             {
-                alert('修改失败, ' + " " + err.statusText);
-                dept_tree.paint();
+                alert('`修改部门信息`失败, ' + " " + err.statusText);
             });
         }
 
-        //删除
-        function delete_item()
+        function insert(id)
         {
-            if (selected_id == '')
+            var arg_obj = {};
+            arg_obj['操作'] = '新增下级部门';
+            arg_obj['id'] = id;
+
+            dhx.ajax.post('<?php base_url(); ?>/dept/ajax/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                alert('请先选择部门');
-                return;
-            }
-            if (dept_tree.data.haveItems(selected_id))
+                value_obj = JSON.parse(data);
+                grid_obj = JSON.parse(data);
+                grid_options.api.setRowData(grid_obj);
+                editable = false;
+                button = '新增下级部门';
+                var item = id.split('^');
+                guid_query = item[1];
+            }).catch(function (err)
             {
-                alert('"' + selected_id + '"' + ' 有下级部门,不能删除');
-                return;
-            }
-            if (confirm('是否删除'))
-            {
-                alert('删除');
-            }
+                alert('`新增下级部门`失败, ' + " " + err.statusText);
+            });
         }
 
-        function upkeep_submit(id)
+        // 新增记录提交
+        function insert_submit(id)
         {
+            var ajax = 0;
+
+            grid_options.api.stopEditing();
+            grid_options.api.forEachNode((rowNode, index) =>
+            {
+                if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '新增下级部门')
+                {
+                    alert('请点选`新增下级部门`选项进行相关操作');
+                    ajax = -1;
+                }
+            });
+
+            if (ajax == -1)
+            {
+                return;
+            }
+
+            var arg_obj = {};
+            arg_obj['操作'] = '新增下级部门';
+
+            grid_options.api.forEachNode((rowNode, index) =>
+            {
+                if (rowNode.data['表项'] != '属性')
+                {
+                    arg_obj[rowNode.data['表项']] = rowNode.data['值'];
+                    if (rowNode.data['值'] != '')
+                    {
+                        ajax = 1;
+                    }
+                }
+            });
+
+            if (ajax == 0)
+            {
+                alert('请输入新增部门的相关信息');
+                return;
+            }
+
+            dhx.ajax.post('<?php base_url(); ?>/dept/insert/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            {
+                alert(data);
+                window.location.reload();
+            }).catch(function (err)
+            {
+                alert('`新增下级部门`失败, ' + " " + err.statusText);
+            });
         }
 
-        //tree event
-        dept_tree.events.on('itemClick', function(id, e)
+        function delete_row(id)
         {
-            selected_id = id;
+            var ajax = 0;
 
-            var item = id.split('^');
+            var arg_obj = {};
+            arg_obj['操作'] = '删除部门';
+            arg_obj['部门'] = guid_selected;
 
-            var items = [];
-            items.push({'表项':'部门编码', '值':item[2]});
-            items.push({'表项':'部门名称', '值':item[1]});
-            items.push({'表项':'部门级别', '值':item[0]});
-            if (item[0] == '1级')
+            dhx.ajax.post('<?php base_url(); ?>/dept/delete_row/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
-                items.push({'表项':'上级部门', '值':'无'});
-            }
-            else
+                alert(data);
+                window.location.reload();
+            }).catch(function (err)
             {
-                items.push({'表项':'上级部门', '值':dept_tree.data.getParent(id).split('^')[1]});
-            }
-            if (dept_tree.data.haveItems(id))
-            {
-                items.push({'表项':'下级部门', '值':'有'});
-            }
-            else
-            {
-                items.push({'表项':'下级部门', '值':'无'});
-            }
-
-            grid_options.api.setRowData(items);
-        });
+                alert('删除面试信息失败, ' + " " + err.statusText);
+            });
+        }
 
     </script>
 

@@ -1,4 +1,4 @@
-<!-- v2.1.1.1.202305122350, from home -->
+<!-- v2.1.2.1.202305141110, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -531,7 +531,7 @@
             arg_obj['操作'] = '删除记录';
             arg_obj['人员'] = csr_guid;
 
-            dhx.ajax.post('<?php base_url(); ?>/store/delete_row/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            dhx.ajax.post('<?php base_url(); ?>/interview/delete_row/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert(data);
                 window.location.reload();

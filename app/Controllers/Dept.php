@@ -1,5 +1,5 @@
 <?php
-/* v1.2.2.1.202207032305, from home */
+/* v1.3.1.1.202305141720, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -21,190 +21,263 @@ class Dept extends Controller
         $session = \Config\Services::session();
         $dept_authz = $session->get($menu_id.'-dept_authz');
 
-        $sql = sprintf('
-            select 部门编码,部门名称,部门级别,上级部门
-            from def_dept
-            where instr(部门编码,"%s")
-            order by 部门编码',
-            $dept_authz);
-
         $model = new Mcommon();
+
+        $sql = sprintf('
+            select GUID,部门编码,部门名称,部门级别,上级部门
+            from def_dept
+            where 删除标识="0" and 有效标识="1"
+                and left(部门编码,length("%s"))="%s"
+            order by 部门级别 desc',
+            $dept_authz, $dept_authz);
 
         $query = $model->select($sql);
         $results = $query->getResult();
 
-        $dept = '';
-        $dept_1_arr = [];
-        $dept_2_arr = [];
-        $dept_3_arr = [];
-        $dept_4_arr = [];
-        $dept_5_arr = [];
-
-        $ii = 0;
-        $item_level = [];
-
-        for ($ii=0; $ii<7; $ii++)
-        {
-            $item_level[$ii] = [];
-        }
+        $dept_arr = [];
 
         foreach ($results as $row)
         {
-            $ii ++;
-
             $item = [];
-            $item['id'] = sprintf('%d级^%s^%s', $row->部门级别, $row->部门名称, $row->部门编码);
-            $item['value'] = $row->部门名称;
-            $item['guid'] = $row->部门编码;
-            $item['level'] = $row->部门级别;
+
+            $item['sid'] = $row->部门编码;
+            $item['id'] = sprintf('部门^%d^%s^%s^%d级', $row->GUID, $row->部门编码, $row->部门名称, $row->部门级别);
+            $item['value'] = sprintf('%s (0)',$row->部门名称);
+            $item['dept'] = $row->部门名称;
             $item['higher'] = $row->上级部门;
+            $item['child_count'] = 0;
+            $item['items'] = [];
 
-            array_push($item_level[$row->部门级别], $item);
+            array_push($dept_arr, $item);
         }
 
-        foreach ($item_level[5] as $item)
-        {
-            $dept = [];
-            $dept['id'] = $item['id'];
-            $dept['value'] = $item['value'];
-            $dept['higher'] = $item['higher'];
-            $dept['items'] = [];
+        $arr_len = count($dept_arr);
 
-            foreach ($item_level[6] as $child)
+        for ($ii=0; $ii<count($dept_arr); $ii++)
+        {
+            for ($jj=$ii; $jj<count($dept_arr); $jj++)
             {
-                if ($child['higher'] == $item['guid'])
+                if ($dept_arr[$jj]['sid'] == $dept_arr[$ii]['higher'])
                 {
-                    $child['value'] = sprintf('%s (0)',$child['value']);
-                    array_push($dept['items'], $child);
+                    $dept_arr[$jj]['child_count'] ++;
+                    $dept_arr[$jj]['value'] = sprintf('%s (%d)', $dept_arr[$jj]['dept'], $dept_arr[$jj]['child_count']);
+
+                    array_push($dept_arr[$jj]['items'], $dept_arr[$ii]);
+                    break;
                 }
             }
-
-            $dept['value'] = sprintf('%s (%d)',$item['value'], count($dept['items']));
-            array_push($dept_5_arr, $dept);
         }
 
-        foreach ($item_level[4] as $item)
-        {
-            $dept = [];
-            $dept['id'] = $item['id'];
-            $dept['value'] = $item['value'];
-            $dept['higher'] = $item['higher'];
-            $dept['items'] = [];
-
-            foreach ($dept_5_arr as $child)
-            {
-                if ($child['higher'] == $item['guid'])
-                {
-                    array_push($dept['items'], $child);
-                }
-            }
-
-            $dept['value'] = sprintf('%s (%d)',$item['value'], count($dept['items']));
-            array_push($dept_4_arr, $dept);
-        }
-
-        foreach ($item_level[3] as $item)
-        {
-            $dept = [];
-            $dept['id'] = $item['id'];
-            $dept['value'] = $item['value'];
-            $dept['higher'] = $item['higher'];
-            $dept['items'] = [];
-
-            foreach ($dept_4_arr as $child)
-            {
-                if ($child['higher'] == $item['guid'])
-                {
-                    array_push($dept['items'], $child);
-                }
-            }
-
-            $dept['value'] = sprintf('%s (%d)',$item['value'], count($dept['items']));
-            array_push($dept_3_arr, $dept);
-        }
-
-        if (count($dept_3_arr) > 0) $dept_arr = $dept_3_arr;
-
-        foreach ($item_level[2] as $item)
-        {
-            $dept = [];
-            $dept['id'] = $item['id'];
-            $dept['value'] = $item['value'];
-            $dept['higher'] = $item['higher'];
-            $dept['items'] = [];
-
-            foreach ($dept_3_arr as $child)
-            {
-                if ($child['higher'] == $item['guid'])
-                {
-                    array_push($dept['items'], $child);
-                }
-            }
-
-            $dept['value'] = sprintf('%s (%d)',$item['value'], count($dept['items']));
-            array_push($dept_2_arr, $dept);
-        }
-
-        if (count($dept_2_arr) > 0) $dept_arr = $dept_2_arr;
-
-        foreach ($item_level[1] as $item)
-        {
-            $dept = [];
-            $dept['id'] = $item['id'];
-            $dept['value'] = $item['value'];
-            $dept['higher'] = $item['higher'];
-            $dept['items'] = [];
-
-            foreach ($dept_2_arr as $child)
-            {
-                if ($child['higher'] == $item['guid'])
-                {
-                    array_push($dept['items'], $child);
-                }
-            }
-
-            $dept['value'] = sprintf('%s (%d)',$item['value'], count($dept['items']));
-            array_push($dept_1_arr, $dept);
-        }
-
-        if (count($dept_1_arr) > 0) $dept_arr = $dept_1_arr;
+        $arr = [];
+        $arr[0] = $dept_arr[$arr_len-1];
 
         $send['func_id'] = $menu_id;
-        $send['dept_json'] = json_encode($dept_arr);
+        $send['dept_json'] = json_encode($arr);
 
         echo view('Vdept.php', $send);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 部门操作
+    // 条目信息查询
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function upkeep($menu_id='')
+    public function ajax($menu_id='', $type='')
     {
-        $cond_arr = $this->request->getJSON(true);
+        $arg = $this->request->getJSON(true);
+
+        $GUID = $arg['id'];
 
         $model = new Mcommon();
 
-        if ($cond_arr['操作'] == '修改部门名称')
+        if ($arg['操作'] == '查询部门信息')
         {
-            $sql = sprintf('update def_dept set 部门名称="%s" where 部门编码="%s"',
-                $cond_arr['部门名称'], $cond_arr['部门编码']);
-            $num = $model->exec($sql);
+            $sql = sprintf('
+                select 部门编码,部门名称,部门级别,负责人,
+                    上级部门,下级部门,
+                    记录开始日期,记录结束日期
+                from def_dept
+                where GUID="%s"', $GUID);
+            $query = $model->select($sql);
+            $results = $query->getResult();
+
+            $rows_arr = [];
+            array_push($rows_arr, array('表项'=>'属性', '值'=>'查询部门信息'));
+            array_push($rows_arr, array('表项'=>'生效日期', '值'=>''));
+            array_push($rows_arr, array('表项'=>'部门编码', '值'=>$results[0]->部门编码));
+            array_push($rows_arr, array('表项'=>'部门名称', '值'=>$results[0]->部门名称));
+            array_push($rows_arr, array('表项'=>'负责人', '值'=>$results[0]->负责人));
+            array_push($rows_arr, array('表项'=>'部门级别', '值'=>$results[0]->部门级别));
+            array_push($rows_arr, array('表项'=>'上级部门', '值'=>$results[0]->上级部门));
+            array_push($rows_arr, array('表项'=>'下级部门', '值'=>$results[0]->下级部门));
+            array_push($rows_arr, array('表项'=>'记录开始日期', '值'=>$results[0]->记录开始日期));
+            array_push($rows_arr, array('表项'=>'记录结束日期', '值'=>$results[0]->记录结束日期));
         }
+
+        else if ($arg['操作'] == '新增下级部门')
+        {
+            $sql = sprintf('
+                select 
+                    t1.部门编码,t1.部门名称,t1.部门级别,
+                    t1.部门级别+1 as 下级部门级别,
+                    concat(t1.部门编码,"-",ifnull(t2.下级部门编码,0)+1) as 下级部门编码
+                from
+                (
+                    select 部门编码,部门名称,部门级别
+                    from def_dept
+                    where GUID="%s"
+                ) as t1
+                left join
+                (
+                    select 上级部门,max(substring_index(上级部门,"-",-1)+0) as 下级部门编码
+                    from def_dept
+                    where 上级部门 in 
+                    (
+                        select 部门编码
+                        from def_dept
+                        where GUID="%s"
+                    )
+                ) as t2
+                on t1.部门编码=t2.上级部门', $GUID, $GUID);
+            $query = $model->select($sql);
+            $results = $query->getResult();
+
+            $rows_arr = [];
+            array_push($rows_arr, array('表项'=>'属性', '值'=>'新增下级部门'));
+            array_push($rows_arr, array('表项'=>'生效日期', '值'=>''));
+            array_push($rows_arr, array('表项'=>'本级部门编码', '值'=>$results[0]->部门编码));
+            array_push($rows_arr, array('表项'=>'本级部门名称', '值'=>$results[0]->部门名称));
+            array_push($rows_arr, array('表项'=>'本级部门级别', '值'=>$results[0]->部门级别));
+            array_push($rows_arr, array('表项'=>'下级部门编码', '值'=>$results[0]->下级部门编码));
+            array_push($rows_arr, array('表项'=>'下级部门名称', '值'=>''));
+            array_push($rows_arr, array('表项'=>'下级部门级别', '值'=>$results[0]->下级部门级别));
+            array_push($rows_arr, array('表项'=>'下级部门负责人', '值'=>''));
+        }
+
+        exit(json_encode($rows_arr));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 自定义函数
+    // 修改部门信息
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function json_data($status=200, $msg, $count, $data =[])
+    public function upkeep($menu_id='')
     {
-        $res = [
-            'status' => $status,
-            'msg' => $msg,
-            'number' => $count,
-            'data' => $data
-        ];
+        $arg = $this->request->getJSON(true);
 
-        echo json_encode($res);
-        die;
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
+        $model = new Mcommon();
+
+        $guid_str = '';
+        foreach ($arg['部门'] as $guid)
+        {
+            if ($guid_str == '')
+            {
+                $guid_str = sprintf('"%s"', $guid);
+            }
+            else
+            {
+                $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
+            }
+        }
+            
+        $update_str = '';
+        foreach ($arg as $key => $value)
+        {
+            if ($key=='操作' || $key=='部门') continue;
+            if ($value['更改标识'] == '0') continue;
+
+            if ($update_str != '')
+            {
+                $update_str = $update_str . ',';
+            }
+            $update_str = $update_str . $key;
+        }
+
+        //增加新记录
+        $fld_str = '部门编码,部门名称,部门级别,' .
+            '上级部门,下级部门,负责人,' .
+            '记录开始日期,记录结束日期,' .
+            '操作记录,操作来源,操作人员,' .
+            '开始操作时间,结束操作时间,' .
+            '校验标识,删除标识,有效标识';
+        $fld_arr = explode(',', $fld_str);
+
+        $col_str = '';
+        foreach ($fld_arr as $fld)
+        {
+            $col = $fld;
+
+            switch ($fld)
+            {
+                case '记录开始日期':
+                    $col = sprintf('"%s" as 记录开始日期', $arg['生效日期']['值']);
+                    break;
+                case '记录结束日期':
+                    $col = '"" as 记录结束日期';
+                    break;
+                case '操作记录':
+                    $col = '"" as 操作记录';
+                    break;
+                case '操作来源':
+                    $col = '"页面更改" as 操作来源';
+                    break;
+                case '操作人员':
+                    $col = sprintf('"%s" as 操作人员', $user_workid);
+                    break;
+                case '开始操作时间':
+                    $col = sprintf('"%s" as 操作开始时间', date('Y-m-d H:i:s'));
+                    break;
+                case '结束操作时间':
+                    $col = '"" as 结束操作时间';
+                    break;
+                case '校验标识':
+                    $col = '"0" as 校验标识';
+                    break;
+                case '删除标识':
+                    $col = '"0" as 删除标识';
+                    break;
+                case '有效标识':
+                    $col = '"1" as 有效标识';
+                    break;
+            }
+
+            foreach ($arg as $key => $value)
+            {
+                if ($key=='操作' || $key=='部门' || $key=='生效日期') continue;
+                if ($value['更改标识'] == '0') continue;
+
+                if ($fld == $key)
+                {
+                    $col = sprintf('"%s" as %s', $value['值'], $key);
+                    break;
+                }
+            }
+
+            if ($col_str != '') $col_str = $col_str . ',';
+            $col_str = $col_str . $col;
+        }
+
+        $sql_insert = sprintf('
+            insert into def_dept (%s)
+            select %s
+            from def_dept
+            where GUID in (%s)', 
+            $fld_str, $col_str, $guid_str);
+
+        // 原记录更新
+        $sql_update = sprintf('
+            update def_dept
+            set 操作记录="更新[2],%s",记录结束日期="%s",有效标识="0"
+            where GUID in (%s)',
+            $update_str, $arg['生效日期']['值'], $guid_str);
+
+        // 写日志
+        $model->sql_log('页面修改', $menu_id, sprintf('表名=def_dept,GUID="%s"', $guid_str));
+
+        $num = $model->exec($sql_insert);
+        $num = $model->exec($sql_update);
+
+        exit(sprintf('部门信息修改成功,修改 %d 条记录',$num));
     }
 }
