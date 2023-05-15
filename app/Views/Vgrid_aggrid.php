@@ -1,4 +1,4 @@
-<!-- v6.1.3.1.202305122350, from home -->
+<!-- v6.1.4.1.202305151625, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -501,7 +501,7 @@
                     }
                     if (id == '单条修改' && rows.length > 1)
                     {
-                        alert('单条修改, 只能选择1条记录');
+                        alert('`单条修改`, 只能选择1条记录');
                         break;
                     }
 
@@ -1017,14 +1017,28 @@
 
                 send_arr.push(col);
 
+                var data_model = '<?php echo $data_model; ?>';
+                var active_date = ''; //生效日期
+
                 //数据检查
                 for (var ii in send_arr)
                 {
-                    if (send_arr[ii]['fld_name'] == '记录开始日期' && send_arr[ii]['value'] =='')
+                    if (send_arr[ii]['fld_name'] == '记录开始日期')
                     {
-                        alert('生效日期不能为空,请重新填写');
-                        return;
+                        if (send_arr[ii]['value'] == '')
+                        {
+                            alert('生效日期不能为空,请重新填写');
+                            return;
+                        }
+                        active_date = send_arr[ii]['value'];
+                        break;
                     }
+                }
+
+                if (data_model == '2' && active_date == '')
+                {
+                    alert('数据模式=2,生效日期不能为空,请重新填写');
+                    return;
                 }
 
                 var url = '<?php base_url(); ?>/frame/update_row/<?php echo $func_id; ?>';
