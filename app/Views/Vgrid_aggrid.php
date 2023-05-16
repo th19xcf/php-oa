@@ -1,4 +1,4 @@
-<!-- v6.1.4.1.202305151625, from office -->
+<!-- v6.1.5.1.202305161440, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -164,7 +164,10 @@
         {
             data_tb.data.add({id:'导入', type:'button', value:'导入'});
         }
-        data_tb.data.add({id:'导出', type:'button', value:'导出'});
+        if (tb_obj['导出授权'] == true)
+        {
+            data_tb.data.add({id:'导出', type:'button', value:'导出'});
+        }
 
         // 生成修改新增用工具栏
         var update_tb = new dhx.Toolbar('update_tb', {css:'toobar-class'});
