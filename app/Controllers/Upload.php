@@ -1,5 +1,5 @@
 <?php
-/* v2.5.2.1.202305012115, from home */
+/* v2.5.3.1.202305171955, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -386,7 +386,7 @@ class Upload extends Controller
                     array_push($tmp_fld_arr, sprintf('"%s" as %s', $user_workid, $row->字段名));
                     break;
                 case '$时间戳':
-                    array_push($tmp_fld_arr, sprintf('"" as %s', $row->字段名));
+                    array_push($tmp_fld_arr, sprintf('"%s" as %s', date('Y-m-d H:i:s'), $row->字段名));
                     break;
                 default:
                     array_push($tmp_fld_arr, sprintf('"%s" as %s', $row->系统变量, $row->字段名));
