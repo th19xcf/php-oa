@@ -1,5 +1,5 @@
 <?php
-/* v2.1.1.1.202305122350, from home */
+/* v2.1.2.1.202305231310, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -361,7 +361,7 @@ class Train extends Controller
                 }
                 if (count($err_arr) != 0)
                 {
-                    $this->json_data(400, sprintf('未执行,在人员表中有相关的人员记录,请设置入职次数+1,身份证号{%s}', implode(',', $err_arr)), 0);
+                    exit(sprintf('未执行,在人员表中有相关的人员记录,请设置入职次数+1,身份证号{%s}',implode(',',$err_arr)));
                     return;
                 }
             }
@@ -391,8 +391,7 @@ class Train extends Controller
                 $guid_str);
 
             $num = $model->exec($sql);
-            $this->json_data(200, sprintf('更新%d条',$num), 0);
-            return;
+            exit(sprintf('更新成功,更新%d条',$num));
         }
 
         // 培训通过,记录导入人员表ee_onjob
@@ -415,10 +414,10 @@ class Train extends Controller
                 正式期日期,
                 员工阶段,员工状态,
                 离职日期,离职原因,
-                派遣公司,变更表项,
+                派遣公司,
                 记录开始日期,记录结束日期,
                 操作来源,操作人员,
-                删除标识,有效标识)
+                校验标识,删除标识,有效标识)
             select 
                 t1.姓名,t1.身份证号,t1.手机号码,t1.属地,%d,
                 t2.招聘渠道,
@@ -434,17 +433,18 @@ class Train extends Controller
                 "" as 正式期日期,
                 "新人组" as 员工阶段,"在职" as 员工状态,
                 "" as 离职日期,"" as 离职原因,
-                "" as 派遣公司,"" as 变更表项,
+                "" as 派遣公司,
                 "%s" as 记录开始日期,"" as 记录结束日期,
                 "培训表转入" as 操作来源,"%s" as 操作人员,
-                "0" as 删除标识,"1" as 有效标识
+                "0" as 校验标识,"0" as 删除标识,"1" as 有效标识
             from
             (
                 select GUID,姓名,身份证号,手机号码,属地,培训业务,培训状态,
                     培训批次,培训老师,培训开始日期,预计完成日期,
                     培训完成日期,培训离开日期,培训离开原因,面试信息,
-                    开始操作时间,结束操作时间,操作来源,操作时间,操作人员
+                    开始操作时间,结束操作时间
                 from ee_train
+                where GUID in (%s)
             ) as t1
             left join
             (
@@ -452,8 +452,7 @@ class Train extends Controller
                 from ee_interview
                 group by 身份证号
             ) as t2
-            on t1.身份证号=t2.身份证号
-            where t1.GUID in (%s)',
+            on t1.身份证号=t2.身份证号',
             (int)$arg['入职次数'],
             $arg['岗位类型'], $arg['结算类型'],
             $arg['培训结束日期'],
@@ -492,7 +491,7 @@ class Train extends Controller
         //原记录更新
         $sql_update = sprintf('
             update ee_train
-            set 变更表项="删除",
+            set 操作来源="删除",
                 操作来源="页面删除",操作人员="%s",
                 删除标识="1",有效标识="0"
             where GUID in (%s)',
@@ -502,20 +501,5 @@ class Train extends Controller
         $model->sql_log('删除', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
 
         $num = $model->exec($sql_update);
-    }
-
-    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 自定义函数
-    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function json_data($status=200, $msg='', $count=0)
-    {
-        $res = [
-            'status' => $status,
-            'msg' => $msg,
-            'number' => $count
-        ];
-
-        echo json_encode($res);
-        die;
     }
 }

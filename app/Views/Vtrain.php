@@ -1,4 +1,4 @@
-<!-- v2.1.1.1.202305122350, from home -->
+<!-- v2.1.2.1.202305231310, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -472,7 +472,7 @@
                 window.location.reload();
             }).catch(function (err)
             {
-                alert('失败, ' + " " + err.statusText);
+                alert('失败, ' + err.statusText + '请联系管理员');
             });
         }
 
