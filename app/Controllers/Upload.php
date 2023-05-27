@@ -1,5 +1,5 @@
 <?php
-/* v2.5.3.1.202305171955, from home */
+/* v2.6.1.1.202305270950, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -353,7 +353,7 @@ class Upload extends Controller
         }
 
         $sql = sprintf('
-            select 列名,字段名,字段类型,字段长度,
+            select 列名,查询名,字段名,字段类型,字段长度,
                 校验类型,对象,
                 replace(系统变量," ","") as 系统变量,
                 replace(表单变量," ","") as 表单变量
@@ -372,7 +372,14 @@ class Upload extends Controller
 
             if ($row->系统变量=='' &&  $row->表单变量=='')
             {
-                array_push($tmp_fld_arr, $row->字段名);
+                if ($row->查询名 != '')
+                {
+                    array_push($tmp_fld_arr, sprintf('%s as %s', $row->查询名, $row->字段名));
+                }
+                else
+                {
+                    array_push($tmp_fld_arr, $row->字段名);
+                }
                 continue;
             }
             switch ($row->系统变量)
