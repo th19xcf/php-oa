@@ -1,5 +1,5 @@
 <?php
-/* v3.1.1.1.202305122350, from home */
+/* v3.2.1.1.202305271155, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -344,6 +344,41 @@ class Store extends Controller
             }
         }
 
+        // 查询ee_interview是否已有相同记录
+        if ($arg['面试结果'] == '通过' || $arg['面试结果'] == '未通过')
+        {
+            $sql = sprintf('
+                select 姓名,手机号码,max(面试次数) as 面试次数
+                from ee_interview
+                where 有效标识!="1"
+                    and 删除标识="0"
+                    and 手机号码 in
+                    (
+                        select 手机号码
+                        from ee_interview
+                        where GUID in (%s)
+                        group by 手机号码
+                    )', $guid_str);
+
+            $errs = $model->select($sql)->getResultArray();
+
+            if (count($errs) != 0)
+            {
+                $err_arr = [];
+                foreach ($errs as $err)
+                {
+                    if ((int)$arg['面试次数'] != ($err['面试次数']+1))
+                    {
+                        array_push($err_arr, sprintf('%s^%s^面试次数=%d',$err['姓名'],$err['手机号码'],$err['面试次数']));
+                    }
+                }
+                if (count($err_arr) != 0)
+                {
+                    exit(sprintf('未执行,在面试表中有相关的人员记录,请设置面试次数+1,异常信息{%s}', implode(',', $err_arr)));
+                }
+            }
+        }
+
         $interview = '';
         switch ($arg['面试结果'])
         {
@@ -366,7 +401,7 @@ class Store extends Controller
                 结束操作时间="%s",操作时间="%s"
             where GUID in (%s) ',
             $interview,
-            '页面转面试', $user_workid,
+            '页面', $user_workid,
             date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $guid_str);
 
         $num = $model->exec($sql);

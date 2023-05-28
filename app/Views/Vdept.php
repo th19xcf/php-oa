@@ -1,4 +1,4 @@
-<!-- v2.1.1.0.202305141720, from home -->
+<!-- v2.2.1.0.202305271755, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -93,6 +93,7 @@
                     {
                         case '属性':
                         case '部门编码':
+                        case '本级部门名称':
                             return false;
                         default:
                             return true;
@@ -151,7 +152,7 @@
                 case '新增下级部门':
                     if (button != '查询部门信息')
                     {
-                        alert('属性=`查询部门信息`, 才能修改');
+                        alert('属性=`查询部门信息`, 才能新增');
                         return;
                     }
                     if (guid_selected.length == 0)
@@ -264,6 +265,12 @@
                             values: ['','有','无']
                         },
                     };
+                case '本级部门编码':
+                case '本级部门名称':
+                case '本级部门级别':
+                case '下级部门编码':
+                case '下级部门级别':
+                    return false;
                 case '生效日期':
                 case '记录开始日期':
                 case '记录结束日期':
@@ -346,6 +353,7 @@
             });
         }
 
+        // 用ajax先获得部门相关信息
         function insert(id)
         {
             var arg_obj = {};
@@ -357,7 +365,7 @@
                 value_obj = JSON.parse(data);
                 grid_obj = JSON.parse(data);
                 grid_options.api.setRowData(grid_obj);
-                editable = false;
+                editable = true;
                 button = '新增下级部门';
                 var item = id.split('^');
                 guid_query = item[1];
@@ -411,7 +419,7 @@
             dhx.ajax.post('<?php base_url(); ?>/dept/insert/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert(data);
-                window.location.reload();
+                //window.location.reload();
             }).catch(function (err)
             {
                 alert('`新增下级部门`失败, ' + " " + err.statusText);

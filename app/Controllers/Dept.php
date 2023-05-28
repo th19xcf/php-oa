@@ -1,5 +1,5 @@
 <?php
-/* v1.3.1.1.202305141720, from home */
+/* v1.4.1.0.202305271155, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -279,5 +279,33 @@ class Dept extends Controller
         $num = $model->exec($sql_update);
 
         exit(sprintf('部门信息修改成功,修改 %d 条记录',$num));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 新增部门信息
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function insert($menu_id='')
+    {
+        $arg = $this->request->getJSON(true);
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
+        $model = new Mcommon();
+
+        $guid_str = '';
+        foreach ($arg['部门'] as $guid)
+        {
+            if ($guid_str == '')
+            {
+                $guid_str = sprintf('"%s"', $guid);
+            }
+            else
+            {
+                $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
+            }
+        }
+
     }
 }
