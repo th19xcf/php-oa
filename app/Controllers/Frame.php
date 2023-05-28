@@ -1,5 +1,5 @@
 <?php
-/* v9.1.2.1.202305151930, from home */
+/* v9.2.1.1.202305282225, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -220,9 +220,12 @@ class Frame extends Controller
         // 读出列配置信息
         $sql = sprintf('
             select 功能编码,查询模块,字段模块,部门字段,属地字段,
-                列名,列类型,列宽度,字段名,查询名,对象,
-                可修改,可筛选,可新增,主键,赋值类型,
-                提示条件,提示样式设置,异常条件,异常样式设置,列顺序
+                列名,列类型,列宽度,字段名,查询名,
+                赋值类型,对象,
+                可修改,可筛选,可新增,不可为空,
+                主键,
+                提示条件,提示样式设置,异常条件,异常样式设置,
+                列顺序
             from view_function
             where 功能编码="%s" and 列顺序>0
             group by 列名
@@ -250,6 +253,7 @@ class Frame extends Controller
             $arr['对象'] = $row->对象;
             $arr['可修改'] = $row->可修改;
             $arr['可新增'] = $row->可新增;
+            $arr['不可为空'] = $row->不可为空;
             $arr['提示条件'] = $row->提示条件;
             $arr['提示样式'] = $row->提示样式设置;
             $arr['异常条件'] = $row->异常条件;
@@ -314,6 +318,8 @@ class Frame extends Controller
             $value_arr['列名'] = $row->列名;
             $value_arr['字段名'] = $row->字段名;
             $value_arr['列类型'] = $row->列类型;
+            $value_arr['是否可修改'] = '是';
+            $value_arr['是否必填'] = ($row->不可为空=='1') ? '是' : '否';
             $value_arr['取值'] = '';
 
             if (strpos($row->赋值类型,'固定值') !== false)

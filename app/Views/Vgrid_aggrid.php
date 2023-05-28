@@ -1,4 +1,4 @@
-<!-- v6.1.5.1.202305161440, from office -->
+<!-- v6.2.1.1.202305282225, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -273,6 +273,7 @@
                 {field:'字段名', hide:true},
                 {field:'列类型'},
                 {field:'是否可修改'},
+                {field:'是否必填'},
                 {field:'取值', width:200, cellEditorSelector:cellEditorSelector}
             ],
             defaultColDef: 
@@ -522,7 +523,7 @@
                             obj['列名'] = columns_obj[ii].列名;
                             obj['字段名'] = columns_obj[ii].字段名;
                             obj['列类型'] = columns_obj[ii].类型;
-                            obj['是否可修改'] = columns_obj[ii].可修改 == '0' ? '否' : '是';
+                            obj['可修改'] = columns_obj[ii].可修改 == '0' ? '否' : '是';
                             obj['取值'] = '';
 
                             if (id == '单条修改')
@@ -965,6 +966,21 @@
 
                     send_arr.push(col);
                 });
+            }
+
+            // 数据不可为空校验
+            for (var ii in send_arr)
+            {
+                for (var jj in columns_obj)
+                {
+                    if (columns_obj[jj].列名 != send_arr[ii]['col_name']) continue;
+
+                    if(columns_obj[jj].不可为空 == '1' && send_arr[ii]['value'] == '')
+                    {
+                        alert('`' + send_arr[ii]['col_name'] + '`的值不能为空');
+                        return;
+                    }
+                }
             }
 
             if (update_flag == '新增')
