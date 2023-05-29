@@ -1,5 +1,5 @@
 <?php
-/* v2.1.1.1.202305122350, from home */
+/* v2.1.2.1.202305291740, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -375,7 +375,7 @@ class Interview extends Controller
         $sql = sprintf('
             select 姓名,身份证号,max(培训次数) as 培训次数
             from ee_train
-            where 有效标识!="0"
+            where 有效标识="1"
                 and 删除标识!="1"
                 and 身份证号 in
                 (
@@ -383,7 +383,8 @@ class Interview extends Controller
                     from ee_interview
                     where GUID in (%s)
                     group by 身份证号
-                )', $guid_str);
+                )
+            group by 身份证号', $guid_str);
 
         $errs = $model->select($sql)->getResultArray();
 

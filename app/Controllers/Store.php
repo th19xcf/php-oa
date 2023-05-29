@@ -1,5 +1,5 @@
 <?php
-/* v3.2.1.1.202305271155, from home */
+/* v3.2.2.1.202305291740, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -350,15 +350,16 @@ class Store extends Controller
             $sql = sprintf('
                 select 姓名,手机号码,max(面试次数) as 面试次数
                 from ee_interview
-                where 有效标识!="1"
+                where 有效标识="1"
                     and 删除标识="0"
                     and 手机号码 in
                     (
                         select 手机号码
-                        from ee_interview
+                        from ee_store
                         where GUID in (%s)
                         group by 手机号码
-                    )', $guid_str);
+                    )
+                group by 手机号码', $guid_str);
 
             $errs = $model->select($sql)->getResultArray();
 
