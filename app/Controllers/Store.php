@@ -1,5 +1,5 @@
 <?php
-/* v3.2.2.1.202305291740, from office */
+/* v3.2.3.1.202306091810, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -235,7 +235,8 @@ class Store extends Controller
 
         $model = new Mcommon();
 
-        $arg['操作来源'] = '页面修改';
+        $arg['操作记录'] = '修改';
+        $arg['操作来源'] = '页面';
         $arg['操作人员'] = $user_workid;
         $arg['操作时间'] = date('Y-m-d H:m:s');
 
@@ -287,7 +288,8 @@ class Store extends Controller
 
         $model = new Mcommon();
 
-        $arg['操作来源'] = '页面新增';
+        $arg['操作记录'] = '新增';
+        $arg['操作来源'] = '页面';
         $arg['操作人员'] = $user_workid;
         $arg['开始操作时间'] = date('Y-m-d H:m:s');
         $arg['结束操作时间'] = '';
@@ -417,20 +419,19 @@ class Store extends Controller
                     面试业务,面试岗位,
                     一次面试日期,一次面试人,一次面试结果,
                     预约培训日期,邀约信息,
-                    开始操作时间,
-                    操作来源,操作人员)
+                    操作记录,操作来源,操作人员,开始操作时间)
                 select 姓名,身份证号,手机号码,属地,
                     招聘渠道,渠道类型,渠道名称,信息来源,"" as 实习结束日期,
                     邀约业务 as 面试业务,邀约岗位 as 面试岗位,
                     "%s" as 一次面试日期,"%s" as 一次面试人,"%s" as 一次面试结果,
                     "%s" as 预约培训日期,"通过" as 邀约信息,
-                    "%s" as 开始操作时间,
-                    "邀约表转入" as 操作来源,"%s" as 操作人员
+                    "转入" as 操作记录,
+                    "邀约表" as 操作来源,"%s" as 操作人员,"%s" as 开始操作时间
                 from ee_store
                 where GUID in (%s)', 
                 $arg['面试日期'], $arg['面试人'], $arg['面试结果'], 
-                $arg['预约培训日期'], date('Y-m-d H:i:s'),
-                $user_workid, $guid_str);
+                $arg['预约培训日期'], $user_workid, date('Y-m-d H:i:s'),
+                $guid_str);
             $num = $model->exec($sql);
         }
 
@@ -466,11 +467,11 @@ class Store extends Controller
         //原记录更新
         $sql_update = sprintf('
             update ee_store
-            set 结束操作时间="%s",操作时间="%s",
-                操作来源="页面删除",操作人员="%s",
+            set 操作记录="删除",操作来源="页面",操作人员="%s",
+                结束操作时间="%s",操作时间="%s",
                 删除标识="1",有效标识="0"
             where GUID in (%s)',
-            date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $user_workid, $guid_str);
+            $user_workid, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $guid_str);
 
         // 写日志
         $model->sql_log('页面删除', $menu_id, sprintf('表名=ee_store,GUID="%s"', $guid_str));

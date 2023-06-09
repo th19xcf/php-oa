@@ -1,4 +1,4 @@
-<!-- v6.2.1.1.202305282225, from home -->
+<!-- v6.2.2.1.202306091740, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -523,7 +523,8 @@
                             obj['列名'] = columns_obj[ii].列名;
                             obj['字段名'] = columns_obj[ii].字段名;
                             obj['列类型'] = columns_obj[ii].类型;
-                            obj['可修改'] = columns_obj[ii].可修改 == '0' ? '否' : '是';
+                            obj['是否可修改'] = columns_obj[ii].可修改 == '0' ? '否' : '是';
+                            obj['是否必填'] = columns_obj[ii].不可为空 == '0' ? '否' : '是';
                             obj['取值'] = '';
 
                             if (id == '单条修改')

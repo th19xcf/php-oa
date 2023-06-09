@@ -1,5 +1,5 @@
 <?php
-/* v5.1.1.1.202305122350, from home */
+/* v5.1.2.1.202306091810, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -394,10 +394,11 @@ class Employee extends Controller
         $sql_update = sprintf('
             update ee_onjob
             set 操作记录="删除",记录结束日期="%s",
-                操作来源="页面删除",操作人员="%s",
+                操作来源="页面",操作人员="%s",
+                结束操作时间="%s",
                 删除标识="1",有效标识="0"
             where GUID in (%s)',
-            date('Y-m-d H:i:s'), $user_workid, $guid_str);
+            date('Y-m-d'), $user_workid, date('Y-m-d H:i:s'), $guid_str);
 
         // 写日志
         $model->sql_log('删除', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));

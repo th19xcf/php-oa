@@ -1,5 +1,5 @@
 <?php
-/* v9.2.1.1.202305282225, from home */
+/* v9.2.2.1.202306091740, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -318,7 +318,7 @@ class Frame extends Controller
             $value_arr['列名'] = $row->列名;
             $value_arr['字段名'] = $row->字段名;
             $value_arr['列类型'] = $row->列类型;
-            $value_arr['是否可修改'] = '是';
+            $value_arr['是否可修改'] = ($row->可修改=='1') ? '是' : '否';
             $value_arr['是否必填'] = ($row->不可为空=='1') ? '是' : '否';
             $value_arr['取值'] = '';
 
@@ -924,7 +924,7 @@ class Frame extends Controller
         switch ($data_model)
         {
             case '0': //无额外字段
-                $this->update_row_1($menu_id, $row_arr);
+                $this->update_row_0($menu_id, $row_arr);
                 break;
             case '1': //有额外字段,模式1
                 $this->update_row_1($menu_id, $row_arr);
@@ -957,6 +957,9 @@ class Frame extends Controller
 
         foreach ($row_arr as $row)
         {
+            // 未修改的字段不处理
+            if ($row['modified'] == false) continue;
+
             $set_str = '';
             switch ($row['type'])
             {
@@ -986,7 +989,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('更新[0]', $menu_id, sprintf('表名="%s",更新="%s",GUID="%s"', $data_table, $change_fld_str, $primary_key));
+        $model->sql_log('更新[0]', $menu_id, sprintf('表名=`%s`,更新=`%s`,GUID=`%s`', $data_table, $change_fld_str, $primary_key));
 
         $num = $model->exec($sql);
         exit(sprintf('更新[0]成功,更新 %d 条记录',$num));
@@ -1015,11 +1018,10 @@ class Frame extends Controller
 
         foreach ($row_arr as $row)
         {
-            $set_str = '';
-
             // 未修改的字段不处理
             if ($row['modified'] == false) continue;
 
+            $set_str = '';
             switch ($row['type'])
             {
                 case '数值':
@@ -1141,7 +1143,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('更新[1]', $menu_id, sprintf('表名="%s",更新="%s",GUID="%s"', $data_table, $change_fld_str, $primary_key));
+        $model->sql_log('更新[1]', $menu_id, sprintf('表名=`%s`,更新=`%s`,GUID=`%s`', $data_table, $change_fld_str, $primary_key));
 
         $num = $model->exec($sql_insert);
         $num = $model->exec($sql_update);
@@ -1310,7 +1312,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('更新[2]', $menu_id, sprintf('表名="%s",更新="%s",GUID="%s"', $data_table, $change_fld_str, $primary_key));
+        $model->sql_log('更新[2]', $menu_id, sprintf('表名=`%s`,更新=`%s`,GUID=`%s`', $data_table, $change_fld_str, $primary_key));
 
         $num = $model->exec($sql_insert);
         $num = $model->exec($sql_update);
@@ -1384,7 +1386,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('新增[0]', $menu_id, sprintf('表名="%s"', $data_table));
+        $model->sql_log('新增[0]', $menu_id, sprintf('表名=`%s`', $data_table));
         // 新增
         $num = $model->exec($sql);
 
@@ -1433,7 +1435,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('新增[1]', $menu_id, sprintf('表名="%s"', $data_table));
+        $model->sql_log('新增[1]', $menu_id, sprintf('表名=`%s`', $data_table));
         // 新增
         $num = $model->exec($sql);
 
@@ -1483,7 +1485,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('新增[2]', $menu_id, sprintf('表名="%s"', $data_table));
+        $model->sql_log('新增[2]', $menu_id, sprintf('表名=`%s`', $data_table));
         // 新增
         $num = $model->exec($sql);
 
@@ -1531,7 +1533,7 @@ class Frame extends Controller
 
         $model = new Mcommon();
         // 写日志
-        $model->sql_log('删除[0]', $menu_id, sprintf('表名="%s",GUID="%s"', $data_table, $primary_key));
+        $model->sql_log('删除[0]', $menu_id, sprintf('表名=`%s`,GUID=`%s`', $data_table, $primary_key));
         // 删除
         $num = $model->exec($sql_delete);
         exit(sprintf('删除[0]成功,删除 %d 条',$num));
@@ -1563,7 +1565,7 @@ class Frame extends Controller
         $model = new Mcommon();
 
         // 写日志
-        $model->sql_log('删除[1]', $menu_id, sprintf('表名="%s",GUID="%s"', $data_table, $primary_key));
+        $model->sql_log('删除[1]', $menu_id, sprintf('表名=`%s`,GUID=`%s`', $data_table, $primary_key));
         // 更新
         $num = $model->modify($sql_update);
 
