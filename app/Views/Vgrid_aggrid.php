@@ -1,4 +1,4 @@
-<!-- v6.2.2.1.202306091740, from office -->
+<!-- v6.3.1.1.202306131730, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -1119,8 +1119,8 @@
             return valueA - valueB;
         }
 
-        // 单元格格式
-        function get_cell_style(params, type, str, style_str, style_default)
+        // 条件判断
+        function get_condition(params, type, str)
         {
             opt = '';
             value = '';
@@ -1136,29 +1136,12 @@
                 value = str.substr(1);
             }
 
-            var style_obj = {};
-
-            if (style_str != '')
-            {
-                var style_arr = style_str.split(',');
-
-                for (var ii in style_arr)
-                {
-                    var item_arr = style_arr[ii].split(':');
-                    style_obj[item_arr[0]] = item_arr[1];
-                }
-            }
-            else
-            {
-                style_obj = style_default;
-            }
-
             error = false;
 
             if (type == '数值')
             {
                 error_field = '';
-                if (value.indexOf('$') !=-1)
+                if (value.indexOf('$') != -1)
                 {
                     error_field = value.replace('$','');
                     value = params.data[error_field];
@@ -1202,7 +1185,65 @@
                 }
             }
 
-            if (error)
+            return error;
+        }
+
+        // 单元格格式
+        function get_cell_style(params, type, str, style_str, style_default)
+        {
+            var str1 = '', str2 = '';
+            var rc = true, rc1 = true, rc2 = true;
+
+            if (str.indexOf('and') != -1)
+            {
+                str1 = str.substr(0, str.indexOf('and'));
+                str2 = str.substr(str.indexOf('and')+3);
+
+                str1 = str1.trim();
+                str2 = str2.trim();
+
+                rc1 = get_condition(params, type, str1);
+                rc2 = get_condition(params, type, str2);
+
+                rc = rc1 && rc2;
+            }
+            else if (str.indexOf('or') != -1)
+            {
+                str1 = str.substr(0, str.indexOf('or'));
+                str2 = str.substr(str.indexOf('or')+2);
+
+                str1 = str1.trim();
+                str2 = str2.trim();
+
+                rc1 = get_condition(params, type, str1);
+                rc2 = get_condition(params, type, str2);
+
+                rc = rc1 || rc2;
+            }
+            else
+            {
+                str = str.trim();
+                rc = get_condition(params, type, str);
+            }
+
+            var style_obj = {};
+
+            if (style_str != '')
+            {
+                var style_arr = style_str.split(',');
+
+                for (var ii in style_arr)
+                {
+                    var item_arr = style_arr[ii].split(':');
+                    style_obj[item_arr[0]] = item_arr[1];
+                }
+            }
+            else
+            {
+                style_obj = style_default;
+            }
+
+            if (rc)
             {
                 return style_obj;
             }
