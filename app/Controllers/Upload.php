@@ -1,5 +1,5 @@
 <?php
-/* v2.6.1.1.202305270950, from home */
+/* v2.6.2.1.202306191105, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -226,7 +226,7 @@ class Upload extends Controller
                         select 对象名称,对象值
                         from def_object
                         where 对象名称="%s"
-                            and (属地="" or 属地 in (%s))
+                            and (属地="" or instr(属地,%s))
                     ) as t2 on t1.字段值=t2.对象值
                     where t2.对象值 is null',
                     $row->字段名, $row->字段名, $tmp_table_name,
