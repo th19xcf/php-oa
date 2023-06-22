@@ -1,5 +1,5 @@
 <?php
-/* v1.4.1.0.202305271155, from home */
+/* v1.5.1.1.202306221330, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -127,7 +127,7 @@ class Dept extends Controller
                 ) as t1
                 left join
                 (
-                    select 上级部门,max(substring_index(上级部门,"-",-1)+0) as 下级部门编码
+                    select 上级部门,max(substring_index(部门编码,"-",-1)+0) as 下级部门编码
                     from def_dept
                     where 上级部门 in 
                     (
@@ -306,6 +306,49 @@ class Dept extends Controller
                 $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
             }
         }
+    }
 
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 删除信息
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function delete_row($menu_id='', $type='')
+    {
+        $arg = $this->request->getJSON(true);
+
+        $model = new Mcommon();
+
+        $guid_str = '';
+        foreach ($arg['部门'] as $guid)
+        {
+            if ($guid_str == '')
+            {
+                $guid_str = sprintf('"%s"', $guid);
+            }
+            else
+            {
+                $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
+            }
+        }
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+
+        //原记录更新
+        $sql_update = sprintf('
+            update def_dept
+            set 操作记录="删除",记录结束日期="%s",
+                操作来源="页面",操作人员="%s",
+                结束操作时间="%s",
+                删除标识="1",有效标识="0"
+            where GUID in (%s)',
+            date('Y-m-d'), $user_workid, date('Y-m-d H:i:s'), $guid_str);
+
+        // 写日志
+        $model->sql_log('删除', $menu_id, sprintf('sql=%s',str_replace('"','',$sql_update)));
+        // 删除
+        $num = $model->exec($sql_update);
+
+        exit(sprintf('删除成功,删除 %d 条记录',$num));
     }
 }

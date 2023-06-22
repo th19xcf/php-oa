@@ -1,5 +1,5 @@
 <?php
-/* v9.2.2.1.202306091740, from office */
+/* v9.2.3.1.202306211215, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1210,7 +1210,7 @@ class Frame extends Controller
 
         // 更新操作记录、操作人员、有效标识等固定字段
         $set = sprintf('
-            %s,记录结束日期="%s",操作记录="更新[1],%s",操作来源="页面",操作人员="%s",
+            %s,记录结束日期="%s",操作记录="更新[2],%s",操作来源="页面",操作人员="%s",
             结束操作时间="%s",操作时间="%s",
             有效标识="0"', 
             $set, $active_date, $change_fld_str, $user_workid,

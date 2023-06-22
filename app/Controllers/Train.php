@@ -1,5 +1,5 @@
 <?php
-/* v2.1.2.1.202305231310, from home */
+/* v2.1.3.1.202306211950, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -186,7 +186,9 @@ class Train extends Controller
             $sql = sprintf('
                 select GUID,姓名,身份证号,手机号码,
                     培训业务,培训状态,培训批次,培训老师,
-                    培训开始日期,预计完成日期
+                    培训开始日期,预计完成日期,
+                    培训完成日期,培训离开日期,
+                    培训离开原因
                 from ee_train
                 where GUID=%s', $arr[1]);
             $query = $model->select($sql);
@@ -199,6 +201,9 @@ class Train extends Controller
             array_push($rows_arr, array('表项'=>'培训老师', '值'=>$results[0]->培训老师));
             array_push($rows_arr, array('表项'=>'培训开始日期', '值'=>$results[0]->培训开始日期));
             array_push($rows_arr, array('表项'=>'预计完成日期', '值'=>$results[0]->预计完成日期));
+            array_push($rows_arr, array('表项'=>'培训完成日期', '值'=>$results[0]->培训完成日期));
+            array_push($rows_arr, array('表项'=>'培训离开日期', '值'=>$results[0]->培训离开日期));
+            array_push($rows_arr, array('表项'=>'培训离开原因', '值'=>$results[0]->培训离开原因));
         }
         else
         {
