@@ -1,5 +1,5 @@
 <?php
-/* v5.1.2.1.202306091810, from office */
+/* v5.1.3.1.202306222050, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -28,7 +28,7 @@ class Employee extends Controller
                 属地,部门名称,if(班组="","未分班组",班组) as 班组,
                 岗位名称,岗位类型,结算类型,培训完成日期
             from ee_onjob
-            where 属地="%s" and 有效标识="1"
+            where 属地="%s" and 有效标识="1" and 删除标识="0"
             order by 员工状态,
                 convert(部门名称 using gbk),
                 convert(班组 using gbk),
@@ -258,7 +258,7 @@ class Employee extends Controller
         {
             if ($arg['员工状态']['值'] == '离职')
             {
-                //更新所有该员工的记录
+                //更新该员工的记录
                 $sql = sprintf('
                     update ee_onjob
                     set 员工状态="%s",离职日期="%s",离职原因="%s"
@@ -271,7 +271,8 @@ class Employee extends Controller
                                 from ee_onjob
                                 where GUID in (%s)
                             ) as ta
-                        )',
+                        )
+                        and 员工状态!="离职"',
                     $arg['员工状态']['值'], $arg['离职日期']['值'], 
                     $arg['离职原因']['值'], $guid_str);
 
