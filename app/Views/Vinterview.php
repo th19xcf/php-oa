@@ -1,4 +1,4 @@
-<!-- v2.1.2.1.202305141110, from home -->
+<!-- v2.1.3.1.20236241050, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -361,7 +361,7 @@
             dhx.ajax.post('<?php base_url(); ?>/interview/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert(data);
-                window.location.reload();
+                //window.location.reload();
             }).catch(function (err)
             {
                 alert('修改面试信息失败, ' + " " + err.statusText);

@@ -1,5 +1,5 @@
 <?php
-/* v2.6.2.1.202306191105, from home */
+/* v2.6.3.0.202306241050, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -40,6 +40,7 @@ class Upload extends Controller
         {
             $send['work_month'] = strpos($row->表单变量, '$工作月份');
             $send['work_date'] = strpos($row->表单变量, '$工作日期');
+            $send['upload_model'] = strpos($row->表单变量, '$导入模式');
             $send['tmpl_file'] = $row->模板文件;
         }
 
@@ -64,6 +65,8 @@ class Upload extends Controller
     {
         $work_month = $this->request->getPost('work_month');
         $work_date = $this->request->getPost('work_date');
+        $upload_model = $this->request->getPost('model');
+        $key_field = $this->request->getPost('key_field');
 
         $file = isset($_FILES['upfiles']) ? $_FILES['upfiles'] : '';
         if (empty($file))

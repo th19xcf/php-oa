@@ -1,4 +1,4 @@
-<!-- v2.1.1.1.202305122350, from home -->
+<!-- v2.1.2.1.202306241050, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -324,7 +324,7 @@
             {
                 if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '修改邀约信息')
                 {
-                    alert('请点选修改邀约信息选项进行相关操作');
+                    alert('请点选`修改邀约信息`选项进行相关操作');
                     ajax = -1;
                 }
             });
@@ -359,7 +359,7 @@
             dhx.ajax.post('<?php base_url(); ?>/store/upkeep/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert(data);
-                window.location.reload();
+                //window.location.reload();
             }).catch(function (err)
             {
                 alert('修改邀约信息失败, ' + " " + err.statusText);
