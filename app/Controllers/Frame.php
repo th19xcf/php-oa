@@ -1,5 +1,5 @@
 <?php
-/* v9.2.3.1.202306211215, from home */
+/* v9.2.4.1.202306282045, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1478,9 +1478,9 @@ class Frame extends Controller
 
         $sql = sprintf('
             insert into %s (%s,记录开始日期,记录结束日期,操作记录,操作来源,操作人员,开始操作时间,操作时间,校验标识,删除标识,有效标识) 
-            values (%s,%s,"","新增[2]","页面","%s","%s","0","0","1")',
-            $data_table, $flds_str, $values_str, 
-            date('Y-m-d'), $user_workid, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'));
+            values (%s,"%s","","新增[2]","页面","%s","%s","%s","0","0","1")',
+            $data_table, $flds_str, 
+            $values_str, date('Y-m-d'), $user_workid, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'));
 
         $model = new Mcommon();
 
