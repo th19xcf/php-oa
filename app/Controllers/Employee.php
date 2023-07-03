@@ -1,5 +1,5 @@
 <?php
-/* v5.1.3.1.202306222050, from home */
+/* v5.1.4.1.202307011135, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -205,7 +205,7 @@ class Employee extends Controller
                 where GUID="%s"', $arr[1]);
             $query = $model->select($sql);
             $results = $query->getResult();
-        
+
             array_push($rows_arr, array('表项'=>'属性', '值'=>'查询人员信息'));
             array_push($rows_arr, array('表项'=>'生效日期', '值'=>''));
             array_push($rows_arr, array('表项'=>'姓名', '值'=>$results[0]->姓名));
@@ -261,26 +261,30 @@ class Employee extends Controller
                 //更新该员工的记录
                 $sql = sprintf('
                     update ee_onjob
-                    set 员工状态="%s",离职日期="%s",离职原因="%s"
-                    where 身份证号 in
+                    set 员工状态="%s",
+                        离职日期="%s",
+                        离职原因="%s",
+                        记录结束日期=if(记录结束日期="","%s",记录结束日期)
+                    where concat(身份证号,入职次数) in
                         (
-                            select 身份证号
+                            select concat(身份证号,入职次数)
                             from
                             (
-                                select 身份证号
+                                select 身份证号,入职次数
                                 from ee_onjob
                                 where GUID in (%s)
                             ) as ta
                         )
                         and 员工状态!="离职"',
                     $arg['员工状态']['值'], $arg['离职日期']['值'], 
-                    $arg['离职原因']['值'], $guid_str);
+                    $arg['离职原因']['值'], $arg['离职日期']['值'], 
+                    $guid_str);
 
                 $num = $model->exec($sql);
                 exit(sprintf('处理离职信息,修改 %d 条记录',$num));
             }
         }
-            
+
         $update_str = '';
         foreach ($arg as $key => $value)
         {
@@ -306,7 +310,9 @@ class Employee extends Controller
             '培训信息,培训开始日期,培训完成日期,' .
             '一阶段日期,二阶段日期,员工阶段,员工状态,' .
             '离职日期,离职原因,派遣公司,记录开始日期,' .
-            '操作来源,操作人员,校验标识,删除标识';
+            '操作来源,操作人员,
+            开始操作时间,
+            校验标识,删除标识';
         $fld_arr = explode(',', $fld_str);
 
         $col_str = '';
@@ -319,11 +325,17 @@ class Employee extends Controller
                 case '记录开始日期':
                     $col = sprintf('"%s" as 记录开始日期', $arg['生效日期']['值']);
                     break;
+                case '操作记录':
+                    $col = '"更新插入" as 操作记录';
+                    break;
                 case '操作来源':
-                    $col = '"页面更改" as 操作来源';
+                    $col = '"页面" as 操作来源';
                     break;
                 case '操作人员':
                     $col = sprintf('"%s" as 操作人员', $user_workid);
+                    break;
+                case '开始操作时间':
+                    $col = date('Y-m-d H:i:s');
                     break;
             }
 
@@ -352,12 +364,12 @@ class Employee extends Controller
         // 原记录更新
         $sql_update = sprintf('
             update ee_onjob
-            set 操作记录="%s",记录结束日期="%s",有效标识="0"
+            set 操作记录="更新,%s",记录结束日期="%s",有效标识="0"
             where GUID in (%s)',
             $update_str, $arg['生效日期']['值'], $guid_str);
 
         // 写日志
-        $model->sql_log('页面修改', $menu_id, sprintf('表名=ee_onjob,GUID="%s"', $guid_str));
+        $model->sql_log('页面修改', $menu_id, sprintf('表名=ee_onjob,GUID=%s',str_replace('"','',$guid_str)));
 
         $num = $model->exec($sql_insert);
         $num = $model->exec($sql_update);

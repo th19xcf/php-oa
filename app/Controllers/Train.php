@@ -1,5 +1,5 @@
 <?php
-/* v2.1.3.1.202306211950, from home */
+/* v2.1.4.1.202307011310, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -422,6 +422,7 @@ class Train extends Controller
                 派遣公司,
                 记录开始日期,记录结束日期,
                 操作来源,操作人员,
+                开始操作时间,结束操作时间,
                 校验标识,删除标识,有效标识)
             select 
                 t1.姓名,t1.身份证号,t1.手机号码,t1.属地,%d,
@@ -441,6 +442,7 @@ class Train extends Controller
                 "" as 派遣公司,
                 "%s" as 记录开始日期,"" as 记录结束日期,
                 "培训表转入" as 操作来源,"%s" as 操作人员,
+                "%s" as 开始操作时间,"" as 结束操作时间,
                 "0" as 校验标识,"0" as 删除标识,"1" as 有效标识
             from
             (
@@ -461,7 +463,9 @@ class Train extends Controller
             (int)$arg['入职次数'],
             $arg['岗位类型'], $arg['结算类型'],
             $arg['培训结束日期'],
-            $user_workid, $guid_str);
+            $user_workid,             
+            date('Y-m-d H:m:s'),
+            $guid_str);
 
         $num = $model->exec($sql);
         exit(sprintf('`更新培训状态`成功,更新 %d 条记录',$num));

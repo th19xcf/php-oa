@@ -1,5 +1,5 @@
 <?php
-/* v2.6.3.0.202306241050, from home */
+/* v2.6.4.0.202307012055, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -229,7 +229,7 @@ class Upload extends Controller
                         select 对象名称,对象值
                         from def_object
                         where 对象名称="%s"
-                            and (属地="" or instr(属地,%s))
+                            and (属地="" or 属地 in (%s))
                     ) as t2 on t1.字段值=t2.对象值
                     where t2.对象值 is null',
                     $row->字段名, $row->字段名, $tmp_table_name,
@@ -425,12 +425,13 @@ class Upload extends Controller
         {
             $sql_insert = sprintf('%s where %s', $sql_insert ,$import_condition);
         }
+
         $rc = $model->exec($sql_insert);
 
         // 写日志
-        $model->sql_log('导入成功', $menu_id, '');
+        $model->sql_log('导入成功', $menu_id, sprintf('表名=%s,导入%d条',$dest_table_name,$rc));
 
-        $this->json_data(200, '导入成功', 0);
+        $this->json_data(200, sprintf('导入成功,导入%d条',$rc), 0);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

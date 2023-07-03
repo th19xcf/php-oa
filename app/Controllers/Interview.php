@@ -1,5 +1,5 @@
 <?php
-/* v2.1.2.1.202305291740, from office */
+/* v2.1.3.1.202307012055, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -408,12 +408,12 @@ class Interview extends Controller
         $sql = sprintf('
             update ee_interview
             set 参培信息="%s",
-                操作来源="%s",操作人员="%s",
+                操作记录="更新,参培信息",操作来源="页面",操作人员="%s",
                 结束操作时间="%s",操作时间="%s"
             where GUID in (%s) ',
-            $arg['参培信息'], 
-            '页面转面试', $user_workid,
-            date('Y-m-d H:m:s'), date('Y-m-d H:m:s'), $guid_str);
+            $arg['参培信息'], $user_workid,
+            date('Y-m-d H:m:s'), date('Y-m-d H:m:s'),
+            $guid_str);
 
         $num = $model->exec($sql);
 
@@ -435,14 +435,15 @@ class Interview extends Controller
                     培训开始日期,预计完成日期,培训完成日期,
                     培训离开日期,培训离开原因,面试信息,
                     开始操作时间,结束操作时间,
-                    操作来源,操作人员,有效标识)
+                    操作记录,操作来源,操作人员,
+                    有效标识)
                 select 姓名,身份证号,手机号码,属地,
                     "%s" as 培训业务,"%s" as 培训状态,
                     "%s" as 培训批次,"%s" as 培训老师,
                     "%s" as 培训开始日期,"%s" as 预计完成日期,"" as 培训完成日期,
                     "" as 培训离开日期,"" as 培训离开原因,"有" as 面试信息,
                     "%s" as 开始操作时间,"" as 结束操作时间,
-                    "面试表转入" as 操作来源,"%s" as 操作人员,
+                    "面试表转入" as 操作记录,"页面" as 操作来源,"%s" as 操作人员,
                     "1" as 有效标识
                 from ee_interview
                 where GUID in (%s)', 

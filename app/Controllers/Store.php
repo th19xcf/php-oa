@@ -1,5 +1,5 @@
 <?php
-/* v3.2.3.1.202306091810, from office */
+/* v3.2.4.1.202307012055, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -400,11 +400,10 @@ class Store extends Controller
         $sql = sprintf('
             update ee_store
             set 面试信息="%s",
-                操作来源="%s",操作人员="%s",
+                操作记录="更新,面试信息",操作来源="页面",操作人员="%s",
                 结束操作时间="%s",操作时间="%s"
             where GUID in (%s) ',
-            $interview,
-            '页面', $user_workid,
+            $interview,$user_workid,
             date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $guid_str);
 
         $num = $model->exec($sql);
@@ -425,12 +424,14 @@ class Store extends Controller
                     邀约业务 as 面试业务,邀约岗位 as 面试岗位,
                     "%s" as 一次面试日期,"%s" as 一次面试人,"%s" as 一次面试结果,
                     "%s" as 预约培训日期,"通过" as 邀约信息,
-                    "转入" as 操作记录,
-                    "邀约表" as 操作来源,"%s" as 操作人员,"%s" as 开始操作时间
+                    "邀约表转入" as 操作记录,
+                    "页面" as 操作来源,"%s" as 操作人员,
+                    "%s" as 开始操作时间
                 from ee_store
                 where GUID in (%s)', 
                 $arg['面试日期'], $arg['面试人'], $arg['面试结果'], 
-                $arg['预约培训日期'], $user_workid, date('Y-m-d H:i:s'),
+                $arg['预约培训日期'], $user_workid, 
+                date('Y-m-d H:i:s'),
                 $guid_str);
             $num = $model->exec($sql);
         }
