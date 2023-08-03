@@ -1,5 +1,5 @@
 <?php
-/* v5.1.4.1.202307011135, from home */
+/* v5.2.1.1.202308032115, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -21,19 +21,20 @@ class Employee extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_location = $session->get('user_location');
+        $user_location_str = $session->get('user_location_str');
+        $tree_expand = $session->get('employee_tree_expand');
 
         $sql = sprintf('
             select GUID,姓名,工号1 as 工号,员工状态,
                 属地,部门名称,if(班组="","未分班组",班组) as 班组,
                 岗位名称,岗位类型,结算类型,培训完成日期
             from ee_onjob
-            where 属地="%s" and 有效标识="1" and 删除标识="0"
+            where 属地 in (%s) and 有效标识="1" and 删除标识="0"
             order by 员工状态,
                 convert(部门名称 using gbk),
                 convert(班组 using gbk),
                 convert(姓名 using gbk)',
-            $user_location);
+            $user_location_str);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -122,6 +123,7 @@ class Employee extends Controller
         $object_arr = []; 
 
         $send['func_id'] = $menu_id;
+        $send['tree_expand_json'] = json_encode($tree_expand);
         $send['tree_json'] = json_encode($tree_arr);
         $send['grid_json'] = json_encode($grid_arr);
         $send['import_func_id'] = '2042';
@@ -138,6 +140,23 @@ class Employee extends Controller
     {
         $arg = $this->request->getJSON(true);
 
+        // 记录展开的节点
+        if ($arg['操作'] == '展开')
+        {
+            $expand_arr = [];
+            for ($i=count($arg['id_arr']); $i>0; $i--)
+            {
+                array_push($expand_arr, $arg['id_arr'][$i-1]);
+            }
+
+            // 存入session
+            $session_arr = [];
+            $session_arr['employee_tree_expand'] = $expand_arr;
+            $session = \Config\Services::session();
+            $session->set($session_arr);
+            return;
+        }
+
         $arr = explode('^', $arg['id']);
 
         // 读出数据
@@ -149,7 +168,7 @@ class Employee extends Controller
             $dept = $arr[2];
 
             $sql = sprintf('
-                select 部门名称,部门全称
+                select 部门名称,三级全称 as 部门全称
                 from view_dept
                 where 部门名称="%s"', $dept);
             $query = $model->select($sql);
@@ -173,7 +192,7 @@ class Employee extends Controller
             $team = $arr[3];
 
             $sql = sprintf('
-                select 部门名称,部门全称
+                select 部门名称,三级全称 as 部门全称
                 from view_dept
                 where 部门名称="%s"', $team);
             $query = $model->select($sql);

@@ -1,4 +1,4 @@
-<!-- v3.1.1.1.202305122350, from home -->
+<!-- v3.3.1.1.202308032115, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -72,6 +72,12 @@
         var tree_obj = JSON.parse('<?php echo $tree_json; ?>');
         var tree = new dhx.Tree('tree_box', {checkbox: true});
         tree.data.parse(tree_obj);
+
+        var tree_expand_obj = JSON.parse('<?php echo $tree_expand_json; ?>');
+        for (var ii in tree_expand_obj)
+        {
+            tree.expand(tree_expand_obj[ii]);
+        }
 
         //grid视图
         var grid_obj = JSON.parse('<?php echo $grid_json; ?>');
@@ -254,6 +260,39 @@
             $$('info_box').innerHTML = '&nbsp&nbsp选定人员:' + csr_str;
         });
 
+        tree.events.on('afterExpand', function(id) 
+        {
+            tree_toggle(id, '展开');
+        });
+
+        tree.events.on('afterCollapse', function(id) 
+        {
+            tree_toggle(id, '收缩');
+        });
+
+        function tree_toggle(id, state) 
+        {
+            arg_obj = {};
+            arg_obj['操作'] = '展开';
+            arg_obj['id_arr'] = [];
+
+            if (state == '展开')
+            {
+                arg_obj['id_arr'].push(id);
+            }
+
+            tree.data.eachParent(id, item => 
+            {
+                arg_obj['id_arr'].push(item.id);
+            });
+
+            dhx.ajax.post('<?php base_url(); ?>/employee/ajax/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            {
+            }).catch(function (err)
+            {
+            });
+        }
+
         //grid event
         function cellEditorSelector(params)
         {
@@ -310,6 +349,12 @@
                         ajax = -1;
                     }
                 }
+                // 校验必填项
+                if (rowNode.data['表项'] == '生效日期' && rowNode.data['值'] == '')
+                {
+                    alert('生效日期为必填项,不能为空');
+                    ajax = -1;
+                }
             });
 
             if (ajax == -1)
@@ -323,13 +368,6 @@
 
             grid_options.api.forEachNode((rowNode, index) =>
             {
-                // 校验必填项
-                if (rowNode.data['表项'] == '生效日期' && rowNode.data['值'] == '')
-                {
-                    alert('生效日期为必填项,不能为空');
-                    return;
-                }
-
                 // 单选
                 if (submit_type == 'upkeep_single')
                 {

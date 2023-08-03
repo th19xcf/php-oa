@@ -1,5 +1,5 @@
 <?php
-/* v2.1.3.1.202307012055, from home */
+/* v2.2.1.1.202308032155, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -21,8 +21,8 @@ class Interview extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_location = $session->get('user_location');
         $user_location_str = $session->get('user_location_str');
+        $tree_expand = $session->get('interview_tree_expand');
 
         $sql = sprintf('
             select GUID,姓名,身份证号,手机号码,招聘渠道,
@@ -31,9 +31,9 @@ class Interview extends Controller
                 if(参培信息="","待参培",参培信息) as 参培信息,
                 一次面试日期 as 面试日期,预约培训日期
             from ee_interview
-            where 属地="%s"
+            where 属地 in (%s)
             order by 面试结果,参培信息,招聘渠道,预约培训日期,convert(姓名 using gbk)',
-            $user_location);
+            $user_location_str);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -159,25 +159,12 @@ class Interview extends Controller
         $object_arr['培训业务'] = [];
         $object_arr['培训业务'][0] = '';
 
-        $value = '';
-        switch ($user_location)
-        {
-            case '北京总公司':
-                $value = '北京培训业务';
-                break;
-            case '河北分公司':
-                $value = '北一培训业务';
-                break;
-            case '四川分公司':
-                $value = '南一培训业务';
-                break;
-        }
-
         $sql = sprintf('
             select 对象值 
             from def_object 
-            where 对象名称="%s"
-            order by 对象值', $value);
+            where 对象名称="培训业务" and 属地 in (%s)
+            order by convert(对象值 using gbk)', 
+            $user_location_str);
 
         $query = $model->select($sql);
         $result = $query->getResult();
@@ -187,6 +174,7 @@ class Interview extends Controller
         }
 
         $send['func_id'] = $menu_id;
+        $send['tree_expand_json'] = json_encode($tree_expand);
         $send['tree_json'] = json_encode($tree_arr);
         $send['grid_json'] = json_encode($grid_arr);
         $send['import_func_id'] = '2022';
@@ -202,6 +190,23 @@ class Interview extends Controller
     public function ajax($menu_id='', $type='')
     {
         $arg = $this->request->getJSON(true);
+
+        // 记录展开的节点
+        if ($arg['操作'] == '展开')
+        {
+            $expand_arr = [];
+            for ($i=count($arg['id_arr']); $i>0; $i--)
+            {
+                array_push($expand_arr, $arg['id_arr'][$i-1]);
+            }
+
+            // 存入session
+            $session_arr = [];
+            $session_arr['interview_tree_expand'] = $expand_arr;
+            $session = \Config\Services::session();
+            $session->set($session_arr);
+            return;
+        }
 
         $model = new Mcommon();
 

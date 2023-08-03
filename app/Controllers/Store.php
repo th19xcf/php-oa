@@ -1,5 +1,5 @@
 <?php
-/* v3.2.4.1.202307012055, from home */
+/* v3.3.1.1.202308032210, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -20,8 +20,8 @@ class Store extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_location = $session->get('user_location');
         $user_location_str = $session->get('user_location_str');
+        $tree_expand = $session->get('store_tree_expand');
 
         $sql = sprintf('
             select 
@@ -148,7 +148,8 @@ class Store extends Controller
             select 对象值 
             from def_object 
             where 对象名称="渠道名称" and 属地 in (%s)
-            order by convert(对象值 using gbk)', $user_location_str);
+            order by convert(对象值 using gbk)',
+            $user_location_str);
 
         $query = $model->select($sql);
         $result = $query->getResult();
@@ -158,6 +159,7 @@ class Store extends Controller
         }
 
         $send['func_id'] = $menu_id;
+        $send['tree_expand_json'] = json_encode($tree_expand);
         $send['tree_json'] = json_encode($tree_arr);
         $send['grid_json'] = json_encode($grid_arr);
         $send['import_func_id'] = '2012';
@@ -173,6 +175,23 @@ class Store extends Controller
     public function ajax($menu_id='', $type='')
     {
         $arg = $this->request->getJSON(true);
+
+        // 记录展开的节点
+        if ($arg['操作'] == '展开')
+        {
+            $expand_arr = [];
+            for ($i=count($arg['id_arr']); $i>0; $i--)
+            {
+                array_push($expand_arr, $arg['id_arr'][$i-1]);
+            }
+
+            // 存入session
+            $session_arr = [];
+            $session_arr['store_tree_expand'] = $expand_arr;
+            $session = \Config\Services::session();
+            $session->set($session_arr);
+            return;
+        }
 
         $model = new Mcommon();
 

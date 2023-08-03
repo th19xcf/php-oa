@@ -1,5 +1,5 @@
 <?php
-/* v2.1.4.1.202307011310, from home */
+/* v2.2.1.1.202308032230, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -21,7 +21,8 @@ class Train extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_location = $session->get('user_location');
+        $user_location_str = $session->get('user_location_str');
+        $tree_expand = $session->get('train_tree_expand');
 
         $sql = sprintf('
             select GUID,姓名,身份证号,手机号码,
@@ -30,10 +31,10 @@ class Train extends Controller
                 培训开始日期,预计完成日期,培训完成日期,
                 培训离开日期,培训离开原因
             from ee_train
-            where 属地="%s" and 有效标识!="0"
+            where 属地 in (%s) and 有效标识!="0"
             order by if(instr(培训状态,"在培"),"在培",培训状态),
                 培训老师,培训开始日期,convert(姓名 using gbk)',
-            $user_location);
+            $user_location_str);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -124,29 +125,16 @@ class Train extends Controller
 
         // 直接给一些固定变量赋值
         $object_arr = []; 
-        $value = '';
 
         $object_arr['培训业务'] = [];
         $object_arr['培训业务'][0] = '';
 
-        switch ($user_location)
-        {
-            case '北京总公司':
-                $value = '北京培训业务';
-                break;
-            case '河北分公司':
-                $value = '北一培训业务';
-                break;
-            case '四川分公司':
-                $value = '南一培训业务';
-                break;
-        }
-
         $sql = sprintf('
             select 对象值 
             from def_object 
-            where 对象名称="%s"
-            order by 对象值', $value);
+            where 对象名称="培训业务" and 属地 in (%s)
+            order by convert(对象值 using gbk)', 
+            $user_location_str);
 
         $query = $model->select($sql);
         $result = $query->getResult();
@@ -156,6 +144,7 @@ class Train extends Controller
         }
 
         $send['func_id'] = $menu_id;
+        $send['tree_expand_json'] = json_encode($tree_expand);
         $send['tree_json'] = json_encode($tree_arr);
         $send['grid_json'] = json_encode($grid_arr);
         $send['import_func_id'] = '2032';
@@ -171,6 +160,23 @@ class Train extends Controller
     public function ajax($menu_id='', $type='')
     {
         $arg = $this->request->getJSON(true);
+
+        // 记录展开的节点
+        if ($arg['操作'] == '展开')
+        {
+            $expand_arr = [];
+            for ($i=count($arg['id_arr']); $i>0; $i--)
+            {
+                array_push($expand_arr, $arg['id_arr'][$i-1]);
+            }
+
+            // 存入session
+            $session_arr = [];
+            $session_arr['train_tree_expand'] = $expand_arr;
+            $session = \Config\Services::session();
+            $session->set($session_arr);
+            return;
+        }
 
         $model = new Mcommon();
 
