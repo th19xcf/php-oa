@@ -1,4 +1,4 @@
-<!-- v2.3.1.0.202306221140, from home -->
+<!-- v2.4.1.1.202308211525, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -69,6 +69,12 @@
         var tree_obj = JSON.parse('<?php echo $dept_json; ?>');
         var tree = new dhx.Tree('tree_box');
         tree.data.parse(tree_obj);
+
+        var tree_expand_obj = JSON.parse('<?php echo $tree_expand_json; ?>');
+        for (var ii in tree_expand_obj)
+        {
+            tree.expand(tree_expand_obj[ii]);
+        }
 
         //grid视图
         var value_obj = [];
@@ -187,6 +193,39 @@
                 alert('`查询部门信息`失败, ' + " " + err.statusText);
             });
         });
+
+        tree.events.on('afterExpand', function(id) 
+        {
+            tree_toggle(id, '展开');
+        });
+
+        tree.events.on('afterCollapse', function(id) 
+        {
+            tree_toggle(id, '收缩');
+        });
+
+        function tree_toggle(id, state) 
+        {
+            arg_obj = {};
+            arg_obj['操作'] = '展开';
+            arg_obj['id_arr'] = [];
+
+            if (state == '展开')
+            {
+                arg_obj['id_arr'].push(id);
+            }
+
+            tree.data.eachParent(id, item => 
+            {
+                arg_obj['id_arr'].push(item.id);
+            });
+
+            dhx.ajax.post('<?php base_url(); ?>/dept/ajax/<?php echo $func_id; ?>', arg_obj).then(function (data)
+            {
+            }).catch(function (err)
+            {
+            });
+        }
 
         //grid event
         function cellEditorSelector(params)
@@ -379,6 +418,7 @@
         function delete_row(id)
         {
             var ajax = 0;
+            var dept_name = '';
 
             grid_options.api.stopEditing();
             grid_options.api.forEachNode((rowNode, index) =>
@@ -394,9 +434,18 @@
                     alert('有下级部门,不能删除');
                     ajax = -1;
                 }
+                if (rowNode.data['表项'] == '部门名称')
+                {
+                    dept_name = rowNode.data['值'];
+                }
             });
 
             if (ajax == -1)
+            {
+                return;
+            }
+
+            if (confirm('请确认是否删除部门: '+dept_name) == false)
             {
                 return;
             }
@@ -411,7 +460,7 @@
                 window.location.reload();
             }).catch(function (err)
             {
-                alert('删除面试信息失败, ' + " " + err.statusText);
+                alert('删除部门失败, ' + " " + err.statusText);
             });
         }
 

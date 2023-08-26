@@ -1,5 +1,5 @@
 <?php
-/* v1.5.1.1.202306221330, from home */
+/* v1.6.1.1.202308211525, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -20,6 +20,7 @@ class Dept extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $dept_authz = $session->get($menu_id.'-dept_authz');
+        $tree_expand = $session->get('dept_tree_expand');
 
         $model = new Mcommon();
 
@@ -72,6 +73,7 @@ class Dept extends Controller
         $arr[0] = $dept_arr[$arr_len-1];
 
         $send['func_id'] = $menu_id;
+        $send['tree_expand_json'] = json_encode($tree_expand);
         $send['dept_json'] = json_encode($arr);
 
         echo view('Vdept.php', $send);
@@ -83,6 +85,23 @@ class Dept extends Controller
     public function ajax($menu_id='', $type='')
     {
         $arg = $this->request->getJSON(true);
+
+        // 记录展开的节点
+        if ($arg['操作'] == '展开')
+        {
+            $expand_arr = [];
+            for ($i=count($arg['id_arr']); $i>0; $i--)
+            {
+                array_push($expand_arr, $arg['id_arr'][$i-1]);
+            }
+
+            // 存入session
+            $session_arr = [];
+            $session_arr['dept_tree_expand'] = $expand_arr;
+            $session = \Config\Services::session();
+            $session->set($session_arr);
+            return;
+        }
 
         $GUID = $arg['id'];
 
