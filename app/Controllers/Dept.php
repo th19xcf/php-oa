@@ -1,5 +1,5 @@
 <?php
-/* v1.6.1.1.202308211525, from office */
+/* v1.6.2.1.202308272305, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -313,18 +313,30 @@ class Dept extends Controller
 
         $model = new Mcommon();
 
-        $guid_str = '';
-        foreach ($arg['部门'] as $guid)
-        {
-            if ($guid_str == '')
-            {
-                $guid_str = sprintf('"%s"', $guid);
-            }
-            else
-            {
-                $guid_str = sprintf('%s,"%s"', $guid_str ,$guid);
-            }
-        }
+        $sql = sprintf('
+            insert into def_dept 
+                (部门编码,部门名称,部门级别,
+                上级部门,下级部门,负责人,
+                记录开始日期,记录结束日期,
+                操作记录,操作来源,操作人员,
+                开始操作时间,结束操作时间,
+                校验标识,删除标识,有效标识) 
+            values ("%s","%s",%d,
+                "%s","无","%s",
+                "%s","",
+                "新增", "页面新增", "%s",
+                "%s","",
+                "0","0","1")',
+            $arg['下级部门编码'], $arg['下级部门名称'], $arg['下级部门级别'], 
+            $arg['本级部门编码'], $arg['下级部门负责人'],
+            $arg['生效日期'],
+            $user_workid,
+            date('Y-m-d H:m:s'));
+        
+        // 新增
+        $num = $model->exec($sql);
+
+        exit(sprintf('`新增面试信息`成功,新增 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
