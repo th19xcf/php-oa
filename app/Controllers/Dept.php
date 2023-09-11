@@ -1,5 +1,5 @@
 <?php
-/* v1.6.2.1.202308272305, from home */
+/* v1.6.3.1.202309091205, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -236,10 +236,10 @@ class Dept extends Controller
                     $col = '"" as 记录结束日期';
                     break;
                 case '操作记录':
-                    $col = '"" as 操作记录';
+                    $col = '"新增[2]" as 操作记录';
                     break;
                 case '操作来源':
-                    $col = '"页面更改" as 操作来源';
+                    $col = '"页面更新" as 操作来源';
                     break;
                 case '操作人员':
                     $col = sprintf('"%s" as 操作人员', $user_workid);
@@ -287,9 +287,18 @@ class Dept extends Controller
         // 原记录更新
         $sql_update = sprintf('
             update def_dept
-            set 操作记录="更新[2],%s",记录结束日期="%s",有效标识="0"
+            set 记录结束日期="%s",
+                操作记录="更新[2],%s",
+                操作来源="页面更新",
+                操作人员="%s",
+                结束操作时间="%s",
+                有效标识="0"
             where GUID in (%s)',
-            $update_str, $arg['生效日期']['值'], $guid_str);
+            $arg['生效日期']['值'],
+            $update_str,
+            $user_workid,
+            date('Y-m-d H:i:s'),
+            $guid_str);
 
         // 写日志
         $model->sql_log('页面修改', $menu_id, sprintf('表名=def_dept,GUID="%s"', $guid_str));
@@ -368,7 +377,7 @@ class Dept extends Controller
         //原记录更新
         $sql_update = sprintf('
             update def_dept
-            set 操作记录="删除",记录结束日期="%s",
+            set 记录结束日期="%s",操作记录="删除",
                 操作来源="页面",操作人员="%s",
                 结束操作时间="%s",
                 删除标识="1",有效标识="0"

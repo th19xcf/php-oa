@@ -1,5 +1,5 @@
 <?php
-/* v5.2.1.1.202308032115, from home */
+/* v5.2.2.1.202309091205, from surface */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -322,7 +322,7 @@ class Employee extends Controller
         $user_workid = $session->get('user_workid');
 
         //增加新记录
-        $fld_str ='姓名,身份证号,手机号码,属地,招聘渠道,' .
+        $fld_str ='姓名,身份证号,手机号码,属地,入职次数,招聘渠道,' .
             '员工类别,实习结束日期,部门编码,部门名称,班组,小组,' .
             '岗位名称,岗位类型,结算类型,' .
             '工号1,工号2,' .
