@@ -1,5 +1,5 @@
 <?php
-/* v1.6.3.1.202309091205, from surface */
+/* v1.6.4.1.202309121345, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -29,7 +29,7 @@ class Dept extends Controller
             from def_dept
             where 删除标识="0" and 有效标识="1"
                 and left(部门编码,length("%s"))="%s"
-            order by 部门级别 desc',
+            order by 部门级别 desc,convert(部门名称 using gbk)',
             $dept_authz, $dept_authz);
 
         $query = $model->select($sql);
