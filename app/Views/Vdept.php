@@ -1,4 +1,4 @@
-<!-- v2.4.2.1.202308272305, from home -->
+<!-- v2.4.2.1.2023009281320, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -372,11 +372,6 @@
                     alert('`下级部门名称`为必填项,不能为空');
                     ajax = -1;
                 }
-                if (rowNode.data['表项'] == '下级部门负责人' && rowNode.data['值'] == '')
-                {
-                    alert('`下级部门负责人`为必填项,不能为空');
-                    ajax = -1;
-                }
             });
 
             if (ajax == -1)
@@ -408,7 +403,7 @@
             dhx.ajax.post('<?php base_url(); ?>/dept/insert/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert(data);
-                window.location.reload();
+                //window.location.reload();
             }).catch(function (err)
             {
                 alert('`新增下级部门`失败, ' + " " + err.statusText);
