@@ -1,5 +1,5 @@
 <?php
-/* v2.2.1.1.202308032230, from home */
+/* v2.2.2.1.202309281520, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -57,12 +57,12 @@ class Train extends Controller
                 $up1_arr[$up1_id] = [];
                 $up1_arr[$up1_id]['num'] = 0;
                 $up1_arr[$up1_id]['id'] = $up1_id;
-                $up1_arr[$up1_id]['value'] = '培训开始日期' . $row->培训开始日期;
+                $up1_arr[$up1_id]['value'] = sprintf('%s 至 %s',$row->培训开始日期,$row->预计完成日期);
                 $up1_arr[$up1_id]['items'] = [];
             }
             $up1_arr[$up1_id]['num'] = count($up1_arr[$up1_id]['items'])+1;
-            $up1_arr[$up1_id]['value'] = sprintf('培训开始日期%s (%d人)', 
-                $row->培训开始日期, $up1_arr[$up1_id]['num']);
+            $up1_arr[$up1_id]['value'] = sprintf('%s 至 %s (%d人)', 
+                $row->培训开始日期, $row->预计完成日期, $up1_arr[$up1_id]['num']);
             array_push($up1_arr[$up1_id]['items'], $ee_arr);
         }
 
@@ -194,7 +194,7 @@ class Train extends Controller
                     培训业务,培训状态,培训批次,培训老师,
                     培训开始日期,预计完成日期,
                     培训完成日期,培训离开日期,
-                    培训离开原因
+                    培训离开原因,培训天数
                 from ee_train
                 where GUID=%s', $arr[1]);
             $query = $model->select($sql);
@@ -210,6 +210,7 @@ class Train extends Controller
             array_push($rows_arr, array('表项'=>'培训完成日期', '值'=>$results[0]->培训完成日期));
             array_push($rows_arr, array('表项'=>'培训离开日期', '值'=>$results[0]->培训离开日期));
             array_push($rows_arr, array('表项'=>'培训离开原因', '值'=>$results[0]->培训离开原因));
+            array_push($rows_arr, array('表项'=>'培训天数', '值'=>$results[0]->培训天数));
         }
         else
         {
