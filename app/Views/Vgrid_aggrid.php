@@ -1,4 +1,4 @@
-<!-- v6.4.1.1.202310051910, from home -->
+<!-- v6.4.2.1.202310052135, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1390,24 +1390,24 @@
                         var data_arr = [];
                         data_arr[0] = '';
 
-                        var up_name = obj_obj[col_name]['上级对象名称'];
+                        var up_name = object_obj[col_name]['上级对象名称'];
 
                         if (cond_object_value[up_name] == '' || cond_object_value[up_name] == undefined)
                         {
-                            for (var v1 in obj_obj[col_name])
+                            for (var v1 in object_obj[col_name])
                             {
                                 if (v1 == '上级对象名称') continue;
-                                for (var v2 in obj_obj[col_name][v1])
+                                for (var v2 in object_obj[col_name][v1])
                                 {
-                                    data_arr.push(obj_obj[col_name][v1][v2]);
+                                    data_arr.push(object_obj[col_name][v1][v2]);
                                 }
                             }
                         }
                         else
                         {
-                            for (var v2 in obj_obj[col_name][cond_object_value[up_name]])
+                            for (var v2 in object_obj[col_name][cond_object_value[up_name]])
                             {
-                                data_arr.push(obj_obj[col_name][cond_object_value[up_name]][v2]);
+                                data_arr.push(object_obj[col_name][cond_object_value[up_name]][v2]);
                             }
                         }
 
