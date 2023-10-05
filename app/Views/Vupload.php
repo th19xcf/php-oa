@@ -1,10 +1,10 @@
-<!-- v1.2.2.0.202306241050, from home -->
+<!-- v1.3.1.1.202310011715, from home -->
 <!DOCTYPE html>
 <html>
 
 <head>
     <meta charset='utf-8'>
-    <title>upload</title>
+    <title>文件上传</title>
 
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/easyupload/main.css'>
     <script src='<?php base_url(); ?>/easyupload/easyUploader.jq.js'></script>
@@ -27,20 +27,16 @@
     <br/>
     <div id='model_div'>
         <h3>选择数据导入模式</h3>
-        <fieldset>
-            <legend></legend>
-
-            <div>
-                <input type='radio' id='insert' name='model' value='insert' checked>
-                <label for='insert'>新增</label>
-                <input type='radio' id='update' name='model' value='update'>
-                <label for='update'>更新</label>
-            </div>
-            <br/>
-            <div>
-                <label for='key_field'>输入索引字段名称：</label><input type='text' id='key_field' name='key_field' value=''>
-            </div>
-        </fieldset>
+        <div>
+            <input type='radio' id='insert' name='model' value='新增'>
+            <label for='insert'>新增</label>
+            <input type='radio' id='update' name='model' value='更新'>
+            <label for='update'>更新</label>
+        </div>
+        <br/>
+        <h3>选择主键字段</h3>
+        <div id='key_div'>
+        </div>
     </div>
 
     <br/>
@@ -57,6 +53,20 @@
         var date_block = '<?php echo $work_date; ?>';
         var model_block = '<?php echo $upload_model; ?>';
 
+        var key_obj = JSON.parse('<?php echo $primary_key; ?>');
+
+        var radio = '';
+        for (var ii in key_obj)
+        {
+            radio = radio +
+                '<input type="radio" ' +
+                'id="' + key_obj[ii] + '" ' +
+                'name="primary_key" ' +
+                'value="' + key_obj[ii] + '" ' +
+                '>' + key_obj[ii];
+        }
+        $$('key_div').innerHTML = radio;
+
         if (month_block == '')
         {
             $$('month_div').style.display = 'none';
@@ -69,6 +79,9 @@
         {
             $$('model_div').style.display = 'none';
         }
+
+        var model_value = '';
+        var key_value = '';
 
         var uploader = easyUploader(
         {
@@ -83,23 +96,44 @@
             data: null,
             beforeUpload: function(file, data, args)
             {
-                var radio = document.getElementsByName('model');
-                var radio_value = '';
-                for (var i = 0; i < radio.length; i++)
+                if (model_block == '')
                 {
-                    if (radio[i].checked)
-                    {
-                        radio_value = radio[i].value;
-                        break;
-                    }
+                    model_value = '插入';
+                    key_value = '';
                 }
-
-                var fld_value = $$('key_field').value;
-
-                if (radio_value == 'update' && fld_value == '')
+                else
                 {
-                    alert('请输入索引字段名称');
-                    return false;
+                    var radio = document.getElementsByName('model');
+                    for (var i = 0; i < radio.length; i++)
+                    {
+                        if (radio[i].checked)
+                        {
+                            model_value = radio[i].value;
+                            break;
+                        }
+                    }
+
+                    if (model_value == '')
+                    {
+                        alert('导入模式不能为空, 请选择导入模式');
+                        return false;
+                    }
+
+                    var radio = document.getElementsByName('primary_key');
+                    for (var i = 0; i < radio.length; i++)
+                    {
+                        if (radio[i].checked)
+                        {
+                            key_value = radio[i].value;
+                            break;
+                        }
+                    }
+
+                    if (model_value == '插入' && key_value == '')
+                    {
+                        alert('主键字段不能为空, 请选择主键字段');
+                        return false;
+                    }
                 }
 
                 /* dataFormat为formData时配置发送数据的方式 */
@@ -108,8 +142,8 @@
                 data.append('func_id', '<?php echo $func_id; ?>');
                 data.append('work_month', $$('work_month').value);
                 data.append('work_date', $$('work_date').value);
-                data.append('model', radio_value);
-                data.append('key_field', fld_value);
+                data.append('model', model_value);
+                data.append('primary_key', key_value);
             },
             onChange: function(fileList)
             {
@@ -132,7 +166,7 @@
                 if (res.status == 200)
                 {
                     $('.progress-text').text('成功');
-                    alert('上传成功！！');
+                    alert(res.msg);
                     window.location.reload();
                 }
                 else
@@ -144,7 +178,7 @@
             {
                 console.log('err', err.responseText);
                 $('.progress-text').text('失败');
-                alert('onError，请联系管理员', err);
+                alert('onError, 请联系管理员', err);
                 window.location.reload();
             },
         });

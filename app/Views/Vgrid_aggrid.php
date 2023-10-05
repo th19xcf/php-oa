@@ -1,4 +1,4 @@
-<!-- v6.3.1.1.202306131730, from office -->
+<!-- v6.4.1.1.202310051910, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -126,6 +126,10 @@
 
         var update_flag = '';  // modify或add
 
+        // 条件选择
+        var cond_object_value = JSON.parse('<?php echo $cond_obj_json; ?>');
+        var update_object_value = JSON.parse('<?php echo $update_obj_json; ?>');
+
         // 生成主工具栏
         var data_tb = new dhx.Toolbar('data_tb', {css:'toobar-class'});
         data_tb.data.add({id:'刷新', type:'button', value:'刷新'});
@@ -230,7 +234,7 @@
             rowSelection: 'multiple',
             //onSelectionChanged: onSelectionChanged,
             pagination: true,
-            localeText: AG_GRID_LOCALE_CN
+            localeText: AG_GRID_LOCALE_CN,
         };
 
         new agGrid.Grid($$('data_grid'), data_grid_options);
@@ -245,12 +249,19 @@
 
         function onSelectionChanged()
         {
-            var row = data_grid_options.api.getSelectedRows();
+            //var row = data_grid_options.api.getSelectedRows();
+            alert('selectionchanged');
+        }
+
+        function onCellValueChanged(params)
+        {
+            cond_object_value[params.data.列名] = params.newValue;
         }
 
         // 生成update_grid
         var update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
         var object_obj = JSON.parse('<?php echo $object_json; ?>');
+
 
         var column_name_arr = [];
         for (var ii in columns_arr)
@@ -309,9 +320,12 @@
 
         // cond_grid
         var cond_grid_obj = JSON.parse('<?php echo $cond_value_json; ?>');
-        const cond_grid_options = 
+        var cond_model = '<?php echo $cond_model; ?>';
+        var cond_col_arr = [];
+
+        if (cond_model == '数据查询')
         {
-            columnDefs:
+            cond_col_arr =
             [
                 {field:'列名', width:120, editable:false},
                 {field:'字段名', width:120, editable:false},
@@ -358,7 +372,23 @@
                         values: ['', '合计', '平均', '最大', '最小', '计数'],
                     },
                 },
-            ],
+            ];
+        }
+        else
+        {
+            cond_col_arr =
+            [
+                {field:'列名', width:120, editable:false},
+                {field:'字段名', width:120, editable:false},
+                {field:'列类型', width:120, editable:false},
+                {field:'是否必填', width:120, editable:false},
+                {field:'取值', width:200, cellEditorSelector:cellEditorSelector}
+            ];
+        }
+
+        const cond_grid_options = 
+        {
+            columnDefs: cond_col_arr,
             defaultColDef: 
             {
                 width: 100,
@@ -367,6 +397,9 @@
             },
             singleClickEdit: true,
             rowData: cond_grid_obj,
+
+            //onCellValueChanged : (params) => {alert('cellchanged');},
+            onCellValueChanged: onCellValueChanged,
 
             components:
             {
@@ -648,7 +681,14 @@
                     cond_grid_options.api.setRowData(cond_grid_obj);
                     break;
                 case '提交':
-                    condition_submit(id);
+                    if (cond_model == '数据查询')
+                    {
+                        cond_query_submit(id);
+                    }
+                    else
+                    {
+                        cond_sp_submit(id);
+                    }
                     break;
             }
         });
@@ -726,7 +766,7 @@
             }
         }
 
-        function condition_submit(id)
+        function cond_query_submit(id)
         {
             var cond_arr = [];
             var group_flag = false;
@@ -850,7 +890,7 @@
                 return;
             }
 
-            dhx.ajax.post('<?php base_url(); ?>/frame/set_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
+            dhx.ajax.post('<?php base_url(); ?>/frame/set_query_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
             {
                 data_grid_obj = JSON.parse(data);
                 data_grid_options.api.setRowData(data_grid_obj);
@@ -881,6 +921,50 @@
 
                 foot_data = '&nbsp&nbsp<b>条件:{' + disp_where + '} , 汇总:{' + disp_group + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}, 计数:{' + count_str + '}</b>';
                 $$('footbox').innerHTML = foot_data;
+            }).catch(function (err)
+            {
+                alert('设置条件错误, ' + " " + err.statusText);
+            });
+        }
+
+        function cond_sp_submit(id)
+        {
+            var ajax = true;
+            var cond_arr = [];
+
+            cond_grid_options.api.stopEditing();
+            cond_grid_options.api.forEachNode((rowNode, index) => 
+            {
+                if (rowNode.data['取值'] == undefined)
+                {
+                    rowNode.data['取值'] = '';
+                }
+
+                if (rowNode.data['是否必填'] == '是' && rowNode.data['取值'] == '')
+                {
+                    alert("'" + rowNode.data['字段名'] + "'" + '是必填项, 请填写');
+                    ajax = false;
+                    return;
+                }
+
+                var col = new ColumnInfo();
+                col.col_name = rowNode.data['列名'];
+                col.fld_name = rowNode.data['字段名'];
+                col.type = rowNode.data['列类型'];
+                col.value = rowNode.data['取值'];
+                col.modified = true;
+
+                cond_arr.push(col);
+            });
+
+            if (ajax == false) return;
+
+            dhx.ajax.post('<?php base_url(); ?>/frame/set_sp_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
+            {
+                data_grid_obj = JSON.parse(data);
+                data_grid_options.api.setRowData(data_grid_obj);
+
+                div_block('databox');
             }).catch(function (err)
             {
                 alert('设置条件错误, ' + " " + err.statusText);
@@ -1299,13 +1383,39 @@
             for (var ii in columns_obj)
             {
                 if (columns_obj[ii].列名 != col_name) continue;
+
                 switch (columns_obj[ii].赋值类型)
                 {
                     case '固定值':
+                        var data_arr = [];
+                        data_arr[0] = '';
+
+                        var up_name = obj_obj[col_name]['上级对象名称'];
+
+                        if (cond_object_value[up_name] == '' || cond_object_value[up_name] == undefined)
+                        {
+                            for (var v1 in obj_obj[col_name])
+                            {
+                                if (v1 == '上级对象名称') continue;
+                                for (var v2 in obj_obj[col_name][v1])
+                                {
+                                    data_arr.push(obj_obj[col_name][v1][v2]);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            for (var v2 in obj_obj[col_name][cond_object_value[up_name]])
+                            {
+                                data_arr.push(obj_obj[col_name][cond_object_value[up_name]][v2]);
+                            }
+                        }
+
                         return {
                             component: 'agSelectCellEditor',
                             params: {
-                                values: object_obj[params.data.列名]
+                                //values: object_obj[params.data.列名]
+                                values: data_arr
                             },
                         };
                     case '日期':

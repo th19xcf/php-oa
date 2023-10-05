@@ -1,5 +1,5 @@
 <?php
-/* v2.6.7.1.202308172335, from home */
+/* v2.7.1.1.202310011900, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -25,7 +25,9 @@ class Upload extends Controller
         $send = [];
 
         $sql = sprintf('
-            select 功能编码,导入模块,导入条件,
+            select 
+                功能编码,
+                导入模块,主键,导入条件,
                 表单变量,滤重字段,模板文件,表头行,数据行
             from def_function as t1
             left join def_import_config as t2
@@ -38,6 +40,10 @@ class Upload extends Controller
 
         foreach ($results as $row)
         {
+            str_replace(' ', '', $row->主键);
+            str_replace('，', ',', $row->主键);
+
+            $send['primary_key'] = json_encode(explode(',', $row->主键));
             $send['work_month'] = strpos($row->表单变量, '$工作月份');
             $send['work_date'] = strpos($row->表单变量, '$工作日期');
             $send['upload_model'] = strpos($row->表单变量, '$导入模式');
@@ -66,7 +72,21 @@ class Upload extends Controller
         $work_month = $this->request->getPost('work_month');
         $work_date = $this->request->getPost('work_date');
         $upload_model = $this->request->getPost('model');
-        $key_field = $this->request->getPost('key_field');
+        $primary_key = $this->request->getPost('primary_key');
+
+        if ($upload_model == null)
+        {
+            $this->json_data(400, '导入模式必须选择！', 0);
+            return;
+        }
+        if ($upload_model == '更新')
+        {
+                if ($primary_key == null || $primary_key == '')
+                {
+                        $this->json_data(400, '更新模式必须选择主键字段！', 0);
+                        return;
+                }
+        }
 
         $file = isset($_FILES['upfiles']) ? $_FILES['upfiles'] : '';
         if (empty($file))
@@ -153,8 +173,15 @@ class Upload extends Controller
         {
             if (in_array($row->列名, $sheet_data[0]) == false)
             {
-                $this->json_data(400, sprintf('导入失败,没有要求的字段"%s"',$row->列名), 0);
-                return;
+                if ($upload_model == '更新')
+                {
+                    continue;
+                }
+                else
+                {
+                    $this->json_data(400, sprintf('导入失败,没有要求的字段"%s"',$row->列名), 0);
+                    return;
+                }
             }
 
             array_push($col_arr, $row->列名);
@@ -210,6 +237,11 @@ class Upload extends Controller
         //数据校验
         foreach ($results as $row)
         {
+            if (in_array($row->列名, $col_arr) == false)
+            {
+                continue;
+            }
+
             $sql = '';
             if (strpos($row->校验类型,'固定值') !== false)
             {
@@ -299,6 +331,31 @@ class Upload extends Controller
                 }
             }
         }
+
+        if ($upload_model == '更新')
+        {
+            $this->model_update($menu_id, $tmp_table_name);
+        }
+        else
+        {
+            $this->model_insert($menu_id, $tmp_table_name);
+        }
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 新增模式
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function model_insert($menu_id='', $tmp_table_name='')
+    {
+        $work_month = $this->request->getPost('work_month');
+        $work_date = $this->request->getPost('work_date');
+
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+        $user_location = $session->get('user_location');
+        $import = $session->get($menu_id.'-import');
+
+        $model = new Mcommon();
 
         //是否有重复记录
         $sql = sprintf('
@@ -432,6 +489,174 @@ class Upload extends Controller
         $model->sql_log('导入成功', $menu_id, sprintf('表名=%s,导入%d条',$dest_table_name,$rc));
 
         $this->json_data(200, sprintf('导入成功,导入%d条',$rc), 0);
+
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 更新模式
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function model_update($menu_id='', $src_table_name='')
+    {
+        $primary_key = $this->request->getPost('primary_key');
+
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+        $user_location = $session->get('user_location');
+        $import = $session->get($menu_id.'-import');
+
+        $model = new Mcommon();
+        $sql = sprintf('
+            select 表名,导入条件,表单变量
+            from def_import_config
+            where 导入模块="%s"', $import);
+
+        $query = $model->select($sql);
+        $results = $query->getResult();
+
+        $dest_table_name = '';
+        $import_condition = '';
+        foreach ($results as $row)
+        {
+            $dest_table_name = $row->表名;
+            $import_condition = $row->导入条件;
+            break;
+        }
+
+        //是否有新记录,有则不能更新
+        $sql = sprintf('
+            select %s from %s
+            where %s not in ( select %s from %s where 有效标识="1" )',
+            $primary_key, $src_table_name, 
+            $primary_key, $primary_key, $dest_table_name);
+
+        $errs = $model->select($sql)->getResultArray();
+
+        if (count($errs) != 0)
+        {
+            $err_arr = [];
+            foreach ($errs as $err)
+            {
+                $str = '';
+                foreach ($err as $item)
+                {
+                    if ($str!='') $str = $str . '^';
+                    $str = $str . $item;
+                }
+                array_push($err_arr, $str);
+            }
+            $this->json_data(400, sprintf('导入失败,主键字段`%s`有新记录 {%s},无法更新', $primary_key, implode(',', $err_arr)), 0);
+            return;
+        }
+
+        // 字段信息
+        $src_fields = $model->get_fields($src_table_name);
+        $dest_fields = $model->get_fields($dest_table_name);
+
+        // 更新原记录
+        $sql_update = sprintf('
+            update %s
+            set 记录结束日期="%s",
+                操作记录="上传更新[2]^%s,%s",
+                结束操作时间="%s",
+                操作时间="%s",
+                有效标识="0"
+            where 有效标识="1"
+                and %s in ( select %s from %s)',
+            $dest_table_name,
+            date('Y-m-d'),
+            $primary_key, implode(',', $src_fields),
+            date('Y-m-d H:i:s'),
+            date('Y-m-d H:i:s'),
+            $primary_key, $primary_key, $src_table_name);
+
+
+        $insert_col_str = '';
+        $select_col_str = '';
+        foreach ($dest_fields as $dest_field)
+        {
+            $col = '';
+            foreach ($src_fields as $src_field)
+            {
+                if ($dest_field == $src_field)
+                {
+                    $col = sprintf('src.%s as %s', $src_field, $dest_field);
+                    break;
+                }
+            }
+            if ($col == '')
+            {
+                $col = sprintf('dest.%s as %s', $dest_field, $dest_field);
+            }
+
+            if ($dest_field == 'GUID' || $dest_field == '操作时间')
+            {
+                continue;
+            }
+
+            switch ($dest_field)
+            {
+                case '记录开始日期':
+                    $col = sprintf('"%s" as %s', date('Y-m-d'), $dest_field);
+                    break;
+                case '记录结束日期':
+                    $col = sprintf('"" as %s', $dest_field);
+                    break;
+                case '操作记录':
+                    $col = sprintf('"上传新增[2]" as %s', $dest_field);
+                    break;
+                case '操作来源':
+                    $col = sprintf('"页面" as %s', $dest_field);
+                    break;
+                case '开始操作时间':
+                    $col = sprintf('"%s" as %s', date('Y-m-d H:i:s'), $dest_field);
+                    break;
+                case '结束操作时间':
+                    $col = sprintf('"" as %s', $dest_field);
+                    break;
+                case '操作人员':
+                    $col = sprintf('"%s" as %s', $user_workid, $dest_field);
+                    break;
+                case '校验标识':
+                case '删除标识':
+                    $col = sprintf('"0" as %s', $dest_field);
+                    break;
+                case '有效标识':
+                    $col = sprintf('"1" as %s', $dest_field);
+                    break;
+                default:
+                    break;
+            }
+
+            if ($select_col_str != '') $select_col_str = $select_col_str . ',';
+            $select_col_str = $select_col_str . $col;
+
+            if ($insert_col_str != '') $insert_col_str = $insert_col_str . ',';
+            $insert_col_str = $insert_col_str . $dest_field;
+        }
+
+        $sql_insert = sprintf('
+            insert into %s (%s) 
+            select %s
+            from
+            (
+                select * from %s
+            ) as src
+            left join
+            (
+                select * from %s
+            ) as dest on src.%s=dest.%s',
+            $dest_table_name, $insert_col_str, 
+            $select_col_str, 
+            $src_table_name, $dest_table_name,
+            $primary_key, $primary_key);
+
+        // 写日志
+        $model->sql_log('上传更新[2]', $menu_id, sprintf('表名=`%s`,主键=`%s`,更新=`%s`', $dest_table_name, $primary_key, implode(',', $src_fields)));
+
+        $num = $model->exec($sql_update);
+        $num = $model->exec($sql_insert);
+
+        $this->json_data(200, sprintf('导入更新成功,更新%d条记录',$num), 0);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

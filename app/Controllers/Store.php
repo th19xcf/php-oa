@@ -1,5 +1,5 @@
 <?php
-/* v3.3.1.1.202308032210, from home */
+/* v3.3.2.1.202309292140, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -33,7 +33,7 @@ class Store extends Controller
                 操作来源,操作人员,操作时间
             from ee_store
             where 属地 in (%s)
-            order by 邀约结果,面试信息,预约面试日期,招聘渠道,convert(姓名 using gbk)',
+            order by field(邀约结果,"通过","未邀约"),面试信息,预约面试日期,招聘渠道,convert(姓名 using gbk)',
             $user_location_str);
 
         $query = $model->select($sql);

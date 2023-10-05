@@ -1,5 +1,5 @@
 <?php
-/* v9.2.5.1.202308281745, from office */
+/* v9.3.1.1.202310051010, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -151,7 +151,153 @@ class Frame extends Controller
             return;
         }
 
+        $primary_key = '';
+        $columns_arr = [];  // 列信息,存入session
+
+        $data_col_arr = [];  // 前端data_grid列信息,用于显示
+        $send_columns_arr = []; // 传递到前端的列信息,查询名为公式,前端报错
+
+        $update_value_arr = [];  // 前端update_grid值信息,用于显示
+        $add_value_arr = [];  // 前端add_grid值信息,用于显示
+        $cond_value_arr = [];  // 前端cond_grid值信息,用于查询类的显示
+        $cond_sp_arr = [];  // 前端cond_grid值信息,用于存储过程类的显示
+        $tip_column = '';  // 前端foot显示的字段
+
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        // 取出查询模块对应的表配置
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        $where = '';
+        $group = '';
+        $order = '';
+        $sp_name = '';  //存储过程模块
+        $query_table = '';
+        $dept_fld = '';  //部门字段
+        $location_fld = '';  //属地字段
+        $query_where = '';
+        $query_group = '';
+        $query_order = '';
+        $next_func_id = '';
+        $next_func_name = '';
+        $next_func_condition = '';
+        $import_func_id = '';
+        $result_count = '';
+        $data_table = '';
+        $data_model = '';
+
+        $sql = sprintf('
+            select 
+                t1.功能编码,
+                存储过程模块,
+                查询表名,
+                数据表名,数据模式,
+                部门字段,属地字段,
+                查询条件,汇总条件,排序条件,初始条数,
+                钻取模块,钻取条件,
+                ifnull(t2.钻取名称,"") as 钻取名称,
+                导入模块,
+                ifnull(t3.导入名称,"") as 导入名称
+            from view_function as t1
+            left join 
+            (
+                select 功能编码,二级菜单 as 钻取名称
+                from view_function
+                group by 功能编码
+            ) as t2 on t1.钻取模块=t2.功能编码
+            left join 
+            (
+                select 功能编码,二级菜单 as 导入名称
+                from view_function
+                group by 功能编码
+            ) as t3 on t1.导入模块=t3.功能编码
+            where t1.功能编码="%s"
+            group by t1.功能编码', $menu_id);
+
+        $query = $model->select($sql);
+        $results = $query->getResult();
+        foreach ($results as $row)
+        {
+            $sp_name = $row->存储过程模块;
+            $query_table = $row->查询表名;
+            $result_count = $row->初始条数;
+            $dept_fld = $row->部门字段;
+            $location_fld = $row->属地字段;
+
+            $query_where = $row->查询条件;
+            if(strpos($row->查询条件, '$角色') !== false)
+            {
+                $query_where = str_replace('$角色', $user_role_str, $row->查询条件);
+            }
+
+            $query_group = $row->汇总条件;
+            $query_order = $row->排序条件;
+
+            $next_func_id = $row->钻取模块;
+            $next_func_name = $row->钻取名称;
+
+            $next_func_condition = $row->钻取条件;
+            str_replace(' ', '', $next_func_condition);
+            str_replace('；', ';', $next_func_condition);
+
+            $import_func_id = $row->导入模块;
+            $import_func_name = $row->导入名称;
+
+            $data_table = $row->数据表名;
+            $data_model = $row->数据模式;
+            break;
+        }
+
+        $tb_arr = [];  // 控制菜单栏
+
+        $tb_arr['钻取授权'] = ($next_func_id!='') ? true : false;
+        $tb_arr['导入授权'] = ($import_func_id!='') ? true : false;
+
+        // 调用存储过程
+        $sp_param_str = '';
+
+        if ($sp_name != '')
+        {
+            $sp_sql = sprintf('
+                select 存储过程模块,参数名,参数类型,不可为空,缺省值,顺序
+                from def_sp_param
+                where 存储过程模块="%s"
+                order by 顺序',
+                $sp_name);
+
+            $sp_results = $model->select($sp_sql)->getResult();
+            foreach ($sp_results as $sp_row)
+            {
+                if ($sp_param_str != '')
+                {
+                    $sp_param_str = $sp_param_str . ',';
+                }
+                switch ($sp_row->参数类型)
+                {
+                    case '数值':
+                        $sp_param_str = sprintf('%s%s', $sp_param_str, $sp_row->缺省值);
+                        break;
+                    case '字符':
+                    case '日期':
+                        $sp_param_str = sprintf('%s"%s"', $sp_param_str, $sp_row->缺省值);
+                        break;
+                }
+
+                // 前端要显示的cond_grid条件信息
+                $cond = [];
+                $cond['列名'] = $sp_row->参数名;
+                $cond['字段名'] = $sp_row->参数名;
+                $cond['列类型'] = $sp_row->参数类型;
+                $cond['是否必填'] = ($sp_row->不可为空=='1') ? '是' : '否';
+
+                array_push($cond_sp_arr, $cond);
+            }
+
+            $sp_sql = sprintf('call %s(%s)', $query_table, $sp_param_str);
+            #$sp_results = $model->select($sp_sql)->getResult();
+        }
+
+        //+=+=+=+=+=+=+=+=+=+=+=+= 
         // 处理钻取功能相关数据
+        //+=+=+=+=+=+=+=+=+=+=+=+= 
         $cond_arr = json_decode($front_where);
         $front_where = [];
         $caller_col_arr = [];
@@ -189,19 +335,9 @@ class Frame extends Controller
             }
         }
 
-        $primary_key = '';
-
-        $data_col_arr = [];  // 前端data_grid列信息,用于显示
-        $columns_arr = [];  // 列信息
-        $send_columns_arr = []; // 传递到前端的列信息,查询名为公式,前端报错
-        $tb_arr = [];  // 控制菜单栏
-
-        $update_value_arr = [];  // 前端update_grid值信息,用于显示
-        $add_value_arr = [];  // 前端add_grid值信息,用于显示
-        $cond_value_arr = [];  // 条件设置信息
-
-        $tip_column = '';  // 前端foot显示的字段
-
+        //+=+=+=+=+=+=+=+=+=+=+=+= 
+        // 处理列的相关数据
+        //+=+=+=+=+=+=+=+=+=+=+=+= 
         // 前端data_grid列信息,手工增加选取列和序号列
         $data_col_arr['选取']['field'] = '选取';
         $data_col_arr['选取']['width'] = 100;
@@ -211,18 +347,23 @@ class Frame extends Controller
 
         $data_col_arr['序号']['field'] = '序号';
         $data_col_arr['序号']['type'] = 'numericColumn';
+        $data_col_arr['序号']['filter'] = 'agNumberColumnFilter';
         $data_col_arr['序号']['width'] = 90;
         $data_col_arr['序号']['resizable'] = true;
         $data_col_arr['序号']['sortable'] = true;
 
         $object_arr = [];  // 下拉选择的对象值
 
+        $obj_arr = [];
+        $cond_obj_arr = [];  // 条件下拉选择的对象值
+        $update_obj_arr = [];  // 修改下拉选择的对象值
+
         // 读出列配置信息
         $sql = sprintf('
             select 功能编码,查询模块,字段模块,部门字段,属地字段,
                 列名,列类型,列宽度,字段名,查询名,
                 赋值类型,对象,
-                可修改,可筛选,可新增,不可为空,
+                可筛选,可汇总,可新增,可修改,不可为空,
                 主键,
                 提示条件,提示样式设置,异常条件,异常样式设置,
                 列顺序
@@ -327,8 +468,13 @@ class Frame extends Controller
                 $object_arr[$row->列名] = [];
                 $object_arr[$row->列名][0] = '';
 
+                $obj_arr[$row->列名] = []; 
+
+                $cond_obj_arr[$row->列名] = '';
+                $update_obj_arr[$row->列名] = '';
+
                 $obj_sql = sprintf('
-                    select 对象值 
+                    select 对象名称,对象值,上级对象名称,上级对象值 
                     from def_object 
                     where 对象名称="%s"
                         and (属地="" or 属地 in (%s))
@@ -337,9 +483,17 @@ class Frame extends Controller
 
                 $qry = $model->select($obj_sql);
                 $rslt = $qry->getResult();
+
                 foreach($rslt as $vv)
                 {
                     array_push($object_arr[$row->列名], $vv->对象值);
+
+                    $obj_arr[$row->列名]['上级对象名称'] = $vv->上级对象名称;
+                    if (array_key_exists($vv->上级对象值, $obj_arr[$row->列名]) == false)
+                    {
+                        $obj_arr[$row->列名][$vv->上级对象值] = [];
+                    }
+                    array_push($obj_arr[$row->列名][$vv->上级对象值], $vv->对象值);
                 }
             }
 
@@ -382,87 +536,6 @@ class Frame extends Controller
             }
         }
 
-        // 取出查询模块对应的表配置
-        $where = '';
-        $group = '';
-        $order = '';
-        $query_table = '';
-        $dept_fld = '';  //部门字段
-        $location_fld = '';  //属地字段
-        $query_where = '';
-        $query_group = '';
-        $query_order = '';
-        $next_func_id = '';
-        $next_func_name = '';
-        $next_func_condition = '';
-        $import_func_id = '';
-        $result_count = '';
-        $data_table = '';
-        $data_model = '';
-
-        $sql = sprintf('
-            select 
-                t1.功能编码,
-                查询表名,
-                数据表名,数据模式,
-                部门字段,属地字段,
-                查询条件,汇总条件,排序条件,初始条数,
-                钻取模块,钻取条件,
-                ifnull(t2.钻取名称,"") as 钻取名称,
-                导入模块,
-                ifnull(t3.导入名称,"") as 导入名称
-            from view_function as t1
-            left join 
-            (
-                select 功能编码,二级菜单 as 钻取名称
-                from view_function
-                group by 功能编码
-            ) as t2 on t1.钻取模块=t2.功能编码
-            left join 
-            (
-                select 功能编码,二级菜单 as 导入名称
-                from view_function
-                group by 功能编码
-            ) as t3 on t1.导入模块=t3.功能编码
-            where t1.功能编码="%s"
-            group by t1.功能编码', $menu_id);
-
-        $query = $model->select($sql);
-        $results = $query->getResult();
-        foreach ($results as $row)
-        {
-            $query_table = $row->查询表名;
-            $result_count = $row->初始条数;
-            $dept_fld = $row->部门字段;
-            $location_fld = $row->属地字段;
-
-            $query_where = $row->查询条件;
-            if(strpos($row->查询条件, '$角色') !== false)
-            {
-                $query_where = str_replace('$角色', $user_role_str, $row->查询条件);
-            }
-
-            $query_group = $row->汇总条件;
-            $query_order = $row->排序条件;
-
-            $next_func_id = $row->钻取模块;
-            $next_func_name = $row->钻取名称;
-
-            $next_func_condition = $row->钻取条件;
-            str_replace(' ', '', $next_func_condition);
-            str_replace('；', ';', $next_func_condition);
-
-            $import_func_id = $row->导入模块;
-            $import_func_name = $row->导入名称;
-
-            $data_table = $row->数据表名;
-            $data_model = $row->数据模式;
-            break;
-        }
-
-        $tb_arr['钻取授权'] = ($next_func_id!='') ? true : false;
-        $tb_arr['导入授权'] = ($import_func_id!='') ? true : false;
-
         // 拼出查询语句
         $select_str = '';
         foreach ($columns_arr as $column) 
@@ -474,7 +547,7 @@ class Frame extends Controller
             $select_str = sprintf('%s %s as `%s`', $select_str, $column['查询名'], $column['列名']);
         }
 
-        $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
+        $query_sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
             from %s,(select @i:=0) as xh', 
             $select_str, $query_table);
 
@@ -508,46 +581,55 @@ class Frame extends Controller
 
         if ($where != '')
         {
-            $sql = sprintf('%s where %s', $sql, $where);
+            $query_sql = sprintf('%s where %s', $query_sql, $where);
         }
 
         // 加上group by 条件
         if ($query_group != '')
         {
             $group = $query_group;
-            $sql = sprintf('%s group by %s', $sql, $group);
+            $query_sql = sprintf('%s group by %s', $query_sql, $group);
         }
 
         // 加上order by
         if ($query_order != '')
         {
             $order = $query_order;
-            $sql = sprintf('%s order by %s', $sql, $order);
+            $query_sql = sprintf('%s order by %s', $query_sql, $order);
         }
 
         // 加上初始结果条数
         if ($result_count > 0)
         {
-            $sql = sprintf('%s limit %d', $sql, $result_count);
+            $query_sql = sprintf('%s limit %d', $query_sql, $result_count);
         }
 
-        // 写日志
-        $model->sql_log('查询', $menu_id, sprintf('表名=%s,条件=%s', $query_table, str_replace('"','',$where)));
+        if ($sp_name != '')
+        {
+            // 写日志
+            $model->sql_log('存储过程', $menu_id, sprintf('sp=%s,条件=%s', $sp_name, str_replace('"','`',$sp_param_str)));
 
-        // 读出数据
-        $query = $model->select($sql);
-        $results = $query->getResult();
+            $results = $model->select($sp_sql)->getResult();    
+        }
+        else
+        {
+            // 写日志
+            $model->sql_log('查询', $menu_id, sprintf('表名=%s,条件=%s', $query_table, str_replace('"','`',$where)));
+
+            $results = $model->select($query_sql)->getResult();    
+        }
 
         // 存入session
         $session_arr = [];
         $session_arr[$menu_id.'-select_str'] = $select_str;
-        $session_arr[$menu_id.'-query_str'] = $sql;
+        $session_arr[$menu_id.'-query_str'] = $query_sql;
         $session_arr[$menu_id.'-query_table'] = $query_table;
         $session_arr[$menu_id.'-columns_arr'] = $columns_arr;
         $session_arr[$menu_id.'-primary_key'] = $primary_key;
         $session_arr[$menu_id.'-back_where'] = $where;
         $session_arr[$menu_id.'-back_group'] = $group;
         $session_arr[$menu_id.'-back_order'] = $order;
+        $session_arr[$menu_id.'-sp_name'] = $sp_name;
 
         if ($next_func_id != '')
         {
@@ -580,8 +662,22 @@ class Frame extends Controller
         $send['data_value_json'] = json_encode($results);
         $send['update_value_json'] = json_encode($update_value_arr);
         $send['add_value_json'] = json_encode($add_value_arr);
-        $send['cond_value_json'] = json_encode($cond_value_arr);
+
+        if ($sp_name != '')
+        {
+            $send['cond_value_json'] = json_encode($cond_sp_arr);
+            $send['cond_model'] = '存储过程';
+        }
+        else
+        {
+            $send['cond_value_json'] = json_encode($cond_value_arr);
+            $send['cond_model'] = '数据查询';
+        }
+
         $send['object_json'] = json_encode($object_arr);
+        $send['obj_json'] = json_encode($obj_arr);
+        $send['cond_obj_json'] = json_encode($cond_obj_arr);
+        $send['update_obj_json'] = json_encode($update_obj_arr);
         $send['func_id'] = $menu_id;
         $send['data_model'] = $data_model;
         $send['primary_key'] = $primary_key;
@@ -610,9 +706,9 @@ class Frame extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 前端设置条件
+    // 前端设置条件,数据查询
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function set_condition($menu_id='')
+    public function set_query_condition($menu_id='')
     {
         $model = new Mcommon();
 
@@ -909,6 +1005,51 @@ class Frame extends Controller
         exit(json_encode($results));
     }
 
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 前端设置条件,数据查询
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function set_sp_condition($menu_id='')
+    {
+        $cond_arr = $this->request->getJSON(true);
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $sp_name = $session->get($menu_id.'-sp_name');
+        $query_table = $session->get($menu_id.'-query_table');
+
+        // 拼出查询语句
+        $sp_param_str = '';
+
+        foreach ($cond_arr as $param)
+        {
+            if ($sp_param_str != '')
+            {
+                $sp_param_str = $sp_param_str . ',';
+            }
+            switch ($param['type'])
+            {
+                case '数值':
+                    $sp_param_str = sprintf('%s%s', $sp_param_str, $param['value']);
+                    break;
+                case '字符':
+                case '日期':
+                    $sp_param_str = sprintf('%s"%s"', $sp_param_str, $param['value']);
+                    break;
+            }
+        }
+
+        $sp_sql = sprintf('call %s(%s)', $query_table, $sp_param_str);
+
+        $model = new Mcommon();
+
+        // 写日志
+        $model->sql_log('存储过程', $menu_id, sprintf('sp=%s,条件=%s', $sp_name, str_replace('"','`',$sp_param_str)));
+
+        // 读出数据
+        $results = $model->select($sp_sql)->getResult();    
+
+        exit(json_encode($results));
+    }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 更新记录
