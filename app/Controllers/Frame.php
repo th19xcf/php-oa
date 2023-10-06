@@ -1,5 +1,5 @@
 <?php
-/* v9.3.1.1.202310051010, from home */
+/* v9.4.1.1.202310062100, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -353,8 +353,6 @@ class Frame extends Controller
         $data_col_arr['序号']['sortable'] = true;
 
         $object_arr = [];  // 下拉选择的对象值
-
-        $obj_arr = [];
         $cond_obj_arr = [];  // 条件下拉选择的对象值
         $update_obj_arr = [];  // 修改下拉选择的对象值
 
@@ -392,6 +390,7 @@ class Frame extends Controller
             $arr['主键'] = $row->主键;
             $arr['赋值类型'] = $row->赋值类型;
             $arr['对象'] = $row->对象;
+            $arr['可汇总'] = $row->可汇总;
             $arr['可修改'] = $row->可修改;
             $arr['可新增'] = $row->可新增;
             $arr['不可为空'] = $row->不可为空;
@@ -465,10 +464,7 @@ class Frame extends Controller
 
             if (strpos($row->赋值类型,'固定值') !== false)
             {
-                $object_arr[$row->列名] = [];
-                $object_arr[$row->列名][0] = '';
-
-                $obj_arr[$row->列名] = []; 
+                $object_arr[$row->列名] = []; 
 
                 $cond_obj_arr[$row->列名] = '';
                 $update_obj_arr[$row->列名] = '';
@@ -486,14 +482,12 @@ class Frame extends Controller
 
                 foreach($rslt as $vv)
                 {
-                    array_push($object_arr[$row->列名], $vv->对象值);
-
-                    $obj_arr[$row->列名]['上级对象名称'] = $vv->上级对象名称;
-                    if (array_key_exists($vv->上级对象值, $obj_arr[$row->列名]) == false)
+                    $object_arr[$row->列名]['上级对象名称'] = $vv->上级对象名称;
+                    if (array_key_exists($vv->上级对象值, $object_arr[$row->列名]) == false)
                     {
-                        $obj_arr[$row->列名][$vv->上级对象值] = [];
+                        $object_arr[$row->列名][$vv->上级对象值] = [];
                     }
-                    array_push($obj_arr[$row->列名][$vv->上级对象值], $vv->对象值);
+                    array_push($object_arr[$row->列名][$vv->上级对象值], $vv->对象值);
                 }
             }
 
@@ -675,7 +669,6 @@ class Frame extends Controller
         }
 
         $send['object_json'] = json_encode($object_arr);
-        $send['obj_json'] = json_encode($obj_arr);
         $send['cond_obj_json'] = json_encode($cond_obj_arr);
         $send['update_obj_json'] = json_encode($update_obj_arr);
         $send['func_id'] = $menu_id;

@@ -1,4 +1,4 @@
-<!-- v6.4.2.1.202310052135, from home -->
+<!-- v6.3.1.1.202310062100, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -330,14 +330,7 @@
                 {field:'列名', width:120, editable:false},
                 {field:'字段名', width:120, editable:false},
                 {field:'列类型', editable:false},
-                {
-                    field:'汇总',
-                    cellEditor: 'agSelectCellEditor',
-                    cellEditorParams: 
-                    {
-                        values: ['','√'],
-                    },
-                },
+                {field:'汇总', cellEditorSelector:cellEditorSelector},
                 {
                     field:'条件1',
                     cellEditor: 'agSelectCellEditor',
@@ -1383,6 +1376,16 @@
             for (var ii in columns_obj)
             {
                 if (columns_obj[ii].列名 != col_name) continue;
+
+                if (params.colDef.field == '汇总' && columns_obj[ii].可汇总 == '1')
+                {
+                    return {
+                        component: 'agSelectCellEditor',
+                        params: {
+                            values: ['','√'],
+                            },
+                    };
+                }
 
                 switch (columns_obj[ii].赋值类型)
                 {
