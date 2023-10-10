@@ -1,5 +1,5 @@
 <?php
-/* v9.4.1.1.202310062100, from home */
+/* v9.4.2.1.202310101610, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -315,11 +315,20 @@ class Frame extends Controller
                         $arr = explode('^', $col_str);
                         $caller_col['caller_col'] = $arr[0];
                         $caller_col['called_col'] = $arr[1];
+                        $caller_col['type'] = '字符';
+                        $caller_col['option'] = '=';
+                        if (count($arr) > 3)
+                        {
+                            $caller_col['type'] = $arr[2];
+                            $caller_col['option'] = $arr[3];
+                        }
                     }
                     else
                     {
                         $caller_col['caller_col'] = $col_str;
                         $caller_col['called_col'] = $col_str;
+                        $caller_col['type'] = '字符';
+                        $caller_col['option'] = '=';
                     }
                     array_push($caller_col_arr, $caller_col);
                 }
@@ -330,7 +339,14 @@ class Frame extends Controller
                 foreach ($caller_col_arr as $col_arr)
                 {
                     if ($key != $col_arr['caller_col']) continue;
-                    $front_where[$col_arr['called_col']] = $value;
+                    if ($col_arr['type'] == '数值')
+                    {
+                        $front_where[$col_arr['called_col']] = sprintf('%s%s%s', $col_arr['called_col'], $col_arr['option'], $value);
+                    }
+                    if ($col_arr['type'] == '字符')
+                    {
+                        $front_where[$col_arr['called_col']] = sprintf('%s%s"%s"', $col_arr['called_col'], $col_arr['option'], $value);
+                    }
                 }
             }
         }
@@ -498,35 +514,6 @@ class Frame extends Controller
             if ($row->可新增 == 1)
             {
                 array_push($add_value_arr, $value_arr);
-            }
-
-            /*
-            // 匹配钻取条件
-            if ($front_id == '') continue;
-            foreach ($front_where as $key => $value)
-            {
-                if ($key != $row->列名) continue;
-
-                switch ($row->列类型)
-                {
-                    case '字符':
-                    case '日期':
-                        $front_where[$key] = sprintf('%s="%s"', $row->查询名, $value);
-                        break;
-                    case '数值':
-                        $front_where[$key] = sprintf('%s=%s', $row->查询名, $value);
-                        break;
-                }
-            }
-            */
-        }
-
-        // 匹配钻取条件(没有获得字段类型,数值会有bug)
-        if ($front_id != '')
-        {
-            foreach ($front_where as $key => $value)
-            {
-                $front_where[$key] = sprintf('%s="%s"', $key, $value);
             }
         }
 

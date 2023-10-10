@@ -1,4 +1,4 @@
-<!-- v6.3.1.1.202310062100, from home -->
+<!-- v6.3.2.1.202310101610, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -611,10 +611,19 @@
                     var nl_str = '<?php echo $next_func_condition; ?>';
                     var nl_arr = nl_str.split(',');
                     var send_obj = {};
+                    var ajax = false;
 
                     for (var ii in nl_arr)
                     {
+                        if (rows[0][nl_arr[ii]] == '') continue;
                         send_obj[nl_arr[ii]] = rows[0][nl_arr[ii]];
+                        ajax = true;
+                    }
+
+                    if (ajax == false)
+                    {
+                        alert('钻取条件都为空,无法钻取');
+                        break;
                     }
 
                     send_str = JSON.stringify(send_obj);
