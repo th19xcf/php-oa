@@ -1,5 +1,5 @@
 <?php
-/* v9.4.2.1.202310101610, from office */
+/* v9.4.3.1.202310111015, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -489,6 +489,7 @@ class Frame extends Controller
                     select 对象名称,对象值,上级对象名称,上级对象值 
                     from def_object 
                     where 对象名称="%s"
+                        and 有效标识="1"
                         and (属地="" or 属地 in (%s))
                     order by convert(对象值 using gbk)',
                     $row->对象, $user_location_str);
@@ -611,6 +612,7 @@ class Frame extends Controller
         $session_arr[$menu_id.'-back_group'] = $group;
         $session_arr[$menu_id.'-back_order'] = $order;
         $session_arr[$menu_id.'-sp_name'] = $sp_name;
+        $session_arr[$menu_id.'-sp_str'] = $sp_sql;
 
         if ($next_func_id != '')
         {
@@ -1027,6 +1029,13 @@ class Frame extends Controller
 
         // 读出数据
         $results = $model->select($sp_sql)->getResult();    
+
+        // 存入session
+        $session_arr = [];
+        $session_arr[$menu_id.'-sp_str'] = $sp_sql;
+
+        $session = \Config\Services::session();
+        $session->set($session_arr);
 
         exit(json_encode($results));
     }
@@ -1703,6 +1712,8 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $query_str = $session->get($menu_id.'-query_str');
+        $sp_name = $session->get($menu_id.'-sp_name');
+        $sp_str = $session->get($menu_id.'-sp_str');
 
         $table = new \CodeIgniter\View\Table();
 
@@ -1717,10 +1728,18 @@ class Frame extends Controller
 
         $model = new Mcommon();
 
-        // 写日志
-        $model->sql_log('导出', $menu_id, str_replace('"','',$query_str));
-
-        $query = $model->select($query_str);
+        if ($sp_name != '')
+        {
+            // 写日志
+            $model->sql_log('sp导出', $menu_id, str_replace('"','',$sp_str));
+            $query = $model->select($sp_str);
+        }
+        else
+        {
+            // 写日志
+            $model->sql_log('导出', $menu_id, str_replace('"','',$query_str));
+            $query = $model->select($query_str);
+        }
 
         header('content-type:application/vnd.ms-excel; charset=gbk');
         header('content-disposition:attachment;filename=aa.xls');
