@@ -1,5 +1,5 @@
 <?php
-/* v9.4.3.1.202310111015, from office */
+/* v9.4.3.1.202310130855, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -170,6 +170,7 @@ class Frame extends Controller
         $group = '';
         $order = '';
         $sp_name = '';  //存储过程模块
+        $sp_sql = '';  //存储过程语句
         $query_table = '';
         $dept_fld = '';  //部门字段
         $location_fld = '';  //属地字段
