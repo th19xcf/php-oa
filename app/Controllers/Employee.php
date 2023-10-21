@@ -1,5 +1,5 @@
 <?php
-/* v5.2.2.1.202309091205, from surface */
+/* v5.2.3.1.202310181405, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -27,7 +27,8 @@ class Employee extends Controller
         $sql = sprintf('
             select GUID,姓名,工号1 as 工号,员工状态,
                 属地,部门名称,if(班组="","未分班组",班组) as 班组,
-                岗位名称,岗位类型,结算类型,培训完成日期
+                岗位名称,岗位类型,结算类型,培训完成日期,
+                floor(datediff(if(离职日期="",curdate(),离职日期),一阶段日期)/30) as 在岗月数
             from ee_onjob
             where 属地 in (%s) and 有效标识="1" and 删除标识="0"
             order by 员工状态,
@@ -48,7 +49,7 @@ class Employee extends Controller
         {
             $ee_arr = [];
             $ee_arr['id'] = sprintf('人员^%s^%s', $row->GUID, $row->姓名);
-            $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->岗位名称);
+            $ee_arr['value'] = sprintf('%s (%s,%d月)', $row->姓名, $row->岗位名称, $row->在岗月数);
 
             $up1_id = sprintf('班组^%s^%s^%s', $row->员工状态, $row->部门名称, $row->班组);
             if (array_key_exists($up1_id, $up1_arr) == false)
