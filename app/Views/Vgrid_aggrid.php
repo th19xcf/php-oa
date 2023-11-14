@@ -1,4 +1,4 @@
-<!-- v6.3.2.1.202310101610, from office -->
+<!-- v6.3.3.1.202311132320, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -210,7 +210,7 @@
             for (var jj in columns_obj)
             {
                 if (columns_obj[jj].列名 != data_columns_arr[ii].field) continue;
-                
+
                 if (columns_obj[jj].类型 == '数值')
                 {
                     data_columns_arr[ii].comparator = value_sort;
@@ -1208,33 +1208,105 @@
         // 条件判断
         function get_condition(params, type, str)
         {
-            opt = '';
-            value = '';
-
-            if (str.search('>=')!=-1 || str.search('<=')!=-1 || str.search('!=')!=-1)
-            {
-                opt = str.substr(0,2);
-                value = str.substr(2);
-            }
-            else if (str.search('>')!=-1 || str.search('<')!=-1 || str.search('=')!=-1)
-            {
-                opt = str.substr(0,1);
-                value = str.substr(1);
-            }
-
+            var f_name = '';
+            var f_type = type;
+            var f_val;
+            var opt = '';
+            var v_name = '';
+            var v_type = '';
+            var v_val;
+            var value = '';
             error = false;
 
-            if (type == '数值')
+            opt_pos = -1;
+            if (str.search('>=') != -1)
             {
-                error_field = '';
-                if (value.indexOf('$') != -1)
-                {
-                    error_field = value.replace('$','');
-                    value = params.data[error_field];
-                }
+                opt_pos = str.search('>=');
+                f_name = str.substr(0, opt_pos);
+                opt = str.substr(opt_pos, 2);
+                v_name = str.substr(opt_pos + 2);
+            }
+            else if (str.search('<=') != -1)
+            {
+                opt_pos = str.search('<=');
+                f_name = str.substr(0, opt_pos);
+                opt = str.substr(opt_pos, 2);
+                v_name = str.substr(opt_pos + 2);
+            }
+            else if (str.search('!=') != -1)
+            {
+                opt_pos = str.search('!=');
+                f_name = str.substr(0, opt_pos);
+                opt = str.substr(opt_pos, 2);
+                v_name = str.substr(opt_pos + 2);
+            }
+            else if (str.search('>') != -1)
+            {
+                opt_pos = str.search('>');
+                f_name = str.substr(0, opt_pos);
+                opt = str.substr(opt_pos, 1);
+                v_name = str.substr(opt_pos + 1);
+            }
+            else if (str.search('<') != -1)
+            {
+                opt_pos = str.search('<');
+                f_name = str.substr(0, opt_pos);
+                opt = str.substr(opt_pos, 1);
+                v_name = str.substr(opt_pos + 1);
+            }
+            else if (str.search('=') != -1)
+            {
+                opt_pos = str.search('=');
+                f_name = str.substr(0, opt_pos);
+                opt = str.substr(opt_pos, 1);
+                v_name = str.substr(opt_pos + 1);
+            }
 
-                val_1 = Number(params.value);
-                val_2 = Number(value);
+            if (f_name == '')
+            {
+                f_name = params.colDef.field;
+                f_val = params.data[f_name];
+            }
+            else
+            {
+                //console.log('params=',params,'fld=',fld);
+                if (f_name.indexOf('$') != -1)
+                {
+                    f_name = f_name.replace('$','');
+                    f_val = params.data[f_name];
+                }
+            }
+
+            for (var ii in columns_obj)
+            {
+                if (f_name != columns_obj[ii].列名) continue;
+                f_type = columns_obj[ii].类型;
+                break;
+            }
+
+            if (v_name.indexOf('$') != -1)
+            {
+                v_name = v_name.replace('$','');
+                v_val = params.data[v_name];
+
+                for (var ii in columns_obj)
+                {
+                    if (v_name != columns_obj[ii].列名) continue;
+                    v_type = columns_obj[ii].类型;
+                    break;
+                }
+            }
+            else
+            {
+                v_val = v_name;
+            }
+
+            if (f_type == '数值')
+            {
+                console.log('num=', f_val, opt, v_val);
+
+                val_1 = Number(f_val);
+                val_2 = Number(v_val);
 
                 switch (opt)
                 {
@@ -1260,13 +1332,15 @@
             }
             else
             {
+                console.log('str=', f_val, opt, v_val);
+
                 switch (opt)
                 {
                     case '=':
-                        if (params.value.indexOf(value) != -1) error = true;
+                        if (f_val.indexOf(v_val) != -1) error = true;
                         break;
                     case '!=':
-                        if (params.value.indexOf(value) == -1) error = true;
+                        if (f_val.indexOf(v_val) == -1) error = true;
                         break;
                 }
             }
@@ -1352,7 +1426,7 @@
                 {
                     str = columns_obj[jj].异常条件;
                     style_str = columns_obj[jj].异常样式;
-                    style_default = {'color':'red','font-weight':'bold','background-color': '#f7acbc'};
+                    style_default = {'color':'red','font-weight':'bold','background-color':'#f7acbc'};
 
                     rc = get_cell_style(params, columns_obj[jj].类型, str, style_str, style_default);
                     if (rc != '')
