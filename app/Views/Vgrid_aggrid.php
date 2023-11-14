@@ -1,4 +1,4 @@
-<!-- v6.3.3.1.202311132320, from home -->
+<!-- v6.3.4.1.202311142355, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1269,7 +1269,6 @@
             }
             else
             {
-                //console.log('params=',params,'fld=',fld);
                 if (f_name.indexOf('$') != -1)
                 {
                     f_name = f_name.replace('$','');
@@ -1303,8 +1302,6 @@
 
             if (f_type == '数值')
             {
-                console.log('num=', f_val, opt, v_val);
-
                 val_1 = Number(f_val);
                 val_2 = Number(v_val);
 
@@ -1332,8 +1329,6 @@
             }
             else
             {
-                console.log('str=', f_val, opt, v_val);
-
                 switch (opt)
                 {
                     case '=':
@@ -1348,8 +1343,37 @@
             return error;
         }
 
-        // 单元格格式
-        function get_cell_style(params, type, str, style_str, style_default)
+        // 单元格提示或异常条件
+        function get_cell_condition_1(params, type, str)
+        {
+            var str1 = '', str2 = '';
+            var rc = true, rc1 = true, rc2 = true;
+
+            str = str.replace('；',';');
+
+            if (str.indexOf(';') != -1)
+            {
+                str1 = str.substr(0, str.indexOf(';'));
+                str2 = str.substr(str.indexOf(';')+1);
+
+                str1 = str1.trim();
+                str2 = str2.trim();
+
+                rc1 = get_cell_condition_2(params, type, str1);
+                rc2 = get_cell_condition_2(params, type, str2);
+
+                rc = rc1 || rc2;
+            }
+            else
+            {
+                str = str.trim();
+                rc = get_cell_condition_2(params, type, str);
+            }
+
+            return rc;
+        }
+
+        function get_cell_condition_2(params, type, str)
         {
             var str1 = '', str2 = '';
             var rc = true, rc1 = true, rc2 = true;
@@ -1386,6 +1410,12 @@
                 rc = get_condition(params, type, str);
             }
 
+            return rc;
+        }
+
+        // 单元格格式
+        function get_cell_style(params, type, str, style_str, style_default)
+        {
             var style_obj = {};
 
             if (style_str != '')
@@ -1403,6 +1433,7 @@
                 style_obj = style_default;
             }
 
+            var rc = get_cell_condition_1(params, type, str);
             if (rc)
             {
                 return style_obj;
