@@ -1,5 +1,5 @@
 <?php
-/* v9.4.3.1.202310130855, from office */
+/* v9.4.4.1.202311192310, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -37,8 +37,13 @@ class Frame extends Controller
             'select 
                 t1.角色编号,t1.角色名称,t1.功能赋权,t1.部门赋权,
                 t1.新增授权,t1.修改授权,t1.删除授权,t1.导入授权,t1.导出授权,
-                t2.功能编码,t2.一级菜单,t2.二级菜单,t2.功能模块,t2.查询模块,
-                t2.菜单顺序,t2.菜单显示,
+                ifnull(t2.功能编码,"") as 功能编码,
+                ifnull(t2.一级菜单,"") as 一级菜单,
+                ifnull(t2.二级菜单,"") as 二级菜单,
+                ifnull(t2.功能模块,"") as 功能模块,
+                ifnull(t2.查询模块,"") as 查询模块,
+                ifnull(t2.菜单顺序,"") as 菜单顺序,
+                ifnull(t2.菜单显示,"") as 菜单显示,
                 ifnull(t3.部门字段,"") as 部门字段,
                 ifnull(t3.属地字段,"") as 属地字段
             from def_role as t1

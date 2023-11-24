@@ -1,4 +1,4 @@
-<!-- v2.4.2.1.2023009281320, from office -->
+<!-- v2.4.3.1.202311241600, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -403,7 +403,7 @@
             dhx.ajax.post('<?php base_url(); ?>/dept/insert/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 alert(data);
-                //window.location.reload();
+                window.location.reload();
             }).catch(function (err)
             {
                 alert('`新增下级部门`失败, ' + " " + err.statusText);
