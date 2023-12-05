@@ -1,5 +1,5 @@
 <?php
-/* v2.7.1.1.202310011900, from home */
+/* v2.7.2.1.202312051510, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -166,7 +166,6 @@ class Upload extends Controller
         $results = $query->getResult();
 
         $col_arr = [];
-        $fld_arr = [];
         $fld_ceate_str = '';
 
         foreach ($results as $row)
@@ -184,8 +183,11 @@ class Upload extends Controller
                 }
             }
 
-            array_push($col_arr, $row->列名);
-            array_push($fld_arr, $row->字段名);
+            $col_arr[$row->列名] = [];
+            $col_arr[$row->列名]['列名'] = $row->列名;
+            $col_arr[$row->列名]['字段名'] = $row->字段名;
+    
+            #array_push($col_arr, $row->列名);
 
             if ($fld_ceate_str != '') $fld_ceate_str = $fld_ceate_str . ',';
             $fld_ceate_str = sprintf('%s %s varchar(%s) not null default ""', $fld_ceate_str, $row->字段名, $row->字段长度);
@@ -215,7 +217,7 @@ class Upload extends Controller
             $data = array_combine($sheet_data[0], $data);  //修改键名
             foreach ($col_arr as $col)
             {
-                $arr[$col] = $data[$col];
+                $arr[$col['字段名']] = $data[$col['列名']];
             }
             array_push($fact_data, $arr);
         }
@@ -227,7 +229,7 @@ class Upload extends Controller
             $tmp_table_name, $fld_ceate_str);
         $rc = $model->exec($sql);
 
-        $rc = $model->add_by_trans($tmp_table_name, $fact_data, $col_arr, $fld_arr);
+        $rc = $model->add_by_trans($tmp_table_name, $fact_data, '', '');
         if ($rc == -1)
         {
             $this->json_data(400, '导入失败,事务执行错误,请重试！', 0);
