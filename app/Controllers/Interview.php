@@ -1,5 +1,5 @@
 <?php
-/* v2.2.1.1.202308032155, from home */
+/* v2.2.2.1.202312302120, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -32,7 +32,9 @@ class Interview extends Controller
                 一次面试日期 as 面试日期,预约培训日期
             from ee_interview
             where 属地 in (%s)
-            order by 面试结果,参培信息,招聘渠道,预约培训日期,convert(姓名 using gbk)',
+            order by field(面试结果,"未面试","通过","未通过"),
+                field(参培信息,"待参培","已参培","未参培"),
+                招聘渠道,预约培训日期,convert(姓名 using gbk)',
             $user_location_str);
 
         $query = $model->select($sql);
