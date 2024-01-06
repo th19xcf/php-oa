@@ -1,5 +1,5 @@
 <?php
-/* v9.4.4.1.202311192310, from home */
+/* v9.4.5.1.202401061515, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1647,6 +1647,7 @@ class Frame extends Controller
                 $this->delete_row_0($menu_id, $row_arr);
                 break;
             case '1': // 模式1,有额外字段
+            case '2':
                 $this->delete_row_1($menu_id, $row_arr);
                 break;
             default:
@@ -1656,7 +1657,7 @@ class Frame extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 删除记录,模式0,无额外字段
+    // 删除记录,模式0,原记录直接删除
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function delete_row_0($menu_id, $arg)
     {
@@ -1677,9 +1678,10 @@ class Frame extends Controller
         exit(sprintf('删除[0]成功,删除 %d 条',$num));
     }
 
-    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 删除记录,模式1,有额外字段
-    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 删除记录,模式1,额外字段更新,置删除标识为1,有效标识为0
+    // 操作记录,操作来源,操作人员,操作时间,校验标识,删除标识,有效标识
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function delete_row_1($menu_id, $arg)
     {
         // 从session中取出数据
