@@ -1,5 +1,5 @@
 <?php
-/* v1.6.5.1.202403171230, from home */
+/* v1.6.6.1.202403171345, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -62,6 +62,11 @@ class Dept extends Controller
                 {
                     $dept_arr[$jj]['child_count'] ++;
                     $dept_arr[$jj]['value'] = sprintf('%s (%d)', $dept_arr[$jj]['dept'], $dept_arr[$jj]['child_count']);
+
+                    if (array_key_exists('items', $dept_arr[$jj]) == false)
+                    {
+                        $dept_arr[$jj]['items'] = [];
+                    }
 
                     array_push($dept_arr[$jj]['items'], $dept_arr[$ii]);
                     break;
