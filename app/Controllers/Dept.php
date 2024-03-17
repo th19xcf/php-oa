@@ -1,5 +1,5 @@
 <?php
-/* v1.6.4.1.202309121345, from office */
+/* v1.6.5.1.202403171230, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -110,7 +110,7 @@ class Dept extends Controller
         if ($arg['操作'] == '查询部门信息')
         {
             $sql = sprintf('
-                select 部门编码,部门名称,部门级别,负责人,
+                select 部门编码,部门名称,部门全称,部门级别,负责人,
                     上级部门,下级部门,
                     记录开始日期,记录结束日期
                 from def_dept
@@ -123,6 +123,7 @@ class Dept extends Controller
             array_push($rows_arr, array('表项'=>'生效日期', '值'=>''));
             array_push($rows_arr, array('表项'=>'部门编码', '值'=>$results[0]->部门编码));
             array_push($rows_arr, array('表项'=>'部门名称', '值'=>$results[0]->部门名称));
+            array_push($rows_arr, array('表项'=>'部门全称', '值'=>$results[0]->部门全称));
             array_push($rows_arr, array('表项'=>'负责人', '值'=>$results[0]->负责人));
             array_push($rows_arr, array('表项'=>'部门级别', '值'=>$results[0]->部门级别));
             array_push($rows_arr, array('表项'=>'上级部门', '值'=>$results[0]->上级部门));

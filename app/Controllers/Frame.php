@@ -1,5 +1,5 @@
 <?php
-/* v9.4.5.2.202402192350, from home */
+/* v9.4.6.1.202403171150, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -257,7 +257,7 @@ class Frame extends Controller
         $tb_arr['钻取授权'] = ($next_func_id!='') ? true : false;
         $tb_arr['导入授权'] = ($import_func_id!='') ? true : false;
 
-        // 调用存储过程
+        // 读出存储过程参数
         $sp_param_str = '';
 
         if ($sp_name != '')
@@ -298,7 +298,6 @@ class Frame extends Controller
             }
 
             $sp_sql = sprintf('call %s(%s)', $query_table, $sp_param_str);
-            #$sp_results = $model->select($sp_sql)->getResult();
         }
 
         //+=+=+=+=+=+=+=+=+=+=+=+= 
@@ -694,7 +693,7 @@ class Frame extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 前端设置条件,数据查询
+    // 前端设置语句查询条件,数据查询
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function set_query_condition($menu_id='')
     {
@@ -994,7 +993,7 @@ class Frame extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 前端设置条件,数据查询
+    // 前端设置存储过程查询条件,数据查询
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function set_sp_condition($menu_id='')
     {

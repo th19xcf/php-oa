@@ -1,5 +1,5 @@
 <?php
-/* v2.7.2.1.202312051510, from office */
+/* v2.8.1.1.202403170040, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -361,12 +361,13 @@ class Upload extends Controller
 
         //是否有重复记录
         $sql = sprintf('
-            select 表名,导入条件,表单变量,滤重字段
+            select 表名,导入条件,表单变量,滤重字段,后处理模块
             from def_import_config
             where 导入模块="%s"', $import);
 
         $query = $model->select($sql);
         $results = $query->getResult();
+        $sp_name = $results[0]->后处理模块;
 
         if ($results[0]->滤重字段 != '')
         {
@@ -490,8 +491,14 @@ class Upload extends Controller
         // 写日志
         $model->sql_log('导入成功', $menu_id, sprintf('表名=%s,导入%d条',$dest_table_name,$rc));
 
-        $this->json_data(200, sprintf('导入成功,导入%d条',$rc), 0);
+        // 执行后处理
+        if ($sp_name != '')
+        {
+            $sp_sql = sprintf('call %s', $sp_name);
+            $model->select($sp_sql);
+        }
 
+        $this->json_data(200, sprintf('导入成功,导入%d条',$rc), 0);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -508,12 +515,13 @@ class Upload extends Controller
 
         $model = new Mcommon();
         $sql = sprintf('
-            select 表名,导入条件,表单变量
+            select 表名,导入条件,表单变量,后处理模块
             from def_import_config
             where 导入模块="%s"', $import);
 
         $query = $model->select($sql);
         $results = $query->getResult();
+        $sp_name = $results[0]->后处理模块;
 
         $dest_table_name = '';
         $import_condition = '';
@@ -657,6 +665,13 @@ class Upload extends Controller
 
         $num = $model->exec($sql_update);
         $num = $model->exec($sql_insert);
+
+        // 执行后处理
+        if ($sp_name != '')
+        {
+            $sp_sql = sprintf('call %s', $sp_name);
+            $model->select($sp_sql);
+        }
 
         $this->json_data(200, sprintf('导入更新成功,更新%d条记录',$num), 0);
     }
