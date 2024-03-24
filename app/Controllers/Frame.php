@@ -1,5 +1,5 @@
 <?php
-/* v9.4.6.1.202403171150, from home */
+/* v9.4.7.1.202403241625, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -93,9 +93,9 @@ class Frame extends Controller
 
             // 存入session
             $session_arr = [];
-            $session_arr[$row->功能赋权.'-dept_authz'] = $row->部门赋权;
-            $session_arr[$row->功能赋权.'-dept_cond'] = $dept_cond;
+            $session_arr[$row->功能赋权.'-dept_authz'] = $dept_str;
             $session_arr[$row->功能赋权.'-dept_fld'] = $row->部门字段;
+            $session_arr[$row->功能赋权.'-dept_cond'] = $dept_cond;
             $session_arr[$row->功能赋权.'-menu_1'] = $row->一级菜单;
             $session_arr[$row->功能赋权.'-menu_2'] = $row->二级菜单;
             $session_arr[$row->功能赋权.'-add_authz'] = $row->新增授权;
@@ -547,7 +547,7 @@ class Frame extends Controller
         // 条件语句加上部门授权条件
         if ($dept_cond)
         {
-            $where = ($where == '') ? $dept_cond : $where . ' and ' . $dept_cond;
+            $where = ($where == '') ? $dept_cond : $where . ' and ' . ($dept_cond);
         }
 
         // 条件语句加上属地条件

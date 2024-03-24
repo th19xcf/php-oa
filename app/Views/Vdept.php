@@ -1,4 +1,4 @@
-<!-- v2.4.3.1.202311241600, from office -->
+<!-- v2.4.4.1.202403242330, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -239,7 +239,7 @@
                             values: ['','北京总公司','河北分公司','四川分公司']
                         },
                     };
-                case '下级部门':
+                case '有无下级部门':
                     return {
                         component: 'agSelectCellEditor',
                         params: {
@@ -424,7 +424,7 @@
                     alert('`属性`不为`查询部门信息`,不能进行`删除部门`操作');
                     ajax = -1;
                 }
-                if (rowNode.data['表项'] == '下级部门' && rowNode.data['值'] == '有')
+                if (rowNode.data['表项'] == '有无下级部门' && rowNode.data['值'] == '有')
                 {
                     alert('有下级部门,不能删除');
                     ajax = -1;

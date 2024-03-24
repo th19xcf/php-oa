@@ -1,5 +1,5 @@
 <?php
-/* v1.6.6.1.202403171345, from home */
+/* v1.6.7.1.202403242250, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -25,7 +25,7 @@ class Dept extends Controller
         $model = new Mcommon();
 
         $sql = sprintf('
-            select GUID,部门编码,部门名称,部门级别,上级部门
+            select GUID,部门编码,部门名称,部门级别,上级部门编码
             from def_dept
             where 删除标识="0" and 有效标识="1"
                 and left(部门编码,length("%s"))="%s"
@@ -45,7 +45,7 @@ class Dept extends Controller
             $item['id'] = sprintf('部门^%d^%s^%s^%d级', $row->GUID, $row->部门编码, $row->部门名称, $row->部门级别);
             $item['value'] = sprintf('%s (0)',$row->部门名称);
             $item['dept'] = $row->部门名称;
-            $item['higher'] = $row->上级部门;
+            $item['higher'] = $row->上级部门编码;
             $item['child_count'] = 0;
             $item['items'] = [];
 
@@ -116,7 +116,7 @@ class Dept extends Controller
         {
             $sql = sprintf('
                 select 部门编码,部门名称,部门全称,部门级别,负责人,
-                    上级部门,下级部门,
+                    上级部门编码,有无下级部门,
                     记录开始日期,记录结束日期
                 from def_dept
                 where GUID="%s"', $GUID);
@@ -131,8 +131,8 @@ class Dept extends Controller
             array_push($rows_arr, array('表项'=>'部门全称', '值'=>$results[0]->部门全称));
             array_push($rows_arr, array('表项'=>'负责人', '值'=>$results[0]->负责人));
             array_push($rows_arr, array('表项'=>'部门级别', '值'=>$results[0]->部门级别));
-            array_push($rows_arr, array('表项'=>'上级部门', '值'=>$results[0]->上级部门));
-            array_push($rows_arr, array('表项'=>'下级部门', '值'=>$results[0]->下级部门));
+            array_push($rows_arr, array('表项'=>'上级部门编码', '值'=>$results[0]->上级部门编码));
+            array_push($rows_arr, array('表项'=>'有无下级部门', '值'=>$results[0]->有无下级部门));
             array_push($rows_arr, array('表项'=>'记录开始日期', '值'=>$results[0]->记录开始日期));
             array_push($rows_arr, array('表项'=>'记录结束日期', '值'=>$results[0]->记录结束日期));
         }
@@ -152,16 +152,16 @@ class Dept extends Controller
                 ) as t1
                 left join
                 (
-                    select 上级部门,max(substring_index(部门编码,"-",-1)+0) as 下级部门编码
+                    select 上级部门编码,max(substring_index(部门编码,"-",-1)+0) as 下级部门编码
                     from def_dept
-                    where 上级部门 in 
+                    where 上级部门编码 in 
                     (
                         select 部门编码
                         from def_dept
                         where GUID="%s"
                     )
                 ) as t2
-                on t1.部门编码=t2.上级部门', $GUID, $GUID);
+                on t1.部门编码=t2.上级部门编码', $GUID, $GUID);
             $query = $model->select($sql);
             $results = $query->getResult();
 
@@ -221,7 +221,7 @@ class Dept extends Controller
 
         //增加新记录
         $fld_str = '部门编码,部门名称,部门级别,' .
-            '上级部门,下级部门,负责人,' .
+            '上级部门编码,有无下级部门,负责人,' .
             '记录开始日期,记录结束日期,' .
             '操作记录,操作来源,操作人员,' .
             '开始操作时间,结束操作时间,' .
@@ -331,7 +331,7 @@ class Dept extends Controller
         $sql = sprintf('
             insert into def_dept 
                 (部门编码,部门名称,部门级别,
-                上级部门,下级部门,负责人,
+                上级部门编码,有无下级部门,负责人,
                 记录开始日期,记录结束日期,
                 操作记录,操作来源,操作人员,
                 开始操作时间,结束操作时间,
