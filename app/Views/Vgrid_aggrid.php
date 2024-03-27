@@ -1,4 +1,4 @@
-<!-- v6.3.4.1.202311142355, from home -->
+<!-- v6.4.1.1.202403272240, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -10,11 +10,11 @@
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-theme-alpine.css'>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-locale-cn.js'></script>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-community.noStyle.js'></script>
+    <script src='<?php base_url(); ?>/assets/js/datepicker_brower.js'></script>
 
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/dhtmlx/codebase/suite.css'>
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
 
-    <script src='<?php base_url(); ?>/assets/js/datepicker_brower.js'></script>
     <script src='<?php base_url(); ?>/echarts/echarts.js'></script>
 </head>
 
@@ -262,7 +262,6 @@
         var update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
         var object_obj = JSON.parse('<?php echo $object_json; ?>');
 
-
         var column_name_arr = [];
         for (var ii in columns_arr)
         {
@@ -401,6 +400,68 @@
         };
 
         new agGrid.Grid($$('cond_grid'), cond_grid_options);
+
+        // 部门选择窗口
+        var dept_grid_obj = [];
+        var win_dept_set = new dhx.Window(
+        {
+            title: '部门设置',
+            footer: true,
+            modal: true,
+            width: 700,
+            height: 500,
+            closable: true,
+            movable: true
+        });
+
+        win_dept_set.footer.data.add(
+        {
+            type: 'button',
+            id: '清空',
+            value: '清空',
+            view: 'flat',
+            size: 'medium',
+            color: 'primary',
+        });
+
+        win_dept_set.footer.data.add(
+        {
+            type: 'button',
+            id: '确定',
+            value: '确定',
+            view: 'flat',
+            size: 'medium',
+            color: 'primary',
+        });
+
+        var html = '<div id="dept_set_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
+        win_dept_set.attachHTML(html);
+        win_dept_set.hide();
+
+        var dept_grid_new = false;
+        const dept_grid_options = 
+        {
+            columnDefs:
+            [
+                {field:'列名', editable:false},
+                {field:'字段名', editable:false},
+                {field:'取值', width:200, cellEditorSelector:dept_select}
+            ],
+            defaultColDef:
+            {
+                width: 120,
+                editable: true,
+                resizable: true
+            },
+            rowData:
+            [
+                {'列名':'一级部门', '字段名':'一级部门', '取值':''},
+                {'列名':'二级部门', '字段名':'二级部门', '取值':''},
+                {'列名':'三级部门', '字段名':'三级部门', '取值':''},
+                {'列名':'四级部门', '字段名':'四级部门', '取值':''},
+            ]
+        };
+
 
         // 图形设置
         var chart_grid_obj = [];
@@ -543,9 +604,9 @@
 
                         // 清空
                         rowData = [];
-                        for (var ii in columns_obj)
+                        for (let ii in columns_obj)
                         {
-                            var obj = {};
+                            let obj = {};
                             obj['列名'] = columns_obj[ii].列名;
                             obj['字段名'] = columns_obj[ii].字段名;
                             obj['列类型'] = columns_obj[ii].类型;
@@ -1485,7 +1546,7 @@
 
         function cellEditorSelector(params)
         {
-            var col_name = params.data.列名;
+            let col_name = params.data.列名;
 
             for (var ii in columns_obj)
             {
@@ -1504,27 +1565,38 @@
                 switch (columns_obj[ii].赋值类型)
                 {
                     case '固定值':
-                        var data_arr = [];
+                        let data_arr = [];
                         data_arr[0] = '';
 
-                        var up_name = object_obj[col_name]['上级对象名称'];
+                        let obj_name = columns_obj[ii].对象;
+                        let up_name = object_obj[obj_name]['上级对象名称'];
+                        let up_value = cond_object_value[up_name];
 
-                        if (cond_object_value[up_name] == '' || cond_object_value[up_name] == undefined)
+                        if (up_value == '' || up_value == undefined)
                         {
-                            for (var v1 in object_obj[col_name])
+                            for (let v1 in object_obj[obj_name])
                             {
                                 if (v1 == '上级对象名称') continue;
-                                for (var v2 in object_obj[col_name][v1])
+
+                                for (let v2 in object_obj[obj_name][v1])
                                 {
-                                    data_arr.push(object_obj[col_name][v1][v2]);
+                                    if (v2 != '对象显示值') continue;
+                                    for (let v3 in object_obj[obj_name][v1][v2])
+                                    {
+                                        data_arr.push(object_obj[obj_name][v1][v2][v3]);
+                                    }
                                 }
                             }
                         }
                         else
                         {
-                            for (var v2 in object_obj[col_name][cond_object_value[up_name]])
+                            for (let v2 in object_obj[obj_name][up_value])
                             {
-                                data_arr.push(object_obj[col_name][cond_object_value[up_name]][v2]);
+                                if (v2 != '对象显示值') continue;
+                                for (let v3 in object_obj[obj_name][up_value][v2])
+                                {
+                                    data_arr.push(object_obj[obj_name][up_value][v2][v3]);
+                                }
                             }
                         }
 
@@ -1539,9 +1611,15 @@
                         return {
                             component: 'datePicker',
                         };
+                    //case '部门':
+                        //const popup = new Popup({showImmediately: true});
                 }
                 break;
             }
+        }
+
+        function dept_select(params)
+        {
         }
 
         // 图形窗口按钮

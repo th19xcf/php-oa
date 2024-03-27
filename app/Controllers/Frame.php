@@ -1,5 +1,5 @@
 <?php
-/* v9.4.7.1.202403241625, from home */
+/* v9.5.1.1.202403251730, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -483,15 +483,16 @@ class Frame extends Controller
             $value_arr['是否必填'] = ($row->不可为空=='1') ? '是' : '否';
             $value_arr['取值'] = '';
 
-            if (strpos($row->赋值类型,'固定值') !== false)
+            if (strpos($row->赋值类型,'固定值') !== false && array_key_exists($row->对象,$object_arr) == false)
             {
-                $object_arr[$row->列名] = []; 
+                $object_obj[$row->对象] = [];
 
                 $cond_obj_arr[$row->列名] = '';
                 $update_obj_arr[$row->列名] = '';
 
                 $obj_sql = sprintf('
-                    select 对象名称,对象值,上级对象名称,上级对象值 
+                    select 对象名称,对象值,if(对象显示值="",对象值,对象显示值) as 对象显示值,
+                        上级对象名称,上级对象值,if(上级对象显示值="",上级对象值,上级对象显示值) as 上级对象显示值
                     from def_object 
                     where 对象名称="%s"
                         and 有效标识="1"
@@ -504,16 +505,20 @@ class Frame extends Controller
 
                 foreach($rslt as $vv)
                 {
-                    $object_arr[$row->列名]['上级对象名称'] = $vv->上级对象名称;
+                    $object_arr[$vv->对象名称]['上级对象名称'] = $vv->上级对象名称;
                     if (array_key_exists($vv->上级对象值, $object_arr[$row->列名]) == false)
                     {
-                        $object_arr[$row->列名][$vv->上级对象值] = [];
+                        $object_arr[$row->对象][$vv->上级对象值] = [];
+                        $object_arr[$row->对象][$vv->上级对象值]['对象值'] = [];
+                        $object_arr[$row->对象][$vv->上级对象值]['对象显示值'] = [];
                     }
-                    array_push($object_arr[$row->列名][$vv->上级对象值], $vv->对象值);
+
+                    array_push($object_arr[$row->对象][$vv->上级对象值]['对象值'], $vv->对象值);
+                    array_push($object_arr[$row->对象][$vv->上级对象值]['对象显示值'], $vv->对象显示值);
                 }
             }
 
-            if ($row->可修改 == 1 || $row->可修改 == 2 )
+            if ($row->可修改 == 1 || $row->可修改 == 2)
             {
                 array_push($update_value_arr, $value_arr);
             }
