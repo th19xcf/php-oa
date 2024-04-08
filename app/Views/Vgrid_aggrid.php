@@ -1,4 +1,4 @@
-<!-- v6.4.1.1.202403272240, from home -->
+<!-- v6.5.1.1.202404082325, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -90,6 +90,25 @@
             this.sum_avg = '';
         }
 
+        function DeptInfo()
+        {
+            this.menu_1 = '';
+            this.menu_2 = '';
+            this.grid_api;
+            this.node_id = '';
+            this.col_name = '';
+            this.max_rank = 0;
+            this.dept_id = '';
+            this.dept_name = '';
+            this.dept = [];
+            this.dept['一级部门'] = '北京电信发展有限公司';
+            this.dept['二级部门'] = '呼叫中心';
+            this.dept['三级部门'] = '';
+            this.dept['四级部门'] = '';
+            this.dept['五级部门'] = '';
+            this.dept['六级部门'] = '';
+        }
+
         function Chart()
         {
             this.type = '';
@@ -129,6 +148,13 @@
         // 条件选择
         var cond_object_value = JSON.parse('<?php echo $cond_obj_json; ?>');
         var update_object_value = JSON.parse('<?php echo $update_obj_json; ?>');
+
+        // 部门选择
+        var dept_value = JSON.parse('<?php echo $dept_json; ?>');
+        var menu_value = JSON.parse('<?php echo $menu_json; ?>');
+        var dept_arr = new DeptInfo();
+        dept_arr.menu_1 = menu_value['menu_1'];
+        dept_arr.menu_2 = menu_value['menu_2'];
 
         // 生成主工具栏
         var data_tb = new dhx.Toolbar('data_tb', {css:'toobar-class'});
@@ -284,7 +310,7 @@
                 {field:'列类型'},
                 {field:'是否可修改'},
                 {field:'是否必填'},
-                {field:'取值', width:200, cellEditorSelector:cellEditorSelector}
+                {field:'取值', width:400, cellEditorSelector:cellEditorSelector}
             ],
             defaultColDef: 
             {
@@ -329,7 +355,25 @@
                 {field:'列名', width:120, editable:false},
                 {field:'字段名', width:120, editable:false},
                 {field:'列类型', editable:false},
-                {field:'汇总', cellEditorSelector:cellEditorSelector},
+                {
+                    field:'汇总',
+                    editable: (params) =>
+                    {
+                        // 根据配置判断是否可以修改
+                        if (params.colDef.field != '汇总') return false;
+
+                        var col_name = params.data.列名;
+
+                        for (var ii in columns_obj)
+                        {
+                            if (columns_obj[ii].列名 != col_name) continue;
+                            return (columns_obj[ii].可汇总 == '1') ? true : false;
+                        }
+
+                        return false;
+                    },
+                    cellEditorSelector:cellEditorSelector
+                },
                 {
                     field:'条件1',
                     cellEditor: 'agSelectCellEditor',
@@ -402,13 +446,12 @@
         new agGrid.Grid($$('cond_grid'), cond_grid_options);
 
         // 部门选择窗口
-        var dept_grid_obj = [];
         var win_dept_set = new dhx.Window(
         {
             title: '部门设置',
             footer: true,
             modal: true,
-            width: 700,
+            width: 600,
             height: 500,
             closable: true,
             movable: true
@@ -427,8 +470,18 @@
         win_dept_set.footer.data.add(
         {
             type: 'button',
-            id: '确定',
-            value: '确定',
+            id: '添加',
+            value: '添加',
+            view: 'flat',
+            size: 'medium',
+            color: 'primary',
+        });
+
+        win_dept_set.footer.data.add(
+        {
+            type: 'button',
+            id: '替换',
+            value: '替换',
             view: 'flat',
             size: 'medium',
             color: 'primary',
@@ -439,13 +492,49 @@
         win_dept_set.hide();
 
         var dept_grid_new = false;
+        var dept_grid_obj =
+            [
+                {'部门':'一级部门', '级别':1, '取值':'北京电信发展有限公司'},
+                {'部门':'二级部门', '级别':2, '取值':'呼叫中心'},
+                {'部门':'三级部门', '级别':3, '取值':''},
+                {'部门':'四级部门', '级别':4, '取值':''},
+                {'部门':'五级部门', '级别':5, '取值':''},
+                {'部门':'六级部门', '级别':6, '取值':''},
+            ];
+
         const dept_grid_options = 
         {
             columnDefs:
             [
-                {field:'列名', editable:false},
-                {field:'字段名', editable:false},
-                {field:'取值', width:200, cellEditorSelector:dept_select}
+                {field:'部门', editable:false},
+                {field:'级别', editable:false},
+                {
+                    field: '取值',
+                    width: 250,
+                    editable: (params) =>
+                    {
+                        if (params.data.部门 == '一级部门' || params.data.部门 == '二级部门') 
+                        {
+                            return false;
+                        }
+                        return true;
+                    },
+                    cellEditorSelector: dept_select,
+                    onCellValueChanged : (params) => 
+                    {
+                        dept_arr.dept[params.data.部门] = params.newValue;
+                        dept_arr.max_rank = params.data.级别;
+
+                        // 清空下级部门
+                        dept_grid_options.api.forEachNode((rowNode, index) => 
+                        {
+                            if (rowNode.data['级别'] > dept_arr.max_rank)
+                            {
+                                rowNode.setDataValue('取值', '');
+                            }
+                        });
+                    },
+                }
             ],
             defaultColDef:
             {
@@ -453,15 +542,113 @@
                 editable: true,
                 resizable: true
             },
-            rowData:
-            [
-                {'列名':'一级部门', '字段名':'一级部门', '取值':''},
-                {'列名':'二级部门', '字段名':'二级部门', '取值':''},
-                {'列名':'三级部门', '字段名':'三级部门', '取值':''},
-                {'列名':'四级部门', '字段名':'四级部门', '取值':''},
-            ]
+            rowData: dept_grid_obj
         };
 
+        // 部门窗口事件
+        win_dept_set.events.on('afterShow', function(position, events)
+        {
+        });
+
+        win_dept_set.events.on('afterHide', function(position, events)
+        {
+        });
+
+        win_dept_set.footer.events.on('click', function (id)
+        {
+            if (id == '清空')
+            {
+                dept_grid_obj =
+                    [
+                        {'部门':'一级部门', '级别':1, '取值':'北京电信发展有限公司'},
+                        {'部门':'二级部门', '级别':2, '取值':'呼叫中心'},
+                        {'部门':'三级部门', '级别':3, '取值':''},
+                        {'部门':'四级部门', '级别':4, '取值':''},
+                        {'部门':'五级部门', '级别':5, '取值':''},
+                        {'部门':'六级部门', '级别':6, '取值':''},
+                    ];
+                dept_grid_options.api.setRowData(dept_grid_obj);
+            }
+            else if (id == '添加' || id == '替换')
+            {
+                dept_grid_options.api.stopEditing();
+
+                // 获表中的数据
+                let send_obj = {};
+                send_obj['操作'] = id;
+                send_obj['部门级别'] = dept_arr.max_rank;
+                dept_grid_options.api.stopEditing();
+                dept_grid_options.api.forEachNode((rowNode, index) => 
+                {
+                    send_obj[rowNode.data['部门']] = rowNode.data['取值'];
+                });
+
+                dhx.ajax.post('<?php base_url(); ?>/dept/verify/<?php echo $func_id; ?>', send_obj).then(function (data)
+                {
+                    if (dept_arr.menu_1 != menu_value['menu_1'] || dept_arr.menu_2 != menu_value['menu_2'])
+                    {
+                        alert('页面已切换,请重新输入');
+                        return;
+                    }
+
+                    win_dept_set.hide();
+
+                    dept_arr.dept['一级部门'] = send_obj['一级部门'];
+                    dept_arr.dept['二级部门'] = send_obj['二级部门'];
+                    dept_arr.dept['三级部门'] = send_obj['三级部门'];
+                    dept_arr.dept['四级部门'] = send_obj['四级部门'];
+                    dept_arr.dept['五级部门'] = send_obj['五级部门'];
+                    dept_arr.dept['六级部门'] = send_obj['六级部门'];
+
+                    let api = dept_arr.grid_api;
+                    api.stopEditing();
+                    let row_node = api.getRowNode(dept_arr['node_id']);
+
+                    if (id == '添加')
+                    {
+                        if (row_node.data['取值'] == '' || row_node.data['取值'] == undefined)
+                        {
+                            row_node.setDataValue('取值', data);
+                        }
+                        else
+                        {
+                            row_node.setDataValue('取值', row_node.data['取值'] + ',' + data);
+                        }
+                    }
+                    else if (id == '替换')
+                    {
+                        row_node.setDataValue('取值', data);
+                    }
+                }).catch(function (err)
+                {
+                    console.log(err);
+                    alert('`校验部门信息`失败, ' + " " + err.statusText);
+                });
+            }
+        });
+
+        function dept_select(params)
+        {
+            let dept = dept_value[params.data.部门];
+            let data_arr = [];
+            data_arr[0] = '';
+
+            for (let item in dept)
+            {
+                if (dept_arr.dept[dept['上级部门级别']] != item) continue;
+                for (let val in dept[item])
+                {
+                    data_arr.push(dept[item][val]);
+                }
+            }
+
+            return {
+                component: 'agSelectCellEditor',
+                params: {
+                    values: data_arr
+                },
+            };
+        }
 
         // 图形设置
         var chart_grid_obj = [];
@@ -1552,14 +1739,18 @@
             {
                 if (columns_obj[ii].列名 != col_name) continue;
 
-                if (params.colDef.field == '汇总' && columns_obj[ii].可汇总 == '1')
+                if (params.colDef.field == '汇总')
                 {
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','√'],
-                            },
-                    };
+                    if (columns_obj[ii].可汇总 == '1')
+                    {
+                        return {
+                            component: 'agSelectCellEditor',
+                            params: {
+                                values: ['','√'],
+                                },
+                        };
+                    }
+                    return null;
                 }
 
                 switch (columns_obj[ii].赋值类型)
@@ -1611,15 +1802,21 @@
                         return {
                             component: 'datePicker',
                         };
-                    //case '部门':
-                        //const popup = new Popup({showImmediately: true});
+                    case '弹窗':
+                        dept_arr.grid_api = params.api;
+                        dept_arr.node_id = params.node.id;
+                        dept_arr.col_name = col_name;
+                        win_dept_set.show();
+                        if (dept_grid_new == false)
+                        {
+                            new agGrid.Grid($$('dept_set_grid'), dept_grid_options);
+                            dept_grid_new = true;
+                        }
+                        break;
                 }
+
                 break;
             }
-        }
-
-        function dept_select(params)
-        {
         }
 
         // 图形窗口按钮

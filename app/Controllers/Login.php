@@ -1,6 +1,6 @@
 <?php
 
-/* v2.2.2.1.202403241515, from home */
+/* v3.1.1.1.202404041245, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -36,9 +36,9 @@ class Login extends Controller
         $pswd = $this->request->getPost('userpwd');
 
         $sql = sprintf('
-            select 员工编号,姓名,身份证号,工号,角色,属地
+            select 员工编号,姓名,身份证号,工号,角色,员工属地
             from def_user
-            where 工号="%s" and 密码="%s" ',
+            where 有效标识="1" and 工号="%s" and 密码="%s" ',
             $user_workid, $pswd);
 
         $model = new Mcommon();
@@ -53,10 +53,10 @@ class Login extends Controller
             exit('2');
         }
 
-        // 验证属地
+        // 验证员工属地
         foreach ($results as $row)
         {
-            if (strpos($row->属地,$company_id) === false) continue;
+            if (strpos($row->员工属地,$company_id) === false) continue;
 
             str_replace(' ', '', $row->角色);
             str_replace('，', ',', $row->角色);
@@ -76,10 +76,10 @@ class Login extends Controller
                 }
             }
 
-            str_replace(' ', '', $row->属地);
-            str_replace('，', ',', $row->属地);
+            str_replace(' ', '', $row->员工属地);
+            str_replace('，', ',', $row->员工属地);
 
-            $location_arr = explode(',', $row->属地);
+            $location_arr = explode(',', $row->员工属地);
 
             $location_str = '';
             foreach ($location_arr as $location)
@@ -102,7 +102,7 @@ class Login extends Controller
             $session_arr['user_role'] = $row->角色;
             $session_arr['user_role_str'] = $role_str;
             $session_arr['user_pswd'] = $pswd;
-            $session_arr['user_location'] = $row->属地;
+            $session_arr['user_location'] = $row->员工属地;
             $session_arr['user_location_str'] = $location_str;
 
             $session = \Config\Services::session();
@@ -113,7 +113,7 @@ class Login extends Controller
             exit('1');
         }
 
-        $Arg['msg'] = '属地错误！';
+        $Arg['msg'] = '员工属地错误！';
         exit('10');
     }
 }
