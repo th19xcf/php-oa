@@ -1,4 +1,4 @@
-<!-- v6.5.1.1.202404082325, from home -->
+<!-- v6.5.2.1.202404092230, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -772,6 +772,7 @@
                 case '单条修改':
                 case '多条修改':
                     var rows = data_grid_options.api.getSelectedRows();
+
                     if (rows.length == 0)
                     {
                         alert('请先选择要修改的记录');
@@ -1253,35 +1254,6 @@
                     alert('所有内容没有修改,不提交');
                     return;
                 }
-
-                /*
-                var rows = update_grid_options.api.getSelectedRows();
-                if (rows.length == 0)
-                {
-                    alert('请选择要提交修改的条目');
-                    return;
-                }
-                for (var ii in rows)
-                {
-                    if (rows[ii]['取值'] == '')
-                    {
-                        if (confirm('\"' + rows[ii]['列名'] + '\" 的值为空,请确认是否有效?') == false)
-                        {
-                            return;
-                        }
-                    }
-
-                    var col = new ColumnInfo();
-                    col.col_name = rows[ii]['列名'];
-                    col.fld_name = rows[ii]['字段名'];
-                    col.type = rows[ii]['列类型'];
-                    col.value = rows[ii]['取值'];
-                    col.modified = true;
-
-                    send_arr.push(col);
-                    ajax = 1;
-                }
-                */
             }
 
             else  // 单条&新增
@@ -1345,29 +1317,34 @@
                 }
                 $$('footbox').innerHTML = '&nbsp&nbsp<b>提交记录:{' + foot_upkeep + '}</b>';
 
-                // 选择的记录
-                var rows = data_grid_options.api.getSelectedRows();
+                let key_arr = [];
+                let key = '<?php echo $primary_key; ?>';
 
-                var key = '<?php echo $primary_key; ?>';
-                var key_values = '';
+                // 选择要提交的记录
+                let selected_rows = data_grid_options.api.getSelectedRows();
+                let selected_key_arr = selected_rows.map(a => a[key]);
 
-                for (var ii in rows)
+                key_arr = selected_key_arr;
+
+                // 设置过滤条件记录
+                var filter_rows = [];
+                if (update_flag == '多条修改' && data_grid_options.api.isAnyFilterPresent() == true)
                 {
-                    if (key_values == '')
+                    data_grid_options.api.forEachNodeAfterFilter((rowNode, index) => 
                     {
-                        key_values = data_grid_obj[rows[ii].序号-1][key];
-                    }
-                    else
-                    {
-                        key_values = key_values + ',' + data_grid_obj[rows[ii].序号-1][key];
-                    }
+                        filter_rows.push(rowNode.data);
+                    });
+
+                    // 交集
+                    let filter_key_arr = filter_rows.map(a => a[key]);
+                    key_arr = filter_key_arr.filter(a => selected_key_arr.includes(a));
                 }
 
                 var col = new ColumnInfo();
                 col.col_name = key;
                 col.fld_name = key;
                 col.type = '主键';
-                col.value = key_values;
+                col.value = key_arr.join(',');
 
                 send_arr.push(col);
 
@@ -1409,35 +1386,39 @@
 
         function delete_submit(id)
         {
-            var send_arr = [];
+            let key_arr = [];
+            let key = '<?php echo $primary_key; ?>';
 
             // 选择的记录
-            var rows = data_grid_options.api.getSelectedRows();
+            let selected_rows = data_grid_options.api.getSelectedRows();
+            let selected_key_arr = selected_rows.map(a => a[key]);
 
-            var key = '<?php echo $primary_key; ?>';
-            var key_values = '';
+            key_arr = selected_key_arr;
 
-            for (var ii in rows)
+            // 设置过滤条件记录
+            var filter_rows = [];
+            if (data_grid_options.api.isAnyFilterPresent() == true)
             {
-                if (key_values == '')
+                data_grid_options.api.forEachNodeAfterFilter((rowNode, index) => 
                 {
-                    key_values = data_grid_obj[rows[ii].序号-1][key];
-                }
-                else
-                {
-                    key_values = key_values + ',' + data_grid_obj[rows[ii].序号-1][key];
-                }
+                    filter_rows.push(rowNode.data);
+                });
+
+                // 交集
+                let filter_key_arr = filter_rows.map(a => a[key]);
+                key_arr = filter_key_arr.filter(a => selected_key_arr.includes(a));
             }
 
-            var col = new ColumnInfo();
+            let col = new ColumnInfo();
             col.col_name = key;
             col.fld_name = key;
             col.type = '主键';
-            col.value = key_values;
+            col.value = key_arr.join(',');;
 
+            let send_arr = [];
             send_arr.push(col);
 
-            var url = '<?php base_url(); ?>/frame/delete_row/<?php echo $func_id; ?>';
+            let url = '<?php base_url(); ?>/frame/delete_row/<?php echo $func_id; ?>';
             dhx.ajax.post(url, send_arr).then(function (data)
             {
                 alert(data);
