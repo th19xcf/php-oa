@@ -1,4 +1,4 @@
-<!-- v6.5.2.1.202404092230, from home -->
+<!-- v6.5.3.1.202404101400, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -523,7 +523,10 @@
                     onCellValueChanged : (params) => 
                     {
                         dept_arr.dept[params.data.部门] = params.newValue;
-                        dept_arr.max_rank = params.data.级别;
+                        if (params.data.取值 != '')
+                        {
+                            dept_arr.max_rank = params.data.级别;
+                        }
 
                         // 清空下级部门
                         dept_grid_options.api.forEachNode((rowNode, index) => 

@@ -1,5 +1,5 @@
 <?php
-/* v10.1.1.1.202404082325, from home */
+/* v10.1.1.1.202404101450, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -59,7 +59,7 @@ class Frame extends Controller
                 select 查询模块,部门字段,属地字段
                 from def_query_config
             ) as t3 on if(t2.功能类型="查询",t2.模块名称,"")=t3.查询模块
-            where t1.角色编号 in (%s)
+            where t1.有效标识="1" and t1.角色编号 in (%s)
             group by t1.功能赋权
             order by t2.菜单顺序', $user_role_str);
 

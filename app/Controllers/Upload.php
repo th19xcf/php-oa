@@ -1,5 +1,5 @@
 <?php
-/* v2.8.1.1.202403170040, from home */
+/* v3.1.1.1.202404101320, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -28,10 +28,11 @@ class Upload extends Controller
             select 
                 功能编码,
                 导入模块,主键,导入条件,
-                表单变量,滤重字段,模板文件,表头行,数据行
+                表单变量,滤重字段,模板文件,
+                表头行,数据行
             from def_function as t1
             left join def_import_config as t2
-            on t1.查询模块=t2.导入模块
+            on t1.模块名称=t2.导入模块
             where 功能编码="%s"', $menu_id);
 
         $model = new Mcommon();
