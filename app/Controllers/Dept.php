@@ -1,5 +1,5 @@
 <?php
-/* v1.7.3.1.202404091330, from office */
+/* v1.7.4.1.202404101130, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -21,6 +21,14 @@ class Dept extends Controller
         $session = \Config\Services::session();
         $dept_authz = $session->get($menu_id.'-dept_authz');
         $tree_expand = $session->get('dept_tree_expand');
+        $add_authz = $session->get($menu_id.'-add_authz');
+        $modify_authz = $session->get($menu_id.'-modify_authz');
+        $delete_authz = $session->get($menu_id.'-delete_authz');
+
+        $tb_arr = [];
+        $tb_arr['新增授权'] = ($add_authz=='1') ? true : false ;
+        $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
+        $tb_arr['删除授权'] = ($delete_authz=='1') ? true : false ;
 
         $model = new Mcommon();
 
@@ -78,6 +86,7 @@ class Dept extends Controller
         $arr[0] = $dept_arr[$arr_len-1];
 
         $send['func_id'] = $menu_id;
+        $send['toolbar_json'] = json_encode($tb_arr);
         $send['tree_expand_json'] = json_encode($tree_expand);
         $send['dept_json'] = json_encode($arr);
 

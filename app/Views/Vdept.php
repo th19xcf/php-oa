@@ -1,4 +1,4 @@
-<!-- v2.4.4.2.202404091730, from office -->
+<!-- v2.4.6.1.202404101130, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -47,15 +47,29 @@
             return document.getElementById(id);
         }
 
-        // tree视图
+        // 工具栏数据
+        var tb_obj = JSON.parse('<?php echo $toolbar_json; ?>');
+
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         main_tb.data.add({type:'separator'});
-        main_tb.data.add({id:'新增下级部门', type:'button', value:'新增下级部门'});
-        main_tb.data.add({id:'修改部门信息', type:'button', value:'修改部门信息'});
-        main_tb.data.add({id:'提交', type:'button', value:'提交'});
-        main_tb.data.add({type:'separator'});
-        main_tb.data.add({id:'删除部门', type:'button', value:'删除部门'});
+        if (tb_obj['新增授权'] == true)
+        {
+            main_tb.data.add({id:'新增下级部门', type:'button', value:'新增下级部门'});
+        }
+        if (tb_obj['修改授权'] == true)
+        {
+            main_tb.data.add({id:'修改部门信息', type:'button', value:'修改部门信息'});
+        }
+        if (tb_obj['新增授权'] == true || tb_obj['修改授权'] == true)
+        {
+            main_tb.data.add({id:'提交', type:'button', value:'提交'});
+        }
+        if (tb_obj['删除授权'] == true)
+        {
+            main_tb.data.add({type:'separator'});
+            main_tb.data.add({id:'删除部门', type:'button', value:'删除部门'});
+        }
 
         $$('info_box').style.height = document.documentElement.clientHeight * 0.035 + 'px';
         $$('info_box').innerHTML = '&nbsp&nbsp选定部门:';
@@ -66,6 +80,7 @@
         var editable = false;
         var button = '';
 
+        // tree视图
         var tree_obj = JSON.parse('<?php echo $dept_json; ?>');
         var tree = new dhx.Tree('tree_box');
         tree.data.parse(tree_obj);
