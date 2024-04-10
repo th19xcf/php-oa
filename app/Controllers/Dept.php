@@ -1,5 +1,5 @@
 <?php
-/* v1.7.1.1.202404081705, from office */
+/* v1.7.3.1.202404091330, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -43,7 +43,7 @@ class Dept extends Controller
 
             $item['sid'] = $row->部门编码;
             $item['id'] = sprintf('部门^%d^%s^%s^%d级', $row->GUID, $row->部门编码, $row->部门名称, $row->部门级别);
-            $item['value'] = sprintf('%s (0)',$row->部门名称);
+            $item['value'] = sprintf('%s (%s, 0)', $row->部门名称, $row->部门编码);
             $item['dept'] = $row->部门名称;
             $item['higher'] = $row->上级部门编码;
             $item['child_count'] = 0;
@@ -61,7 +61,7 @@ class Dept extends Controller
                 if ($dept_arr[$jj]['sid'] == $dept_arr[$ii]['higher'])
                 {
                     $dept_arr[$jj]['child_count'] ++;
-                    $dept_arr[$jj]['value'] = sprintf('%s (%d)', $dept_arr[$jj]['dept'], $dept_arr[$jj]['child_count']);
+                    $dept_arr[$jj]['value'] = sprintf('%s (%s, %d)', $dept_arr[$jj]['dept'], $dept_arr[$jj]['sid'], $dept_arr[$jj]['child_count']);
 
                     if (array_key_exists('items', $dept_arr[$jj]) == false)
                     {

@@ -1,4 +1,4 @@
-<!-- v2.4.4.1.202403242330, from home -->
+<!-- v2.4.4.2.202404091730, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -84,7 +84,7 @@
             columnDefs: 
             [
                 {field:'表项', width:150, editable:false},
-                {field:'值', width:280, cellEditorSelector:cellEditorSelector}
+                {field:'值', width:350, cellEditorSelector:cellEditorSelector}
             ],
             defaultColDef: 
             {
