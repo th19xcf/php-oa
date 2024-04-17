@@ -1,4 +1,4 @@
-<!-- v6.5.3.1.202404101400, from office -->
+<!-- v6.5.4.1.202404172345, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -101,12 +101,13 @@
             this.dept_id = '';
             this.dept_name = '';
             this.dept = [];
-            this.dept['一级部门'] = '北京电信发展有限公司';
-            this.dept['二级部门'] = '呼叫中心';
+            this.dept['一级部门'] = '';
+            this.dept['二级部门'] = '';
             this.dept['三级部门'] = '';
             this.dept['四级部门'] = '';
             this.dept['五级部门'] = '';
             this.dept['六级部门'] = '';
+            this.dept['七级部门'] = '';
         }
 
         function Chart()
@@ -148,13 +149,6 @@
         // 条件选择
         var cond_object_value = JSON.parse('<?php echo $cond_obj_json; ?>');
         var update_object_value = JSON.parse('<?php echo $update_obj_json; ?>');
-
-        // 部门选择
-        var dept_value = JSON.parse('<?php echo $dept_json; ?>');
-        var menu_value = JSON.parse('<?php echo $menu_json; ?>');
-        var dept_arr = new DeptInfo();
-        dept_arr.menu_1 = menu_value['menu_1'];
-        dept_arr.menu_2 = menu_value['menu_2'];
 
         // 生成主工具栏
         var data_tb = new dhx.Toolbar('data_tb', {css:'toobar-class'});
@@ -445,6 +439,19 @@
 
         new agGrid.Grid($$('cond_grid'), cond_grid_options);
 
+        // 部门选择
+        var dept_value = JSON.parse('<?php echo $dept_json; ?>');
+        var menu_value = JSON.parse('<?php echo $menu_json; ?>');
+
+        var dept_grid_new = false;
+        var dept_grid_obj = JSON.parse('<?php echo $dept_rows_json; ?>');
+
+        var dept_arr = new DeptInfo();
+        dept_arr.menu_1 = menu_value['menu_1'];
+        dept_arr.menu_2 = menu_value['menu_2'];
+        dept_arr.dept['一级部门'] = dept_grid_obj[0]['取值'];
+        dept_arr.dept['二级部门'] = dept_grid_obj[1]['取值'];
+
         // 部门选择窗口
         var win_dept_set = new dhx.Window(
         {
@@ -490,17 +497,6 @@
         var html = '<div id="dept_set_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
         win_dept_set.attachHTML(html);
         win_dept_set.hide();
-
-        var dept_grid_new = false;
-        var dept_grid_obj =
-            [
-                {'部门':'一级部门', '级别':1, '取值':'北京电信发展有限公司'},
-                {'部门':'二级部门', '级别':2, '取值':'呼叫中心'},
-                {'部门':'三级部门', '级别':3, '取值':''},
-                {'部门':'四级部门', '级别':4, '取值':''},
-                {'部门':'五级部门', '级别':5, '取值':''},
-                {'部门':'六级部门', '级别':6, '取值':''},
-            ];
 
         const dept_grid_options = 
         {
@@ -561,15 +557,7 @@
         {
             if (id == '清空')
             {
-                dept_grid_obj =
-                    [
-                        {'部门':'一级部门', '级别':1, '取值':'北京电信发展有限公司'},
-                        {'部门':'二级部门', '级别':2, '取值':'呼叫中心'},
-                        {'部门':'三级部门', '级别':3, '取值':''},
-                        {'部门':'四级部门', '级别':4, '取值':''},
-                        {'部门':'五级部门', '级别':5, '取值':''},
-                        {'部门':'六级部门', '级别':6, '取值':''},
-                    ];
+                dept_grid_obj = JSON.parse('<?php echo $dept_rows_json; ?>');
                 dept_grid_options.api.setRowData(dept_grid_obj);
             }
             else if (id == '添加' || id == '替换')
@@ -602,6 +590,7 @@
                     dept_arr.dept['四级部门'] = send_obj['四级部门'];
                     dept_arr.dept['五级部门'] = send_obj['五级部门'];
                     dept_arr.dept['六级部门'] = send_obj['六级部门'];
+                    dept_arr.dept['七级部门'] = send_obj['七级部门'];
 
                     let api = dept_arr.grid_api;
                     api.stopEditing();

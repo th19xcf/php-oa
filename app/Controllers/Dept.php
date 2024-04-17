@@ -1,5 +1,5 @@
 <?php
-/* v1.7.4.1.202404101130, from office */
+/* v1.7.5.1.202404172345, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -423,10 +423,12 @@ class Dept extends Controller
                 and 三级部门名称="%s"
                 and 四级部门名称="%s"
                 and 五级部门名称="%s"
-                and 六级部门名称="%s"',
+                and 六级部门名称="%s"
+                and 七级部门名称="%s"',
             $arg['部门级别'],
             $arg['一级部门'], $arg['二级部门'], $arg['三级部门'], 
-            $arg['四级部门'], $arg['五级部门'], $arg['六级部门']);
+            $arg['四级部门'], $arg['五级部门'], $arg['六级部门'],
+            $arg['七级部门']);
 
         $rows = $model->select($sql)->getResultArray();
         exit(sprintf('%s^%s', $rows[0]['部门编码'], $rows[0]['二级全称']));

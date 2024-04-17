@@ -1,5 +1,5 @@
 <?php
-/* v10.1.1.1.202404101450, from office */
+/* v10.1.2.1.202404172345, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -739,7 +739,18 @@ class Frame extends Controller
             array_push($dept_arr[$row->部门级别][$row->上级部门名称], $row->部门名称);
         }
 
+        // 部门表显示信息
+        $dept_rows_arr = [];
+        array_push($dept_rows_arr, array('部门'=>'一级部门', '级别'=>'1', '取值'=>'公司'));
+        array_push($dept_rows_arr, array('部门'=>'二级部门', '级别'=>'2', '取值'=>'呼叫中心'));
+        array_push($dept_rows_arr, array('部门'=>'三级部门', '级别'=>'3', '取值'=>''));
+        array_push($dept_rows_arr, array('部门'=>'四级部门', '级别'=>'4', '取值'=>''));
+        array_push($dept_rows_arr, array('部门'=>'五级部门', '级别'=>'5', '取值'=>''));
+        array_push($dept_rows_arr, array('部门'=>'六级部门', '级别'=>'6', '取值'=>''));
+        array_push($dept_rows_arr, array('部门'=>'七级部门', '级别'=>'7', '取值'=>''));
+
         //返回页面
+        $send['dept_rows_json'] = json_encode($dept_rows_arr);
         $send['dept_json'] = json_encode($dept_arr);
         $send['menu_json'] = json_encode($menu_arr);
         $send['toolbar_json'] = json_encode($tb_arr);
