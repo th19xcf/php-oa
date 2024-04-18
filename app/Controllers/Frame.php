@@ -1,5 +1,5 @@
 <?php
-/* v10.1.2.1.202404172345, from home */
+/* v10.2.1.1.202404181650, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -216,10 +216,12 @@ class Frame extends Controller
         $query_where = '';
         $query_group = '';
         $query_order = '';
-        $next_func_id = '';
-        $next_func_name = '';
-        $next_func_condition = '';
+        $next_func_id = '';  //钻取模块
+        $next_func_name = '';  //钻取模块名称
+        $next_func_condition = '';  //钻取条件
         $import_func_id = '';
+        $after_insert = '';  //新增后处理模块
+        $after_update = '';  //更新后处理模块
         $result_count = '';
         $data_table = '';
         $data_model = '';
@@ -231,6 +233,7 @@ class Frame extends Controller
                 查询表名,
                 数据表名,数据模式,
                 查询条件,汇总条件,排序条件,初始条数,
+                新增后处理模块,更新后处理模块,
                 钻取模块,钻取条件,ifnull(t2.钻取模块名称,"") as 钻取模块名称,
                 导入模块,ifnull(t3.导入模块名称,"") as 导入模块名称
             from view_function as t1
@@ -278,6 +281,9 @@ class Frame extends Controller
 
             $import_func_id = $row->导入模块;
             $import_func_name = $row->导入模块名称;
+
+            $after_insert = $row->新增后处理模块;
+            $after_update = $row->更新后处理模块;
 
             $data_table = $row->数据表名;
             $data_model = $row->数据模式;
@@ -666,6 +672,10 @@ class Frame extends Controller
 
         $session_arr[$menu_id.'-import_func_id'] = $import_func_id;
         $session_arr[$menu_id.'-import_func_name'] = $import_func_name;
+
+        $session_arr[$menu_id.'-after_insert'] = $after_insert;
+        $session_arr[$menu_id.'-after_update'] = $after_update;
+
         $session_arr[$menu_id.'-data_table'] = $data_table;
         $session_arr[$menu_id.'-data_model'] = $data_model;
 
@@ -1142,7 +1152,7 @@ class Frame extends Controller
         $model->sql_log('存储过程', $menu_id, sprintf('sp=%s,条件=%s', $sp_name, str_replace('"','`',$sp_param_str)));
 
         // 读出数据
-        $results = $model->select($sp_sql)->getResult();    
+        $results = $model->select($sp_sql)->getResult();
 
         // 存入session
         $session_arr = [];
@@ -1165,6 +1175,7 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $data_model = $session->get($menu_id.'-data_model');
         $columns_arr = $session->get($menu_id.'-columns_arr');
+        $after_update = $session->get($menu_id.'-after_update');
 
         //处理部门信息
         foreach ($columns_arr as $column)
@@ -1188,21 +1199,30 @@ class Frame extends Controller
             }
         }
 
+        $num = 0;
         switch ($data_model)
         {
             case '0': //无额外字段
-                $this->update_row_0($menu_id, $row_arr);
+                $num = $this->update_row_0($menu_id, $row_arr);
                 break;
             case '1': //有额外字段,模式1
-                $this->update_row_1($menu_id, $row_arr);
+                $num = $this->update_row_1($menu_id, $row_arr);
                 break;
             case '2': //有额外字段,模式2
-                $this->update_row_2($menu_id, $row_arr);
+                $num = $this->update_row_2($menu_id, $row_arr);
                 break;
             default:
                 exit(sprintf('更新失败,数据模式[-%d-]错误',$data_model));
-                break;
         }
+
+        // 执行后处理
+        if ($after_update != '')
+        {
+            $model = new Mcommon();
+            $model->select(sprintf('call %s', $after_update));
+        }
+
+        exit(sprintf('更新[%d]成功,更新 %d 条记录',$data_model,$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -1259,7 +1279,7 @@ class Frame extends Controller
         $model->sql_log('更新[0]', $menu_id, sprintf('表名=`%s`,更新=`%s`,GUID=`%s`', $data_table, $change_fld_str, $primary_key));
 
         $num = $model->exec($sql);
-        exit(sprintf('更新[0]成功,更新 %d 条记录',$num));
+        return $num;
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -1415,8 +1435,7 @@ class Frame extends Controller
 
         $num = $model->exec($sql_insert);
         $num = $model->exec($sql_update);
-
-        exit(sprintf('更新[1]成功,更新 %d 条',$num));
+        return $num;
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -1586,8 +1605,7 @@ class Frame extends Controller
 
         $num = $model->exec($sql_insert);
         $num = $model->exec($sql_update);
-
-        exit(sprintf('更新[2]成功,更新 %d 条',$num));
+        return $num;
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -1601,6 +1619,7 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $data_model = $session->get($menu_id.'-data_model');
         $columns_arr = $session->get($menu_id.'-columns_arr');
+        $after_insert = $session->get($menu_id.'-after_insert');
 
         //处理部门信息
         foreach ($columns_arr as $column)
@@ -1624,21 +1643,30 @@ class Frame extends Controller
             }
         }
 
+        $num = 0;
         switch ($data_model)
         {
             case '0': // 模式0,无额外字段
-                $this->add_row_0($menu_id, $row_arr);
+                $num = $this->add_row_0($menu_id, $row_arr);
                 break;
             case '1': // 模式1,有额外字段
-                $this->add_row_1($menu_id, $row_arr);
+                $num = $this->add_row_1($menu_id, $row_arr);
                 break;
             case '2': // 模式2,有额外字段
-                $this->add_row_2($menu_id, $row_arr);
+                $num = $this->add_row_2($menu_id, $row_arr);
                 break;
             default:
                 exit(sprintf('新增失败,数据模式[-%d-]错误',$data_model));
-            break;
         }
+
+        // 执行后处理
+        if ($after_insert != '')
+        {
+            $model = new Mcommon();
+            $model->select(sprintf('call %s', $after_insert));
+        }
+
+        exit(sprintf('更新[%d]成功,更新 %d 条记录',$data_model,$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -1682,8 +1710,7 @@ class Frame extends Controller
         $model->sql_log('新增[0]', $menu_id, sprintf('表名=`%s`', $data_table));
         // 新增
         $num = $model->exec($sql);
-
-        exit(sprintf('新增[0]成功,新增 %d 条记录',$num));
+        return $num;
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -1732,8 +1759,7 @@ class Frame extends Controller
         $model->sql_log('新增[1]', $menu_id, sprintf('表名=`%s`', $data_table));
         // 新增
         $num = $model->exec($sql);
-
-        exit(sprintf('新增[1]成功,新增 %d 条记录',$num));
+        return $num;
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -1784,8 +1810,7 @@ class Frame extends Controller
         $model->sql_log('新增[2]', $menu_id, sprintf('表名=`%s`', $data_table));
         // 新增
         $num = $model->exec($sql);
-
-        exit(sprintf('新增[2]成功,新增 %d 条记录',$num));
+        return $num;
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
