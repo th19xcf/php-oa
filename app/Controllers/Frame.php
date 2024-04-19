@@ -1,5 +1,5 @@
 <?php
-/* v10.2.1.1.202404181650, from office */
+/* v10.2.2.1.202404191035, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1176,6 +1176,7 @@ class Frame extends Controller
         $data_model = $session->get($menu_id.'-data_model');
         $columns_arr = $session->get($menu_id.'-columns_arr');
         $after_update = $session->get($menu_id.'-after_update');
+        $primary_key = $session->get($menu_id.'-primary_key');
 
         //处理部门信息
         foreach ($columns_arr as $column)
@@ -1219,7 +1220,8 @@ class Frame extends Controller
         if ($after_update != '')
         {
             $model = new Mcommon();
-            $model->select(sprintf('call %s', $after_update));
+            $key_str = $this->get_where($row_arr, $primary_key, 'str');
+            $model->select(sprintf('call %s("更新","%s")', $after_update, $key_str));
         }
 
         exit(sprintf('更新[%d]成功,更新 %d 条记录',$data_model,$num));
@@ -1620,6 +1622,7 @@ class Frame extends Controller
         $data_model = $session->get($menu_id.'-data_model');
         $columns_arr = $session->get($menu_id.'-columns_arr');
         $after_insert = $session->get($menu_id.'-after_insert');
+        $primary_key = $session->get($menu_id.'-primary_key');
 
         //处理部门信息
         foreach ($columns_arr as $column)
@@ -1663,7 +1666,8 @@ class Frame extends Controller
         if ($after_insert != '')
         {
             $model = new Mcommon();
-            $model->select(sprintf('call %s', $after_insert));
+            $key_str = $this->get_where($row_arr, $primary_key, 'str');
+            $model->select(sprintf('call %s("新增","%s")', $after_insert, $key_str));
         }
 
         exit(sprintf('更新[%d]成功,更新 %d 条记录',$data_model,$num));
@@ -1990,14 +1994,16 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 内部函数,取出where条件
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function get_where($row_arr, $primary_key)
+    public function get_where($row_arr, $primary_key, $rc_type='where')
     {
         $where = '';
+        $value_str = '';
         foreach ($row_arr as $row)
         {
             //主键
             if ($row['fld_name'] == $primary_key)
             {
+                $value_str = $row['value'];
                 $key_arr = explode(',', $row['value']);
 
                 $key_str = '';
@@ -2018,6 +2024,6 @@ class Frame extends Controller
             }
         }
 
-        return $where;
+        return ($rc_type == 'where') ? $where : $value_str;
     }
 }
