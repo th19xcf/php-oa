@@ -1,5 +1,5 @@
 <?php
-/* v10.2.2.1.202404191035, from office */
+/* v10.2.3.1.202404241400, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -113,7 +113,7 @@ class Frame extends Controller
                 }
                 else
                 {
-                    $location_cond = sprintf('%s or instr(%s,"%s")', $location_cond, $location);
+                    $location_cond = sprintf('%s or instr(%s,"%s")', $location_cond, $row->属地字段, $location);
                 }
             }
 
