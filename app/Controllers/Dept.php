@@ -1,5 +1,5 @@
 <?php
-/* v1.7.5.1.202404172345, from home */
+/* v1.7.6.1.202405051750, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -415,7 +415,7 @@ class Dept extends Controller
         $arg = $this->request->getJSON(true);
         $model = new Mcommon();
         $sql = sprintf('
-            select 部门编码,部门名称,二级全称,部门级别,上级部门编码
+            select 部门编码,部门名称,一级全称,部门级别,上级部门编码
             from view_dept
             where 部门级别="%s"
                 and 一级部门名称="%s"
@@ -431,6 +431,6 @@ class Dept extends Controller
             $arg['七级部门']);
 
         $rows = $model->select($sql)->getResultArray();
-        exit(sprintf('%s^%s', $rows[0]['部门编码'], $rows[0]['二级全称']));
+        exit(sprintf('%s^%s', $rows[0]['部门编码'], $rows[0]['一级全称']));
     }
 }

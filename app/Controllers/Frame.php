@@ -1,5 +1,5 @@
 <?php
-/* v10.2.3.1.202404241400, from office */
+/* v10.2.4.1.202405051905, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -759,9 +759,82 @@ class Frame extends Controller
         array_push($dept_rows_arr, array('部门'=>'六级部门', '级别'=>'6', '取值'=>''));
         array_push($dept_rows_arr, array('部门'=>'七级部门', '级别'=>'7', '取值'=>''));
 
+        //////////////////
+        // 取出科目信息
+        $sql = sprintf(
+            'select 
+                t1.科目编码,t1.科目名称,t1.科目级别,
+                if(t1.上级科目编码="","无",t1.上级科目编码) as 上级科目编码,
+                ifnull(t2.科目级别,"无") as 上级科目级别,
+                ifnull(t2.科目名称,"无") as 上级科目名称,
+                t1.级别
+            from
+            (
+                select 
+                    科目编码,科目名称,
+                    case 科目级别
+                        when 1 then "一级科目"
+                        when 2 then "二级科目"
+                        when 3 then "三级科目"
+                        when 4 then "四级科目"
+                        else "未知级别"
+                    end as 科目级别,
+                    科目级别 as 级别,
+                    if(上级科目编码="","无",上级科目编码) as 上级科目编码
+                from 中心_预算_科目
+                where 有效标识="1" and 科目级别>=1
+            ) as t1
+            left join
+            (
+                select 
+                    科目编码,科目名称,
+                    case 科目级别
+                        when 1 then "一级科目"
+                        when 2 then "二级科目"
+                        when 3 then "三级科目"
+                        when 4 then "四级科目"
+                        else "未知级别"
+                    end as 科目级别
+                from 中心_预算_科目
+                where 有效标识="1" and 科目级别>=1
+            ) as t2 on t1.上级科目编码=t2.科目编码
+            order by t1.级别,t1.科目编码');
+
+        $rows = $model->select($sql)->getResult();
+
+        $finance_arr = [];
+
+        foreach ($rows as $row)
+        {
+            if (array_key_exists($row->科目级别, $finance_arr) == false)
+            {
+                $finance_arr[$row->科目级别] = [];
+                $finance_arr[$row->科目级别]['级别'] = $row->级别;
+                $finance_arr[$row->科目级别]['上级科目级别'] = $row->上级科目级别;
+            }
+            if (array_key_exists($row->上级科目名称, $finance_arr[$row->科目级别]) == false)
+            {
+                $finance_arr[$row->科目级别][$row->上级科目名称] = [];
+            }
+            array_push($finance_arr[$row->科目级别][$row->上级科目名称], $row->科目名称);
+        }
+
+        // 科目表显示信息
+        $finance_rows_arr = [];
+        array_push($finance_rows_arr, array('科目'=>'一级科目', '级别'=>'1', '取值'=>'公司'));
+        array_push($finance_rows_arr, array('科目'=>'二级科目', '级别'=>'2', '取值'=>'呼叫中心'));
+        array_push($finance_rows_arr, array('科目'=>'三级科目', '级别'=>'3', '取值'=>''));
+        array_push($finance_rows_arr, array('科目'=>'四级科目', '级别'=>'4', '取值'=>''));
+        array_push($finance_rows_arr, array('科目'=>'五级科目', '级别'=>'5', '取值'=>''));
+        //////////////////
+
         //返回页面
         $send['dept_rows_json'] = json_encode($dept_rows_arr);
         $send['dept_json'] = json_encode($dept_arr);
+
+        $send['finance_rows_json'] = json_encode($finance_rows_arr);
+        $send['finance_json'] = json_encode($finance_arr);
+
         $send['menu_json'] = json_encode($menu_arr);
         $send['toolbar_json'] = json_encode($tb_arr);
         $send['columns_json'] = json_encode($send_columns_arr);
@@ -1181,9 +1254,9 @@ class Frame extends Controller
         //处理部门信息
         foreach ($columns_arr as $column)
         {
-            if ($column['赋值类型'] == '弹窗' && $column['对象'] == '部门')
+            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'部门') !== false)
             {
-                $dept_id = '';
+                $dept_value = '';
                 for ($ii=0; $ii<count($row_arr); $ii++)
                 {
                     if ($row_arr[$ii]['col_name'] != $column['列名']) continue;
@@ -1192,10 +1265,17 @@ class Frame extends Controller
                     foreach ($dept_arr as $dept)
                     {
                         $arr = explode('^', $dept);
-                        $dept_id = ($dept_id=='') ? $arr[0] : $dept_id.','.$arr[0];
+                        if (strpos($column['对象'],'部门编码') !== false)
+                        {
+                            $dept_value = ($dept_value=='') ? $arr[0] : $dept_value.','.$arr[0];
+                        }
+                        else if (strpos($column['对象'],'部门全称') !== false)
+                        {
+                            $dept_value = ($dept_value=='') ? $arr[1] : $dept_value.','.$arr[1];
+                        }
                     }
 
-                    $row_arr[$ii]['value'] = $dept_id;
+                    $row_arr[$ii]['value'] = $dept_value;
                 }
             }
         }
@@ -1627,9 +1707,9 @@ class Frame extends Controller
         //处理部门信息
         foreach ($columns_arr as $column)
         {
-            if ($column['赋值类型'] == '弹窗' && $column['对象'] == '部门')
+            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'部门') !== false)
             {
-                $dept_id = '';
+                $dept_value = '';
                 for ($ii=0; $ii<count($row_arr); $ii++)
                 {
                     if ($row_arr[$ii]['col_name'] != $column['列名']) continue;
@@ -1638,10 +1718,17 @@ class Frame extends Controller
                     foreach ($dept_arr as $dept)
                     {
                         $arr = explode('^', $dept);
-                        $dept_id = ($dept_id=='') ? $arr[0] : $dept_id.','.$arr[0];
+                        if (strpos($column['对象'],'部门编码') !== false)
+                        {
+                            $dept_value = ($dept_value=='') ? $arr[0] : $dept_value.','.$arr[0];
+                        }
+                        else if (strpos($column['对象'],'部门全称') !== false)
+                        {
+                            $dept_value = ($dept_value=='') ? $arr[1] : $dept_value.','.$arr[1];
+                        }
                     }
 
-                    $row_arr[$ii]['value'] = $dept_id;
+                    $row_arr[$ii]['value'] = $dept_value;
                 }
             }
         }
