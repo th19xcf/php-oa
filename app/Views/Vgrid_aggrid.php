@@ -1,4 +1,4 @@
-<!-- v6.5.4.1.202404172345, from home -->
+<!-- v6.6.1.1.202405061620, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -108,6 +108,24 @@
             this.dept['五级部门'] = '';
             this.dept['六级部门'] = '';
             this.dept['七级部门'] = '';
+        }
+
+        function FdInfo()
+        {
+            this.menu_1 = '';
+            this.menu_2 = '';
+            this.grid_api;
+            this.node_id = '';
+            this.col_name = '';
+            this.max_rank = 0;
+            this.fd_id = '';
+            this.fd_name = '';
+            this.fd = [];
+            this.fd['一级科目'] = '无';
+            this.fd['二级科目'] = '';
+            this.fd['三级科目'] = '';
+            this.fd['四级科目'] = '';
+            this.fd['五级科目'] = '';
         }
 
         function Chart()
@@ -439,11 +457,16 @@
 
         new agGrid.Grid($$('cond_grid'), cond_grid_options);
 
-        // 部门选择
-        var dept_value = JSON.parse('<?php echo $dept_json; ?>');
+        // 当前menu
         var menu_value = JSON.parse('<?php echo $menu_json; ?>');
 
-        var dept_grid_new = false;
+        // 弹窗选择
+        var popup_grid_api = null;
+        var popup_grid_content = '';
+
+        // 部门选择
+        var dept_value = JSON.parse('<?php echo $dept_json; ?>');
+
         var dept_grid_obj = JSON.parse('<?php echo $dept_rows_json; ?>');
 
         var dept_arr = new DeptInfo();
@@ -452,10 +475,19 @@
         dept_arr.dept['一级部门'] = dept_grid_obj[0]['取值'];
         dept_arr.dept['二级部门'] = dept_grid_obj[1]['取值'];
 
+        // 科目选择
+        var fd_value = JSON.parse('<?php echo $fd_json; ?>');
+        var fd_grid_new = false;
+        var fd_grid_obj = JSON.parse('<?php echo $fd_rows_json; ?>');
+
+        var fd_arr = new FdInfo();
+        fd_arr.menu_1 = menu_value['menu_1'];
+        fd_arr.menu_2 = menu_value['menu_2'];
+
         // 部门选择窗口
-        var win_dept_set = new dhx.Window(
+        var win_popup_set = new dhx.Window(
         {
-            title: '部门设置',
+            title: '条件输入窗口',
             footer: true,
             modal: true,
             width: 600,
@@ -464,7 +496,7 @@
             movable: true
         });
 
-        win_dept_set.footer.data.add(
+        win_popup_set.footer.data.add(
         {
             type: 'button',
             id: '清空',
@@ -474,7 +506,7 @@
             color: 'primary',
         });
 
-        win_dept_set.footer.data.add(
+        win_popup_set.footer.data.add(
         {
             type: 'button',
             id: '添加',
@@ -484,7 +516,7 @@
             color: 'primary',
         });
 
-        win_dept_set.footer.data.add(
+        win_popup_set.footer.data.add(
         {
             type: 'button',
             id: '替换',
@@ -494,9 +526,9 @@
             color: 'primary',
         });
 
-        var html = '<div id="dept_set_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
-        win_dept_set.attachHTML(html);
-        win_dept_set.hide();
+        var html = '<div id="popup_set_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
+        win_popup_set.attachHTML(html);
+        win_popup_set.hide();
 
         const dept_grid_options = 
         {
@@ -544,23 +576,67 @@
             rowData: dept_grid_obj
         };
 
+        const fd_grid_options = 
+        {
+            columnDefs:
+            [
+                {field:'科目', editable:false},
+                {field:'级别', editable:false},
+                {
+                    field: '取值',
+                    width: 250,
+                    cellEditorSelector: fd_select,
+                    onCellValueChanged : (params) => 
+                    {
+                        fd_arr.fd[params.data.科目] = params.newValue;
+                        if (params.data.取值 != '')
+                        {
+                            fd_arr.max_rank = params.data.级别;
+                        }
+
+                        // 清空下级部门
+                        fd_grid_options.api.forEachNode((rowNode, index) => 
+                        {
+                            if (rowNode.data['级别'] > fd_arr.max_rank)
+                            {
+                                rowNode.setDataValue('取值', '');
+                            }
+                        });
+                    },
+                }
+            ],
+            defaultColDef:
+            {
+                width: 120,
+                editable: true,
+                resizable: true
+            },
+            rowData: fd_grid_obj
+        };
+
+
         // 部门窗口事件
-        win_dept_set.events.on('afterShow', function(position, events)
+        win_popup_set.events.on('afterShow', function(position, events)
         {
         });
 
-        win_dept_set.events.on('afterHide', function(position, events)
+        win_popup_set.events.on('afterHide', function(position, events)
         {
         });
 
-        win_dept_set.footer.events.on('click', function (id)
+        win_popup_set.footer.events.on('click', function (id)
         {
-            if (id == '清空')
+            if (id == '清空' && popup_grid_content == 'DEPT')
             {
                 dept_grid_obj = JSON.parse('<?php echo $dept_rows_json; ?>');
                 dept_grid_options.api.setRowData(dept_grid_obj);
             }
-            else if (id == '添加' || id == '替换')
+            else if (id == '清空' && popup_grid_content == 'FD')
+            {
+                fd_grid_obj = JSON.parse('<?php echo $fd_rows_json; ?>');
+                fd_grid_options.api.setRowData(fd_grid_obj);
+            }
+            else if (id == '添加' || id == '替换' && popup_grid_content == 'DEPT')
             {
                 dept_grid_options.api.stopEditing();
 
@@ -574,7 +650,7 @@
                     send_obj[rowNode.data['部门']] = rowNode.data['取值'];
                 });
 
-                dhx.ajax.post('<?php base_url(); ?>/dept/verify/<?php echo $func_id; ?>', send_obj).then(function (data)
+                dhx.ajax.post('<?php base_url(); ?>/popup/dept_verify/<?php echo $func_id; ?>', send_obj).then(function (data)
                 {
                     if (dept_arr.menu_1 != menu_value['menu_1'] || dept_arr.menu_2 != menu_value['menu_2'])
                     {
@@ -582,7 +658,7 @@
                         return;
                     }
 
-                    win_dept_set.hide();
+                    win_popup_set.hide();
 
                     dept_arr.dept['一级部门'] = send_obj['一级部门'];
                     dept_arr.dept['二级部门'] = send_obj['二级部门'];
@@ -617,6 +693,61 @@
                     alert('`校验部门信息`失败, ' + " " + err.statusText);
                 });
             }
+            else if (id == '添加' || id == '替换' && popup_grid_content == 'FD')
+            {
+                fd_grid_options.api.stopEditing();
+
+                // 获表中的数据
+                let send_obj = {};
+                send_obj['操作'] = id;
+                send_obj['科目级别'] = fd_arr.max_rank;
+                fd_grid_options.api.stopEditing();
+                fd_grid_options.api.forEachNode((rowNode, index) => 
+                {
+                    send_obj[rowNode.data['科目']] = rowNode.data['取值'];
+                });
+
+                dhx.ajax.post('<?php base_url(); ?>/popup/fd_verify/<?php echo $func_id; ?>', send_obj).then(function (data)
+                {
+                    if (fd_arr.menu_1 != menu_value['menu_1'] || fd_arr.menu_2 != menu_value['menu_2'])
+                    {
+                        alert('页面已切换,请重新输入');
+                        return;
+                    }
+
+                    win_popup_set.hide();
+
+                    fd_arr.fd['一级科目'] = send_obj['一级科目'];
+                    fd_arr.fd['二级科目'] = send_obj['二级科目'];
+                    fd_arr.fd['三级科目'] = send_obj['三级科目'];
+                    fd_arr.fd['四级科目'] = send_obj['四级科目'];
+                    fd_arr.fd['五级科目'] = send_obj['五级科目'];
+
+                    let api = fd_arr.grid_api;
+                    api.stopEditing();
+                    let row_node = api.getRowNode(fd_arr['node_id']);
+
+                    if (id == '添加')
+                    {
+                        if (row_node.data['取值'] == '' || row_node.data['取值'] == undefined)
+                        {
+                            row_node.setDataValue('取值', data);
+                        }
+                        else
+                        {
+                            row_node.setDataValue('取值', row_node.data['取值'] + ',' + data);
+                        }
+                    }
+                    else if (id == '替换')
+                    {
+                        row_node.setDataValue('取值', data);
+                    }
+                }).catch(function (err)
+                {
+                    console.log(err);
+                    alert('`校验科目信息`失败, ' + " " + err.statusText);
+                });
+            }
         });
 
         function dept_select(params)
@@ -631,6 +762,39 @@
                 for (let val in dept[item])
                 {
                     data_arr.push(dept[item][val]);
+                }
+            }
+
+            return {
+                component: 'agSelectCellEditor',
+                params: {
+                    values: data_arr
+                },
+            };
+        }
+
+        function fd_select(params)
+        {
+            let fd = fd_value[params.data.科目];
+            let data_arr = [];
+            data_arr[0] = '';
+
+            if (params.data.科目 == '一级科目' && fd['上级科目级别'] == '无')
+            {
+                for (let val in fd['无'])
+                {
+                    data_arr.push(fd['无'][val]);
+                }
+            }
+            else
+            {
+                for (let item in fd)
+                {
+                    if (fd_arr.fd[fd['上级科目级别']] != item) continue;
+                    for (let val in fd[item])
+                    {
+                        data_arr.push(fd[item][val]);
+                    }
                 }
             }
 
@@ -1776,14 +1940,39 @@
                             component: 'datePicker',
                         };
                     case '弹窗':
-                        dept_arr.grid_api = params.api;
-                        dept_arr.node_id = params.node.id;
-                        dept_arr.col_name = col_name;
-                        win_dept_set.show();
-                        if (dept_grid_new == false)
+                        if (columns_obj[ii].对象.indexOf('部门') != -1)
                         {
-                            new agGrid.Grid($$('dept_set_grid'), dept_grid_options);
-                            dept_grid_new = true;
+                            dept_arr.grid_api = params.api;
+                            dept_arr.node_id = params.node.id;
+                            dept_arr.col_name = col_name;
+                            win_popup_set.show();
+                            if (popup_grid_content == 'FD')
+                            {
+                                popup_grid_api.destroy();
+                                popup_grid_content = '';
+                            }
+                            if (popup_grid_content == '')
+                            {
+                                popup_grid_api = new agGrid.Grid($$('popup_set_grid'), dept_grid_options);
+                                popup_grid_content = 'DEPT';
+                            }
+                        }
+                        else if (columns_obj[ii].对象.indexOf('科目') != -1)
+                        {
+                            fd_arr.grid_api = params.api;
+                            fd_arr.node_id = params.node.id;
+                            fd_arr.col_name = col_name;
+                            win_popup_set.show();
+                            if (popup_grid_content == 'DEPT')
+                            {
+                                popup_grid_api.destroy();
+                                popup_grid_content = '';
+                            }
+                            if (popup_grid_content == '')
+                            {
+                                popup_grid_api = new agGrid.Grid($$('popup_set_grid'), fd_grid_options);
+                                popup_grid_content = 'FD';
+                            }
                         }
                         break;
                 }

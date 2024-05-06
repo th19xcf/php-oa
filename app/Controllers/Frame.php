@@ -1,5 +1,5 @@
 <?php
-/* v10.2.4.1.202405051905, from home */
+/* v10.3.1.1.202405061620, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -759,7 +759,6 @@ class Frame extends Controller
         array_push($dept_rows_arr, array('部门'=>'六级部门', '级别'=>'6', '取值'=>''));
         array_push($dept_rows_arr, array('部门'=>'七级部门', '级别'=>'7', '取值'=>''));
 
-        //////////////////
         // 取出科目信息
         $sql = sprintf(
             'select 
@@ -802,38 +801,37 @@ class Frame extends Controller
 
         $rows = $model->select($sql)->getResult();
 
-        $finance_arr = [];
+        $fd_arr = []; // finace dept
 
         foreach ($rows as $row)
         {
-            if (array_key_exists($row->科目级别, $finance_arr) == false)
+            if (array_key_exists($row->科目级别, $fd_arr) == false)
             {
-                $finance_arr[$row->科目级别] = [];
-                $finance_arr[$row->科目级别]['级别'] = $row->级别;
-                $finance_arr[$row->科目级别]['上级科目级别'] = $row->上级科目级别;
+                $fd_arr[$row->科目级别] = [];
+                $fd_arr[$row->科目级别]['级别'] = $row->级别;
+                $fd_arr[$row->科目级别]['上级科目级别'] = $row->上级科目级别;
             }
-            if (array_key_exists($row->上级科目名称, $finance_arr[$row->科目级别]) == false)
+            if (array_key_exists($row->上级科目名称, $fd_arr[$row->科目级别]) == false)
             {
-                $finance_arr[$row->科目级别][$row->上级科目名称] = [];
+                $fd_arr[$row->科目级别][$row->上级科目名称] = [];
             }
-            array_push($finance_arr[$row->科目级别][$row->上级科目名称], $row->科目名称);
+            array_push($fd_arr[$row->科目级别][$row->上级科目名称], $row->科目名称);
         }
 
         // 科目表显示信息
-        $finance_rows_arr = [];
-        array_push($finance_rows_arr, array('科目'=>'一级科目', '级别'=>'1', '取值'=>'公司'));
-        array_push($finance_rows_arr, array('科目'=>'二级科目', '级别'=>'2', '取值'=>'呼叫中心'));
-        array_push($finance_rows_arr, array('科目'=>'三级科目', '级别'=>'3', '取值'=>''));
-        array_push($finance_rows_arr, array('科目'=>'四级科目', '级别'=>'4', '取值'=>''));
-        array_push($finance_rows_arr, array('科目'=>'五级科目', '级别'=>'5', '取值'=>''));
-        //////////////////
+        $fd_rows_arr = [];
+        array_push($fd_rows_arr, array('科目'=>'一级科目', '级别'=>'1', '取值'=>''));
+        array_push($fd_rows_arr, array('科目'=>'二级科目', '级别'=>'2', '取值'=>''));
+        array_push($fd_rows_arr, array('科目'=>'三级科目', '级别'=>'3', '取值'=>''));
+        array_push($fd_rows_arr, array('科目'=>'四级科目', '级别'=>'4', '取值'=>''));
+        array_push($fd_rows_arr, array('科目'=>'五级科目', '级别'=>'5', '取值'=>''));
 
         //返回页面
         $send['dept_rows_json'] = json_encode($dept_rows_arr);
         $send['dept_json'] = json_encode($dept_arr);
 
-        $send['finance_rows_json'] = json_encode($finance_rows_arr);
-        $send['finance_json'] = json_encode($finance_arr);
+        $send['fd_rows_json'] = json_encode($fd_rows_arr);
+        $send['fd_json'] = json_encode($fd_arr);
 
         $send['menu_json'] = json_encode($menu_arr);
         $send['toolbar_json'] = json_encode($tb_arr);
@@ -1276,6 +1274,35 @@ class Frame extends Controller
                     }
 
                     $row_arr[$ii]['value'] = $dept_value;
+                }
+            }
+        }
+
+        //处理科目信息
+        foreach ($columns_arr as $column)
+        {
+            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'科目') !== false)
+            {
+                $fd_value = '';
+                for ($ii=0; $ii<count($row_arr); $ii++)
+                {
+                    if ($row_arr[$ii]['col_name'] != $column['列名']) continue;
+
+                    $fd_arr = explode(',', $row_arr[$ii]['value']);
+                    foreach ($fd_arr as $fd)
+                    {
+                        $arr = explode('^', $fd);
+                        if (strpos($column['对象'],'科目编码') !== false)
+                        {
+                            $fd_value = ($fd_value=='') ? $arr[0] : $fd_value.','.$arr[0];
+                        }
+                        else if (strpos($column['对象'],'科目全称') !== false)
+                        {
+                            $fd_value = ($fd_value=='') ? $arr[1] : $fd_value.','.$arr[1];
+                        }
+                    }
+
+                    $row_arr[$ii]['value'] = $fd_value;
                 }
             }
         }
@@ -1729,6 +1756,35 @@ class Frame extends Controller
                     }
 
                     $row_arr[$ii]['value'] = $dept_value;
+                }
+            }
+        }
+
+        //处理科目信息
+        foreach ($columns_arr as $column)
+        {
+            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'科目') !== false)
+            {
+                $fd_value = '';
+                for ($ii=0; $ii<count($row_arr); $ii++)
+                {
+                    if ($row_arr[$ii]['col_name'] != $column['列名']) continue;
+
+                    $fd_arr = explode(',', $row_arr[$ii]['value']);
+                    foreach ($fd_arr as $fd)
+                    {
+                        $arr = explode('^', $fd);
+                        if (strpos($column['对象'],'科目编码') !== false)
+                        {
+                            $fd_value = ($fd_value=='') ? $arr[0] : $fd_value.','.$arr[0];
+                        }
+                        else if (strpos($column['对象'],'科目全称') !== false)
+                        {
+                            $fd_value = ($fd_value=='') ? $arr[1] : $fd_value.','.$arr[1];
+                        }
+                    }
+
+                    $row_arr[$ii]['value'] = $fd_value;
                 }
             }
         }

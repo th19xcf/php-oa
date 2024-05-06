@@ -1,5 +1,5 @@
 <?php
-/* v1.7.6.1.202405051750, from home */
+/* v1.7.6.1.202405061620, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -405,32 +405,5 @@ class Dept extends Controller
         $num = $model->exec($sql_update);
 
         exit(sprintf('删除成功,删除 %d 条记录',$num));
-    }
-
-    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 部门校验
-    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function verify($menu_id='')
-    {
-        $arg = $this->request->getJSON(true);
-        $model = new Mcommon();
-        $sql = sprintf('
-            select 部门编码,部门名称,一级全称,部门级别,上级部门编码
-            from view_dept
-            where 部门级别="%s"
-                and 一级部门名称="%s"
-                and 二级部门名称="%s"
-                and 三级部门名称="%s"
-                and 四级部门名称="%s"
-                and 五级部门名称="%s"
-                and 六级部门名称="%s"
-                and 七级部门名称="%s"',
-            $arg['部门级别'],
-            $arg['一级部门'], $arg['二级部门'], $arg['三级部门'], 
-            $arg['四级部门'], $arg['五级部门'], $arg['六级部门'],
-            $arg['七级部门']);
-
-        $rows = $model->select($sql)->getResultArray();
-        exit(sprintf('%s^%s', $rows[0]['部门编码'], $rows[0]['一级全称']));
     }
 }
