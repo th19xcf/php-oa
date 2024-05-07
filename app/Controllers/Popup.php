@@ -1,5 +1,5 @@
 <?php
-/* v1.1.1.1.202405061620, from office */
+/* v1.2.1.1.202405070930, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -13,7 +13,7 @@ class Popup extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 部门校验
+    // 运营部门校验
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function dept_verify($menu_id='')
     {
@@ -37,6 +37,33 @@ class Popup extends Controller
 
         $rows = $model->select($sql)->getResultArray();
         exit(sprintf('%s^%s', $rows[0]['部门编码'], $rows[0]['一级全称']));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 预算部门校验
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function budget_verify($menu_id='')
+    {
+        $arg = $this->request->getJSON(true);
+        $model = new Mcommon();
+        $sql = sprintf('
+            select "" as 部门编码,统计部门全称
+            from 中心_预算_部门
+            where 统计部门级别="%s"
+                and 一级统计部门="%s"
+                and 二级统计部门="%s"
+                and 三级统计部门="%s"
+                and 四级统计部门="%s"
+                and 五级统计部门="%s"
+                and 六级统计部门="%s"
+                and 七级统计部门="%s"',
+            $arg['部门级别'],
+            $arg['一级部门'], $arg['二级部门'], $arg['三级部门'], 
+            $arg['四级部门'], $arg['五级部门'], $arg['六级部门'],
+            $arg['七级部门']);
+
+        $rows = $model->select($sql)->getResultArray();
+        exit(sprintf('%s^%s', $rows[0]['部门编码'], $rows[0]['统计部门全称']));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

@@ -1,5 +1,5 @@
 <?php
-/* v10.3.1.1.202405061620, from office */
+/* v10.4.1.1.202405070930, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -688,7 +688,7 @@ class Frame extends Controller
         $tb_arr['导入授权'] = ($import_authz=='1' && $import_func_id!='') ? true : false ;
         $tb_arr['导出授权'] = ($export_authz=='1') ? true : false ;
 
-        // 取出部门信息
+        // 取出运营部门信息
         $sql = sprintf(
             'select 
                 t1.部门编码,t1.部门名称,t1.部门级别,
@@ -749,7 +749,7 @@ class Frame extends Controller
             array_push($dept_arr[$row->部门级别][$row->上级部门名称], $row->部门名称);
         }
 
-        // 部门表显示信息
+        // 前端运营部门显示信息
         $dept_rows_arr = [];
         array_push($dept_rows_arr, array('部门'=>'一级部门', '级别'=>'1', '取值'=>'公司'));
         array_push($dept_rows_arr, array('部门'=>'二级部门', '级别'=>'2', '取值'=>'呼叫中心'));
@@ -758,6 +758,69 @@ class Frame extends Controller
         array_push($dept_rows_arr, array('部门'=>'五级部门', '级别'=>'5', '取值'=>''));
         array_push($dept_rows_arr, array('部门'=>'六级部门', '级别'=>'6', '取值'=>''));
         array_push($dept_rows_arr, array('部门'=>'七级部门', '级别'=>'7', '取值'=>''));
+
+        // 取出预算部门信息
+        $sql = sprintf(
+            'select 
+                "" as 部门编码,
+                substring_index(统计部门全称,">>",-1) as 部门名称,
+                统计部门全称 as 部门全称,
+                case 统计部门级别
+                    when 1 then "一级部门"
+                    when 2 then "二级部门"
+                    when 3 then "三级部门"
+                    when 4 then "四级部门"
+                    when 5 then "五级部门"
+                    when 6 then "六级部门"
+                    when 7 then "七级部门"
+                    else "未知级别"
+                end as 部门级别,
+                统计部门级别 as 级别,
+                substring_index(substring_index(统计部门全称,">>",统计部门级别-1),">>",-1) as 上级部门名称,
+                substring_index(统计部门全称,">>",统计部门级别-1) as 上级部门全称,
+                case 统计部门级别-1
+                    when 1 then "一级部门"
+                    when 2 then "二级部门"
+                    when 3 then "三级部门"
+                    when 4 then "四级部门"
+                    when 5 then "五级部门"
+                    when 6 then "六级部门"
+                    when 7 then "七级部门"
+                    else "未知级别"
+                end as 上级部门级别
+            from 中心_预算_部门
+            where 统计部门级别=1 or 有效标识!=0
+            group by 部门全称
+            order by 级别,部门全称');
+
+        $rows = $model->select($sql)->getResult();
+
+        $budget_arr = []; // finace dept
+
+        foreach ($rows as $row)
+        {
+            if (array_key_exists($row->部门级别, $budget_arr) == false)
+            {
+                $budget_arr[$row->部门级别] = [];
+                $budget_arr[$row->部门级别]['级别'] = $row->级别;
+                $budget_arr[$row->部门级别]['上级部门级别'] = $row->上级部门级别;
+            }
+            if (array_key_exists($row->上级部门名称, $budget_arr[$row->部门级别]) == false)
+            {
+                $budget_arr[$row->部门级别][$row->上级部门名称] = [];
+            }
+            array_push($budget_arr[$row->部门级别][$row->上级部门名称], $row->部门名称);
+        }
+
+        // 前端预算部门显示信息
+        $budget_rows_arr = [];
+        array_push($budget_rows_arr, array('部门'=>'一级部门', '级别'=>'1', '取值'=>'公司'));
+        array_push($budget_rows_arr, array('部门'=>'二级部门', '级别'=>'2', '取值'=>'呼叫中心'));
+        array_push($budget_rows_arr, array('部门'=>'三级部门', '级别'=>'3', '取值'=>''));
+        array_push($budget_rows_arr, array('部门'=>'四级部门', '级别'=>'4', '取值'=>''));
+        array_push($budget_rows_arr, array('部门'=>'五级部门', '级别'=>'5', '取值'=>''));
+        array_push($budget_rows_arr, array('部门'=>'六级部门', '级别'=>'6', '取值'=>''));
+        array_push($budget_rows_arr, array('部门'=>'七级部门', '级别'=>'7', '取值'=>''));
 
         // 取出科目信息
         $sql = sprintf(
@@ -818,7 +881,7 @@ class Frame extends Controller
             array_push($fd_arr[$row->科目级别][$row->上级科目名称], $row->科目名称);
         }
 
-        // 科目表显示信息
+        // 前端科目显示信息
         $fd_rows_arr = [];
         array_push($fd_rows_arr, array('科目'=>'一级科目', '级别'=>'1', '取值'=>''));
         array_push($fd_rows_arr, array('科目'=>'二级科目', '级别'=>'2', '取值'=>''));
@@ -832,6 +895,9 @@ class Frame extends Controller
 
         $send['fd_rows_json'] = json_encode($fd_rows_arr);
         $send['fd_json'] = json_encode($fd_arr);
+
+        $send['budget_rows_json'] = json_encode($budget_rows_arr);
+        $send['budget_json'] = json_encode($budget_arr);
 
         $send['menu_json'] = json_encode($menu_arr);
         $send['toolbar_json'] = json_encode($tb_arr);
@@ -1249,10 +1315,10 @@ class Frame extends Controller
         $after_update = $session->get($menu_id.'-after_update');
         $primary_key = $session->get($menu_id.'-primary_key');
 
-        //处理部门信息
+        //处理运营部门信息
         foreach ($columns_arr as $column)
         {
-            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'部门') !== false)
+            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'运营部门') !== false)
             {
                 $dept_value = '';
                 for ($ii=0; $ii<count($row_arr); $ii++)
@@ -1274,6 +1340,35 @@ class Frame extends Controller
                     }
 
                     $row_arr[$ii]['value'] = $dept_value;
+                }
+            }
+        }
+
+        //处理预算部门信息
+        foreach ($columns_arr as $column)
+        {
+            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'预算部门') !== false)
+            {
+                $budget_value = '';
+                for ($ii=0; $ii<count($row_arr); $ii++)
+                {
+                    if ($row_arr[$ii]['col_name'] != $column['列名']) continue;
+
+                    $budget_arr = explode(',', $row_arr[$ii]['value']);
+                    foreach ($budget_arr as $budget)
+                    {
+                        $arr = explode('^', $budget);
+                        if (strpos($column['对象'],'部门编码') !== false)
+                        {
+                            $budget_value = ($budget_value=='') ? $arr[0] : $budget_value.','.$arr[0];
+                        }
+                        else if (strpos($column['对象'],'部门全称') !== false)
+                        {
+                            $budget_value = ($budget_value=='') ? $arr[1] : $budget_value.','.$arr[1];
+                        }
+                    }
+
+                    $row_arr[$ii]['value'] = $budget_value;
                 }
             }
         }
@@ -1731,10 +1826,10 @@ class Frame extends Controller
         $after_insert = $session->get($menu_id.'-after_insert');
         $primary_key = $session->get($menu_id.'-primary_key');
 
-        //处理部门信息
+        //处理运营部门信息
         foreach ($columns_arr as $column)
         {
-            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'部门') !== false)
+            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'运营部门') !== false)
             {
                 $dept_value = '';
                 for ($ii=0; $ii<count($row_arr); $ii++)
@@ -1756,6 +1851,35 @@ class Frame extends Controller
                     }
 
                     $row_arr[$ii]['value'] = $dept_value;
+                }
+            }
+        }
+
+        //处理预算部门信息
+        foreach ($columns_arr as $column)
+        {
+            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'预算部门') !== false)
+            {
+                $budget_value = '';
+                for ($ii=0; $ii<count($row_arr); $ii++)
+                {
+                    if ($row_arr[$ii]['col_name'] != $column['列名']) continue;
+
+                    $budget_arr = explode(',', $row_arr[$ii]['value']);
+                    foreach ($budget_arr as $budget)
+                    {
+                        $arr = explode('^', $budget);
+                        if (strpos($column['对象'],'部门编码') !== false)
+                        {
+                            $budget_value = ($budget_value=='') ? $arr[0] : $budget_value.','.$arr[0];
+                        }
+                        else if (strpos($column['对象'],'部门全称') !== false)
+                        {
+                            $budget_value = ($budget_value=='') ? $arr[1] : $budget_value.','.$arr[1];
+                        }
+                    }
+
+                    $row_arr[$ii]['value'] = $budget_value;
                 }
             }
         }
