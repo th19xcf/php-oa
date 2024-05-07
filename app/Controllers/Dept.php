@@ -1,5 +1,5 @@
 <?php
-/* v1.7.6.1.202405061620, from office */
+/* v1.8.1.1.202405071805, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -24,6 +24,10 @@ class Dept extends Controller
         $add_authz = $session->get($menu_id.'-add_authz');
         $modify_authz = $session->get($menu_id.'-modify_authz');
         $delete_authz = $session->get($menu_id.'-delete_authz');
+
+        $menu_arr = [];
+        $menu_arr['menu_1'] = $session->get($menu_id.'-menu_1');
+        $menu_arr['menu_2'] = $session->get($menu_id.'-menu_2');
 
         $tb_arr = [];
         $tb_arr['新增授权'] = ($add_authz=='1') ? true : false ;
@@ -89,6 +93,14 @@ class Dept extends Controller
         $send['toolbar_json'] = json_encode($tb_arr);
         $send['tree_expand_json'] = json_encode($tree_expand);
         $send['dept_json'] = json_encode($arr);
+        $send['menu_json'] = json_encode($menu_arr);
+
+        // 取出弹窗参数
+        $popup_arr = $this->get_popup($menu_id);
+
+        //返回页面
+        $send['budget_rows_json'] = json_encode($popup_arr['budget_rows']);
+        $send['budget_json'] = json_encode($popup_arr['budget_value']);
 
         echo view('Vdept.php', $send);
     }
@@ -126,6 +138,8 @@ class Dept extends Controller
             $sql = sprintf('
                 select 部门编码,部门名称,部门全称,部门级别,负责人,
                     上级部门编码,有无下级部门,
+                    预算表部门全称,
+                    属地,
                     记录开始日期,记录结束日期
                 from def_dept
                 where GUID="%s"', $GUID);
@@ -142,6 +156,8 @@ class Dept extends Controller
             array_push($rows_arr, array('表项'=>'部门级别', '值'=>$results[0]->部门级别));
             array_push($rows_arr, array('表项'=>'上级部门编码', '值'=>$results[0]->上级部门编码));
             array_push($rows_arr, array('表项'=>'有无下级部门', '值'=>$results[0]->有无下级部门));
+            array_push($rows_arr, array('表项'=>'预算表部门全称', '值'=>$results[0]->预算表部门全称));
+            array_push($rows_arr, array('表项'=>'属地', '值'=>$results[0]->属地));
             array_push($rows_arr, array('表项'=>'记录开始日期', '值'=>$results[0]->记录开始日期));
             array_push($rows_arr, array('表项'=>'记录结束日期', '值'=>$results[0]->记录结束日期));
         }
@@ -230,7 +246,7 @@ class Dept extends Controller
 
         //增加新记录
         $fld_str = '部门编码,部门名称,部门级别,' .
-            '上级部门编码,有无下级部门,负责人,' .
+            '上级部门编码,有无下级部门,负责人,预算表部门全称' .
             '记录开始日期,记录结束日期,' .
             '操作记录,操作来源,操作人员,' .
             '开始操作时间,结束操作时间,' .
@@ -280,10 +296,10 @@ class Dept extends Controller
             {
                 if ($key=='操作' || $key=='部门' || $key=='生效日期') continue;
                 if ($value['更改标识'] == '0') continue;
-
+                $col_value = $value['值'];
                 if ($fld == $key)
                 {
-                    $col = sprintf('"%s" as %s', $value['值'], $key);
+                    $col = sprintf('"%s" as %s', $col_value, $key);
                     break;
                 }
             }
@@ -321,7 +337,7 @@ class Dept extends Controller
         $num = $model->exec($sql_insert);
         $num = $model->exec($sql_update);
 
-        exit(sprintf('部门信息修改成功,修改 %d 条记录',$num));
+        exit(sprintf('`修改部门信息`成功,修改 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -340,19 +356,19 @@ class Dept extends Controller
         $sql = sprintf('
             insert into def_dept 
                 (部门编码,部门名称,部门级别,
-                上级部门编码,有无下级部门,负责人,
+                上级部门编码,有无下级部门,负责人,预算表部门全称,
                 记录开始日期,记录结束日期,
                 操作记录,操作来源,操作人员,
                 开始操作时间,结束操作时间,
                 校验标识,删除标识,有效标识) 
             values ("%s","%s",%d,
-                "%s","无","%s",
+                "%s","无","%s","%s",
                 "%s","",
                 "新增", "页面新增", "%s",
                 "%s","",
                 "0","0","1")',
             $arg['下级部门编码'], $arg['下级部门名称'], $arg['下级部门级别'], 
-            $arg['本级部门编码'], $arg['下级部门负责人'],
+            $arg['本级部门编码'], $arg['下级部门负责人'],$arg['预算表部门全称'],
             $arg['生效日期'],
             $user_workid,
             date('Y-m-d H:m:s'));
@@ -360,7 +376,7 @@ class Dept extends Controller
         // 新增
         $num = $model->exec($sql);
 
-        exit(sprintf('`新增面试信息`成功,新增 %d 条记录',$num));
+        exit(sprintf('`新增下级部门`成功,新增 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -404,6 +420,110 @@ class Dept extends Controller
         // 删除
         $num = $model->exec($sql_update);
 
-        exit(sprintf('删除成功,删除 %d 条记录',$num));
+        exit(sprintf('`删除部门`成功,删除 %d 条记录',$num));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 预算部门校验
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function budget_verify($menu_id='')
+    {
+        $arg = $this->request->getJSON(true);
+        $model = new Mcommon();
+        $sql = sprintf('
+            select "" as 部门编码,统计部门全称
+            from 中心_预算_部门
+            where 统计部门级别="%s"
+                and 一级统计部门="%s"
+                and 二级统计部门="%s"
+                and 三级统计部门="%s"
+                and 四级统计部门="%s"
+                and 五级统计部门="%s"
+                and 六级统计部门="%s"
+                and 七级统计部门="%s"',
+            $arg['部门级别'],
+            $arg['一级部门'], $arg['二级部门'], $arg['三级部门'], 
+            $arg['四级部门'], $arg['五级部门'], $arg['六级部门'],
+            $arg['七级部门']);
+
+        $rows = $model->select($sql)->getResultArray();
+        exit($rows[0]['统计部门全称']);
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 内部函数,取出弹窗参数
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function get_popup()
+    {
+        $model = new Mcommon();
+
+        // 取出预算部门信息
+        $sql = sprintf(
+            'select 
+                "" as 部门编码,
+                substring_index(统计部门全称,">>",-1) as 部门名称,
+                统计部门全称 as 部门全称,
+                case 统计部门级别
+                    when 1 then "一级部门"
+                    when 2 then "二级部门"
+                    when 3 then "三级部门"
+                    when 4 then "四级部门"
+                    when 5 then "五级部门"
+                    when 6 then "六级部门"
+                    when 7 then "七级部门"
+                    else "未知级别"
+                end as 部门级别,
+                统计部门级别 as 级别,
+                substring_index(substring_index(统计部门全称,">>",统计部门级别-1),">>",-1) as 上级部门名称,
+                substring_index(统计部门全称,">>",统计部门级别-1) as 上级部门全称,
+                case 统计部门级别-1
+                    when 1 then "一级部门"
+                    when 2 then "二级部门"
+                    when 3 then "三级部门"
+                    when 4 then "四级部门"
+                    when 5 then "五级部门"
+                    when 6 then "六级部门"
+                    when 7 then "七级部门"
+                    else "未知级别"
+                end as 上级部门级别
+            from 中心_预算_部门
+            where 统计部门级别=1 or 有效标识!=0
+            group by 部门全称
+            order by 级别,部门全称');
+
+        $rows = $model->select($sql)->getResult();
+
+        $budget_arr = []; // finace dept
+
+        foreach ($rows as $row)
+        {
+            if (array_key_exists($row->部门级别, $budget_arr) == false)
+            {
+                $budget_arr[$row->部门级别] = [];
+                $budget_arr[$row->部门级别]['级别'] = $row->级别;
+                $budget_arr[$row->部门级别]['上级部门级别'] = $row->上级部门级别;
+            }
+            if (array_key_exists($row->上级部门名称, $budget_arr[$row->部门级别]) == false)
+            {
+                $budget_arr[$row->部门级别][$row->上级部门名称] = [];
+            }
+            array_push($budget_arr[$row->部门级别][$row->上级部门名称], $row->部门名称);
+        }
+
+        // 前端预算部门显示信息
+        $budget_rows_arr = [];
+        array_push($budget_rows_arr, array('部门'=>'一级部门', '级别'=>'1', '取值'=>'公司'));
+        array_push($budget_rows_arr, array('部门'=>'二级部门', '级别'=>'2', '取值'=>'呼叫中心'));
+        array_push($budget_rows_arr, array('部门'=>'三级部门', '级别'=>'3', '取值'=>''));
+        array_push($budget_rows_arr, array('部门'=>'四级部门', '级别'=>'4', '取值'=>''));
+        array_push($budget_rows_arr, array('部门'=>'五级部门', '级别'=>'5', '取值'=>''));
+        array_push($budget_rows_arr, array('部门'=>'六级部门', '级别'=>'6', '取值'=>''));
+        array_push($budget_rows_arr, array('部门'=>'七级部门', '级别'=>'7', '取值'=>''));
+
+        $popup_arr = [];
+        $popup_arr['budget_value'] = $budget_arr;
+        $popup_arr['budget_rows'] = $budget_rows_arr;
+
+        return $popup_arr;
     }
 }
