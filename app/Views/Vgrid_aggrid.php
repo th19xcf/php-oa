@@ -1,4 +1,4 @@
-<!-- v6.7.1.1.202405070930, from office -->
+<!-- v6.7.2.1.202405072210, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -573,7 +573,26 @@
                         }
                         return true;
                     },
-                    cellEditorSelector: dept_select,
+                    cellEditorSelector: (params) => 
+                    {
+                        let data_arr = [];
+                        data_arr[0] = '';
+
+                        let item = dept_value[params.data.部门];  // 如:四级部门
+                        let parent_value = dept_arr.dept[item['上级部门级别']]; // 如:`三级部门`的值
+
+                        for (let val in item[parent_value])
+                        {
+                            data_arr.push(item[parent_value][val]);
+                        }
+
+                        return {
+                            component: 'agSelectCellEditor',
+                            params: {
+                                values: data_arr
+                            },
+                        };
+                    },
                     onCellValueChanged : (params) => 
                     {
                         dept_arr.dept[params.data.部门] = params.newValue;
@@ -619,7 +638,26 @@
                         }
                         return true;
                     },
-                    cellEditorSelector: budget_select,
+                    cellEditorSelector: (params) => 
+                    {
+                        let data_arr = [];
+                        data_arr[0] = '';
+
+                        let item = budget_value[params.data.部门];  // 如:四级部门
+                        let parent_value = budget_arr.budget[item['上级部门级别']]; // 如:`三级部门`的值
+
+                        for (let val in item[parent_value])
+                        {
+                            data_arr.push(item[parent_value][val]);
+                        }
+
+                        return {
+                            component: 'agSelectCellEditor',
+                            params: {
+                                values: data_arr
+                            },
+                        };
+                    },
                     onCellValueChanged : (params) => 
                     {
                         budget_arr.budget[params.data.部门] = params.newValue;
@@ -657,7 +695,39 @@
                 {
                     field: '取值',
                     width: 250,
-                    cellEditorSelector: fd_select,
+                    cellEditorSelector: (params) =>
+                    {
+                        let data_arr = [];
+                        data_arr[0] = '';
+
+                        let fd = fd_value[params.data.科目];
+                        if (params.data.科目 == '一级科目' && fd['上级科目级别'] == '无')
+                        {
+                            for (let val in fd['无'])
+                            {
+                                data_arr.push(fd['无'][val]);
+                            }
+                        }
+                        else
+                        {
+                            for (let item in fd)
+                            {
+                                if (fd_arr.fd[fd['上级科目级别']] != item) continue;
+                                for (let val in fd[item])
+                                {
+                                    data_arr.push(fd[item][val]);
+                                }
+                            }
+                        }
+
+                        return {
+                            component: 'agSelectCellEditor',
+                            params: {
+                                values: data_arr
+                            },
+                        };
+
+                    },
                     onCellValueChanged : (params) => 
                     {
                         fd_arr.fd[params.data.科目] = params.newValue;
@@ -882,85 +952,6 @@
                 });
             }
         });
-
-        function dept_select(params)
-        {
-            let dept = dept_value[params.data.部门];
-            let data_arr = [];
-            data_arr[0] = '';
-
-            for (let item in dept)
-            {
-                if (dept_arr.dept[dept['上级部门级别']] != item) continue;
-                for (let val in dept[item])
-                {
-                    data_arr.push(dept[item][val]);
-                }
-            }
-
-            return {
-                component: 'agSelectCellEditor',
-                params: {
-                    values: data_arr
-                },
-            };
-        }
-
-        function budget_select(params)
-        {
-            let budget = budget_value[params.data.部门];
-            let data_arr = [];
-            data_arr[0] = '';
-
-            for (let item in budget)
-            {
-                if (budget_arr.budget[budget['上级部门级别']] != item) continue;
-                for (let val in budget[item])
-                {
-                    data_arr.push(budget[item][val]);
-                }
-            }
-
-            return {
-                component: 'agSelectCellEditor',
-                params: {
-                    values: data_arr
-                },
-            };
-        }
-
-        function fd_select(params)
-        {
-            let fd = fd_value[params.data.科目];
-            let data_arr = [];
-            data_arr[0] = '';
-
-            if (params.data.科目 == '一级科目' && fd['上级科目级别'] == '无')
-            {
-                for (let val in fd['无'])
-                {
-                    data_arr.push(fd['无'][val]);
-                }
-            }
-            else
-            {
-                for (let item in fd)
-                {
-                    if (fd_arr.fd[fd['上级科目级别']] != item) continue;
-                    for (let val in fd[item])
-                    {
-                        data_arr.push(fd[item][val]);
-                    }
-                }
-            }
-
-            return {
-                component: 'agSelectCellEditor',
-                params: {
-                    values: data_arr
-                },
-            };
-        }
 
         // 图形设置
         var chart_grid_obj = [];
