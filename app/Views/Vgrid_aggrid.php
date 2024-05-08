@@ -1,4 +1,4 @@
-<!-- v6.7.2.1.202405072210, from home -->
+<!-- v7.1.1.1.202405081615, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -212,15 +212,6 @@
         {
             data_tb.data.add({id:'删除', type:'button', value:'删除'});
         }
-        data_tb.data.add({type:'separator'});
-        data_tb.data.add({id:'title', type:'title', value:'分页'});
-        data_tb.data.add(
-        {
-            id: '分页',
-            type: 'selectButton',
-            value: '500',
-            items: [{id:'500',value:'500'},{id:'1000',value:'1000'},{id:'2000',value:'2000'}]
-        });
         data_tb.data.add({type:'spacer'});
         if (tb_obj['导入授权'] == true)
         {
@@ -292,22 +283,24 @@
             rowSelection: 'multiple',
             //onSelectionChanged: onSelectionChanged,
             pagination: true,
+            paginationPageSize: 500,
+            paginationPageSizeSelector: [500, 1000, 2000],
             localeText: AG_GRID_LOCALE_CN,
         };
 
-        new agGrid.Grid($$('data_grid'), data_grid_options);
+        var data_grid_api = agGrid.createGrid($$('data_grid'), data_grid_options);
 
         data_grid_options.onGridReady = data_grid_ready;
 
         function data_grid_ready(event)
         {
-            data_grid_options.api.paginationSetPageSize(Number(500));
+            data_grid_api.setGridOption('paginationPageSize', 500);
             console.log('datagrid ready');
         }
 
         function onSelectionChanged()
         {
-            //var row = data_grid_options.api.getSelectedRows();
+            //var row = data_grid_api.getSelectedRows();
             alert('selectionchanged');
         }
 
@@ -373,7 +366,7 @@
             }
         };
 
-        new agGrid.Grid($$('update_grid'), update_grid_options);
+        var update_grid_api = agGrid.createGrid($$('update_grid'), update_grid_options);
 
         // cond_grid
         var cond_grid_obj = JSON.parse('<?php echo $cond_value_json; ?>');
@@ -475,7 +468,7 @@
             }
         };
 
-        new agGrid.Grid($$('cond_grid'), cond_grid_options);
+        cond_grid_api = agGrid.createGrid($$('cond_grid'), cond_grid_options);
 
         // 当前menu
         var menu_value = JSON.parse('<?php echo $menu_json; ?>');
@@ -579,11 +572,14 @@
                         data_arr[0] = '';
 
                         let item = dept_value[params.data.部门];  // 如:四级部门
-                        let parent_value = dept_arr.dept[item['上级部门级别']]; // 如:`三级部门`的值
-
-                        for (let val in item[parent_value])
+                        if (JSON.stringify(item) != '{}')
                         {
-                            data_arr.push(item[parent_value][val]);
+                            let parent_value = dept_arr.dept[item['上级部门级别']]; // 如:`三级部门`的值
+
+                            for (let val in item[parent_value])
+                            {
+                                data_arr.push(item[parent_value][val]);
+                            }
                         }
 
                         return {
@@ -602,7 +598,7 @@
                         }
 
                         // 清空下级部门
-                        dept_grid_options.api.forEachNode((rowNode, index) => 
+                        popup_grid_api.forEachNode((rowNode, index) => 
                         {
                             if (rowNode.data['级别'] > dept_arr.max_rank)
                             {
@@ -644,11 +640,14 @@
                         data_arr[0] = '';
 
                         let item = budget_value[params.data.部门];  // 如:四级部门
-                        let parent_value = budget_arr.budget[item['上级部门级别']]; // 如:`三级部门`的值
-
-                        for (let val in item[parent_value])
+                        if (JSON.stringify(item) != '{}')
                         {
-                            data_arr.push(item[parent_value][val]);
+                            let parent_value = budget_arr.budget[item['上级部门级别']]; // 如:`三级部门`的值
+
+                            for (let val in item[parent_value])
+                            {
+                                data_arr.push(item[parent_value][val]);
+                            }
                         }
 
                         return {
@@ -667,7 +666,7 @@
                         }
 
                         // 清空下级部门
-                        budget_grid_options.api.forEachNode((rowNode, index) => 
+                        popup_grid_api.forEachNode((rowNode, index) => 
                         {
                             if (rowNode.data['级别'] > budget_arr.max_rank)
                             {
@@ -737,7 +736,7 @@
                         }
 
                         // 清空下级部门
-                        fd_grid_options.api.forEachNode((rowNode, index) => 
+                        popup_grid_api.forEachNode((rowNode, index) => 
                         {
                             if (rowNode.data['级别'] > fd_arr.max_rank)
                             {
@@ -771,28 +770,28 @@
             if (id == '清空' && popup_grid_content == 'DEPT')
             {
                 dept_grid_obj = JSON.parse('<?php echo $dept_rows_json; ?>');
-                dept_grid_options.api.setRowData(dept_grid_obj);
+                popup_grid_api.setGridOption('rowData', dept_grid_obj);
             }
             else if (id == '清空' && popup_grid_content == 'FD')
             {
                 fd_grid_obj = JSON.parse('<?php echo $fd_rows_json; ?>');
-                fd_grid_options.api.setRowData(fd_grid_obj);
+                popup_grid_api.setGridOption('rowData', fd_grid_obj);
             }
             else if (id == '清空' && popup_grid_content == 'BUDGET')
             {
                 budget_grid_obj = JSON.parse('<?php echo $budget_rows_json; ?>');
-                budget_grid_options.api.setRowData(budget_grid_obj);
+                popup_grid_api.setGridOption('rowData', budget_grid_obj);
             }
             else if (id == '添加' || id == '替换' && popup_grid_content == 'DEPT')
             {
-                dept_grid_options.api.stopEditing();
+                popup_grid_api.stopEditing();
 
                 // 获表中的数据
                 let send_obj = {};
                 send_obj['操作'] = id;
                 send_obj['部门级别'] = dept_arr.max_rank;
-                dept_grid_options.api.stopEditing();
-                dept_grid_options.api.forEachNode((rowNode, index) => 
+                popup_grid_api.stopEditing();
+                popup_grid_api.forEachNode((rowNode, index) => 
                 {
                     send_obj[rowNode.data['部门']] = rowNode.data['取值'];
                 });
@@ -847,8 +846,8 @@
                 send_obj['操作'] = id;
                 send_obj['部门级别'] = budget_arr.max_rank;
 
-                budget_grid_options.api.stopEditing();
-                budget_grid_options.api.forEachNode((rowNode, index) => 
+                popup_grid_api.stopEditing();
+                popup_grid_api.forEachNode((rowNode, index) => 
                 {
                     send_obj[rowNode.data['部门']] = rowNode.data['取值'];
                 });
@@ -898,14 +897,14 @@
             }
             else if (id == '添加' || id == '替换' && popup_grid_content == 'FD')
             {
-                fd_grid_options.api.stopEditing();
+                popup_grid_api.stopEditing();
 
                 // 获表中的数据
                 let send_obj = {};
                 send_obj['操作'] = id;
                 send_obj['科目级别'] = fd_arr.max_rank;
-                fd_grid_options.api.stopEditing();
-                fd_grid_options.api.forEachNode((rowNode, index) => 
+                popup_grid_api.stopEditing();
+                popup_grid_api.forEachNode((rowNode, index) => 
                 {
                     send_obj[rowNode.data['科目']] = rowNode.data['取值'];
                 });
@@ -1074,7 +1073,7 @@
                     break;
                 case '单条修改':
                 case '多条修改':
-                    var rows = data_grid_options.api.getSelectedRows();
+                    var rows = data_grid_api.getSelectedRows();
 
                     if (rows.length == 0)
                     {
@@ -1118,7 +1117,7 @@
                             rowData.push(obj);
                         }
 
-                        update_grid_options.api.setRowData(rowData);
+                        update_grid_api.setGridOption('rowData', rowData);
                     }
 
                     $$('footbox').innerHTML = '&nbsp&nbsp<b>提交记录:{' + foot_upkeep + '}</b>';
@@ -1130,14 +1129,14 @@
                         update_flag = id;
                         // 清空
                         update_grid_obj = JSON.parse('<?php echo $add_value_json; ?>');
-                        update_grid_options.api.setRowData(update_grid_obj);
+                        update_grid_api.setGridOption('rowData', update_grid_obj);
                     }
 
                     $$('footbox').innerHTML = '&nbsp&nbsp<b>提交记录:{' + foot_upkeep + '}</b>';
                     div_block('updatebox');
                     break;
                 case '删除':
-                    var rows = data_grid_options.api.getSelectedRows();
+                    var rows = data_grid_api.getSelectedRows();
                     if (rows.length == 0)
                     {
                         alert('请先选择要删除的记录');
@@ -1148,7 +1147,7 @@
                     }
                     break;
                 case '数据钻取':
-                    var rows = data_grid_options.api.getSelectedRows();
+                    var rows = data_grid_api.getSelectedRows();
                     if (rows.length == 0)
                     {
                         alert('请先选择要钻取的记录');
@@ -1198,7 +1197,7 @@
             if (id == '分页' && data_page != updatedItem['value'])
             {
                 data_page =  updatedItem['value'];
-                data_grid_options.api.paginationSetPageSize(Number(data_page));
+                data_grid_api.setGridOption('paginationPageSize', Number(data_page));
             }
         });
 
@@ -1213,7 +1212,7 @@
                     break;
                 case '清空':
                     update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
-                    update_grid_options.api.setRowData(update_grid_obj);
+                    update_grid_api.setGridOption('rowData', update_grid_obj);
                     break;
                 case '提交':
                     update_submit(id);
@@ -1232,7 +1231,7 @@
                     break;
                 case '清空':
                     cond_grid_obj = JSON.parse('<?php echo $cond_value_json; ?>');
-                    cond_grid_options.api.setRowData(cond_grid_obj);
+                    cond_grid_api.setGridOption('rowData', cond_grid_obj);
                     break;
                 case '提交':
                     if (cond_model == '数据查询')
@@ -1315,7 +1314,7 @@
             win_chart_set.show();
             if (chart_grid_new == false)
             {
-                new agGrid.Grid($$('chart_set_grid'), chart_grid_options);
+                var chart_grid_api = agGrid.createGrid($$('chart_set_grid'), chart_grid_options);
                 chart_grid_new = true;
             }
         }
@@ -1335,8 +1334,8 @@
             var min_str = '';
             var count_str = '';
 
-            cond_grid_options.api.stopEditing();
-            cond_grid_options.api.forEachNode((rowNode, index) => 
+            cond_grid_api.stopEditing();
+            cond_grid_api.forEachNode((rowNode, index) => 
             {
                 if (rowNode.data['计算方式']=='合计' && rowNode.data['列类型']!='数值')
                 {
@@ -1447,7 +1446,7 @@
             dhx.ajax.post('<?php base_url(); ?>/frame/set_query_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
             {
                 data_grid_obj = JSON.parse(data);
-                data_grid_options.api.setRowData(data_grid_obj);
+                data_grid_api.setGridOption('rowData', data_grid_obj);
 
                 div_block('databox');
 
@@ -1486,8 +1485,8 @@
             var ajax = true;
             var cond_arr = [];
 
-            cond_grid_options.api.stopEditing();
-            cond_grid_options.api.forEachNode((rowNode, index) => 
+            cond_grid_api.stopEditing();
+            cond_grid_api.forEachNode((rowNode, index) => 
             {
                 if (rowNode.data['取值'] == undefined)
                 {
@@ -1516,7 +1515,7 @@
             dhx.ajax.post('<?php base_url(); ?>/frame/set_sp_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
             {
                 data_grid_obj = JSON.parse(data);
-                data_grid_options.api.setRowData(data_grid_obj);
+                data_grid_api.setGridOption('rowData', data_grid_obj);
 
                 div_block('databox');
             }).catch(function (err)
@@ -1530,13 +1529,13 @@
             var ajax = 0;
             var send_arr = [];
 
-            update_grid_options.api.stopEditing();
+            update_grid_api.stopEditing();
 
             // 获得要提交的数据
             if (update_flag == '多条修改')  // 多条
             {
-                update_grid_options.api.stopEditing();
-                update_grid_options.api.forEachNode((rowNode, index) => 
+                update_grid_api.stopEditing();
+                update_grid_api.forEachNode((rowNode, index) => 
                 {
                     if (rowNode.data['取值'] != '')
                     {
@@ -1561,7 +1560,7 @@
 
             else  // 单条&新增
             {
-                update_grid_options.api.forEachNode((rowNode, index) => 
+                update_grid_api.forEachNode((rowNode, index) => 
                 {
                     var col = new ColumnInfo();
                     col.col_name = rowNode.data['列名'];
@@ -1624,16 +1623,16 @@
                 let key = '<?php echo $primary_key; ?>';
 
                 // 选择要提交的记录
-                let selected_rows = data_grid_options.api.getSelectedRows();
+                let selected_rows = data_grid_api.getSelectedRows();
                 let selected_key_arr = selected_rows.map(a => a[key]);
 
                 key_arr = selected_key_arr;
 
                 // 设置过滤条件记录
                 var filter_rows = [];
-                if (update_flag == '多条修改' && data_grid_options.api.isAnyFilterPresent() == true)
+                if (update_flag == '多条修改' && data_grid_api.isAnyFilterPresent() == true)
                 {
-                    data_grid_options.api.forEachNodeAfterFilter((rowNode, index) => 
+                    data_grid_api.forEachNodeAfterFilter((rowNode, index) => 
                     {
                         filter_rows.push(rowNode.data);
                     });
@@ -1693,16 +1692,16 @@
             let key = '<?php echo $primary_key; ?>';
 
             // 选择的记录
-            let selected_rows = data_grid_options.api.getSelectedRows();
+            let selected_rows = data_grid_api.getSelectedRows();
             let selected_key_arr = selected_rows.map(a => a[key]);
 
             key_arr = selected_key_arr;
 
             // 设置过滤条件记录
             var filter_rows = [];
-            if (data_grid_options.api.isAnyFilterPresent() == true)
+            if (data_grid_api.isAnyFilterPresent() == true)
             {
-                data_grid_options.api.forEachNodeAfterFilter((rowNode, index) => 
+                data_grid_api.forEachNodeAfterFilter((rowNode, index) => 
                 {
                     filter_rows.push(rowNode.data);
                 });
@@ -2102,7 +2101,7 @@
                             }
                             if (popup_grid_content == '')
                             {
-                                popup_grid_api = new agGrid.Grid($$('popup_set_grid'), dept_grid_options);
+                                popup_grid_api = agGrid.createGrid($$('popup_set_grid'), dept_grid_options);
                                 popup_grid_content = 'DEPT';
                             }
                         }
@@ -2121,7 +2120,7 @@
                             }
                             if (popup_grid_content == '')
                             {
-                                popup_grid_api = new agGrid.Grid($$('popup_set_grid'), budget_grid_options);
+                                popup_grid_api = agGrid.createGrid($$('popup_set_grid'), budget_grid_options);
                                 popup_grid_content = 'BUDGET';
                             }
                         }
@@ -2140,7 +2139,7 @@
                             }
                             if (popup_grid_content == '')
                             {
-                                popup_grid_api = new agGrid.Grid($$('popup_set_grid'), fd_grid_options);
+                                popup_grid_api = agGrid.createGrid($$('popup_set_grid'), fd_grid_options);
                                 popup_grid_content = 'FD';
                             }
                         }
@@ -2157,19 +2156,19 @@
             {
                 var row = {'行选择':'', '字段名称':'', '坐标轴':'', '图形类型':''};
                 chart_grid_obj.push(row);
-                chart_grid_options.api.setRowData(chart_grid_obj);
+                chart_grid_api.setGridOption('rowData', chart_grid_obj);
             }
             else if (id == '删除')
             {
                 var pos = -1;
-                chart_grid_options.api.forEachNode((rowNode, index) => 
+                chart_grid_api.forEachNode((rowNode, index) => 
                 {
                     pos = pos + 1;
                     if (rowNode.isSelected() == true)
                     {
                         chart_grid_obj.splice(pos, 1);
-                        chart_grid_options.api.setRowData(chart_grid_obj);
-                        //chart_grid_options.api.updateRowData({remove: row});
+                        chart_grid_api.setRowData(chart_grid_obj);
+                        chart_grid_api.setGridOption('rowData', chart_grid_obj);
                     }
                 });
             }
@@ -2188,7 +2187,7 @@
             var y_axis = '';
 
             chart.dataset[0] = [];
-            chart_grid_options.api.forEachNode((rowNode, index) => 
+            chart_grid_api.forEachNode((rowNode, index) => 
             {
                 if (chart_type == '') chart_type = rowNode.data['图形类型'];
 
@@ -2236,7 +2235,7 @@
             });
 
             var pos = 1;
-            data_grid_options.api.forEachNodeAfterFilter((rowNode, index) => 
+            data_grid_api.forEachNodeAfterFilter((rowNode, index) => 
             {
                 rowNode.data['字段名称'];
                 chart.dataset[pos] = [];
