@@ -1,4 +1,4 @@
-<!-- v7.1.1.1.202405081615, from office -->
+<!-- v7.1.2.1.202405112120, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1269,7 +1269,7 @@
         {
             var checkbox_arr = [];
             var key = '<?php echo $primary_key; ?>';
-            var columns_arr = data_grid_options.columnApi.getAllColumns();
+            var columns_arr = data_grid_api.getColumns();
 
             for (var ii in columns_arr)
             {
@@ -1290,8 +1290,10 @@
 
             form.events.on('change', function(value)
             {
-                var checked = form.getItem(value).getValue();
-                data_grid_options.columnApi.setColumnVisible(value, checked);
+                let checked = form.getItem(value).getValue();
+                let col_arr = [];
+                col_arr.push(value);
+                data_grid_api.setColumnsVisible(col_arr, checked);
             });
 
             var win_field = new dhx.Window(
