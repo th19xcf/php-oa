@@ -1,5 +1,5 @@
 <?php
-/* v10.4.1.1.202405071805, from office */
+/* v10.5.1.1.202405132310, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -177,7 +177,6 @@ class Frame extends Controller
         $delete_authz = $session->get($menu_id.'-delete_authz');
         $import_authz = $session->get($menu_id.'-import_authz');
         $export_authz = $session->get($menu_id.'-export_authz');
-        $caller_func_condition = $session->get($menu_id.'-caller_func_condition_'.$front_id);
 
         $menu_arr = [];
         $menu_arr['menu_1'] = $session->get($menu_id.'-menu_1');
@@ -225,6 +224,8 @@ class Frame extends Controller
         $result_count = '';
         $data_table = '';
         $data_model = '';
+
+        $drill_arr = [];  // 钻取模块参数
 
         $sql = sprintf('
             select 
@@ -338,6 +339,28 @@ class Frame extends Controller
             $sp_sql = sprintf('call %s(%s)', $query_table, $sp_param_str);
         }
 
+        // 读出钻取模块参数
+        $sql = sprintf('
+            select 钻取模块,页面选项,t1.功能编码,钻取条件,ifnull(t2.二级菜单,"") as 显示名称
+            from def_drill_config as t1
+            left join def_function as t2 on t1.功能编码=t2.功能编码
+            where 钻取模块="%s"', $next_func_id);
+
+        $results = $model->select($sql)->getResult();
+        foreach ($results as $row)
+        {
+            str_replace(' ', '', $row->钻取条件);
+            str_replace('；', ';', $row->钻取条件);
+
+            $arr = [];
+            $arr['模块名称'] = $row->钻取模块;
+            $arr['页面选项'] = $row->页面选项;
+            $arr['功能编码'] = $row->功能编码;
+            $arr['钻取条件'] = $row->钻取条件;
+            $arr['显示名称'] = $row->显示名称;
+            array_push($drill_arr, $arr);
+        }
+
         //+=+=+=+=+=+=+=+=+=+=+=+= 
         // 处理钻取功能相关数据
         //+=+=+=+=+=+=+=+=+=+=+=+= 
@@ -347,34 +370,31 @@ class Frame extends Controller
 
         if ($front_id != '')
         {
-            if ($caller_func_condition != '')
+            $caller_col = [];
+            $col_arr = explode(';', $cond_arr->钻取条件);
+            foreach ($col_arr as $col_str)
             {
-                $caller_col = [];
-                $col_arr = explode(';', $caller_func_condition);
-                foreach ($col_arr as $col_str)
+                if (strpos($col_str,'^') !== false)
                 {
-                    if (strpos($col_str,'^') !== false)
+                    $arr = explode('^', $col_str);
+                    $caller_col['caller_col'] = $arr[0];
+                    $caller_col['called_col'] = $arr[1];
+                    $caller_col['type'] = '字符';
+                    $caller_col['option'] = '=';
+                    if (count($arr) > 3)
                     {
-                        $arr = explode('^', $col_str);
-                        $caller_col['caller_col'] = $arr[0];
-                        $caller_col['called_col'] = $arr[1];
-                        $caller_col['type'] = '字符';
-                        $caller_col['option'] = '=';
-                        if (count($arr) > 3)
-                        {
-                            $caller_col['type'] = $arr[2];
-                            $caller_col['option'] = $arr[3];
-                        }
+                        $caller_col['type'] = $arr[2];
+                        $caller_col['option'] = $arr[3];
                     }
-                    else
-                    {
-                        $caller_col['caller_col'] = $col_str;
-                        $caller_col['called_col'] = $col_str;
-                        $caller_col['type'] = '字符';
-                        $caller_col['option'] = '=';
-                    }
-                    array_push($caller_col_arr, $caller_col);
                 }
+                else
+                {
+                    $caller_col['caller_col'] = $col_str;
+                    $caller_col['called_col'] = $col_str;
+                    $caller_col['type'] = '字符';
+                    $caller_col['option'] = '=';
+                }
+                array_push($caller_col_arr, $caller_col);
             }
 
             foreach ($cond_arr as $key => $value)
@@ -741,6 +761,8 @@ class Frame extends Controller
             }
             $send['next_func_condition'] = $send['next_func_condition'] . $arr[0];
         }
+
+        $send['drill_json'] = json_encode($drill_arr);
 
         $send['import_func_id'] = $import_func_id;
         $send['import_func_name'] = $import_func_name;

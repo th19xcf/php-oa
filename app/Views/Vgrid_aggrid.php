@@ -1,4 +1,4 @@
-<!-- v7.1.2.1.202405112120, from home -->
+<!-- v7.2.1.1.202405132310, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -470,6 +470,10 @@
 
         cond_grid_api = agGrid.createGrid($$('cond_grid'), cond_grid_options);
 
+        // 钻取模块参数
+        var drill_arr = JSON.parse('<?php echo $drill_json; ?>');
+        var drill_selected = '';
+
         // 当前menu
         var menu_value = JSON.parse('<?php echo $menu_json; ?>');
 
@@ -754,7 +758,6 @@
             },
             rowData: fd_grid_obj
         };
-
 
         // 部门窗口事件
         win_popup_set.events.on('afterShow', function(position, events)
@@ -1159,27 +1162,8 @@
                         break;
                     }
 
-                    var nl_str = '<?php echo $next_func_condition; ?>';
-                    var nl_arr = nl_str.split(',');
-                    var send_obj = {};
-                    var ajax = false;
-
-                    for (var ii in nl_arr)
-                    {
-                        if (rows[0][nl_arr[ii]] == '') continue;
-                        send_obj[nl_arr[ii]] = rows[0][nl_arr[ii]];
-                        ajax = true;
-                    }
-
-                    if (ajax == false)
-                    {
-                        alert('钻取条件都为空,无法钻取');
-                        break;
-                    }
-
-                    send_str = JSON.stringify(send_obj);
-
-                    parent.window.goto('<?php echo $next_func_id; ?>','钻取-'+'<?php echo $next_func_name; ?>','frame/init/<?php echo $next_func_id; ?>/<?php echo $func_id; ?>/'+send_str);
+                    drill_selected = '';
+                    drill_select(rows);
                     break;
                 case '导入':
                     parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','upload/init/<?php echo $import_func_id; ?>');
@@ -1283,32 +1267,134 @@
                 checkbox_arr.push(col);
             }
 
-            var form = new dhx.Form('form_field_select', 
+            const form_field = new dhx.Form(null, 
             {
                 rows: checkbox_arr
             });
 
-            form.events.on('change', function(value)
+            form_field.events.on('change', function(value)
             {
-                let checked = form.getItem(value).getValue();
+                let checked = form_field.getItem(value).getValue();
                 let col_arr = [];
                 col_arr.push(value);
                 data_grid_api.setColumnsVisible(col_arr, checked);
             });
 
-            var win_field = new dhx.Window(
+            const win_field = new dhx.Window(
             {
                 title: '选择显示字段',
                 footer: true,
                 modal: true,
                 width: 350,
-                height: 500,
+                height: 400,
                 closable: true,
                 movable: true
             });
 
-            win_field.attach(form);
+            win_field.attach(form_field);
             win_field.show();
+        }
+
+        // 钻取条件选择
+        function drill_select(rows)
+        {
+            var drill_value = '';
+            var radio_arr = [];
+
+            for (let ii in drill_arr)
+            {
+                let radio = {};
+                radio['type'] = 'radioButton';
+                radio['text'] = drill_arr[ii]['页面选项'];
+                radio['value'] = drill_arr[ii]['页面选项'];
+                radio['id'] = drill_arr[ii]['页面选项'];
+                radio_arr.push(radio);
+            }
+
+            const form_drill = new dhx.Form(null, 
+            {
+                rows:
+                [
+                    {
+                        type: 'radioGroup',
+                        options: 
+                        {
+                            rows: radio_arr
+                        }
+                    }
+                ]
+            });
+
+            form_drill.events.on('change', function(value)
+            {
+                drill_selected = form_drill.getItem(value).getValue();
+            });
+
+            const win_drill = new dhx.Window(
+            {
+                title: '选择钻取条件',
+                footer: true,
+                modal: true,
+                width: 350,
+                height: 400,
+                closable: true,
+                movable: true
+            });
+
+            win_drill.footer.data.add(
+            {
+                type: 'button',
+                id: '确定',
+                value: '确定',
+                view: 'flat',
+                size: 'medium',
+                color: 'primary',
+            });
+
+            win_drill.footer.events.on('click', function (id)
+            {
+                if (drill_selected == '')
+                {
+                    alert('请选择钻取条件');
+                    return;
+                }
+
+                let drill_item = '';
+                for (let ii in drill_arr)
+                {
+                    if (drill_arr[ii]['页面选项'] != drill_selected) continue;
+                    drill_item = drill_arr[ii];
+                    break;
+                }
+
+                drill_item['钻取条件'] = drill_item['钻取条件'].replace('；',';');
+                let nl_arr = drill_item['钻取条件'].split(';');
+                let send_obj = {};
+                let ajax = false;
+
+                for (let ii in nl_arr)
+                {
+                    if (rows[0][nl_arr[ii]] == '') continue;
+                    send_obj[nl_arr[ii]] = rows[0][nl_arr[ii]];
+                    ajax = true;
+                }
+
+                if (ajax == false)
+                {
+                    alert('钻取条件都为空,无法钻取');
+                    return;
+                }
+
+                send_obj['钻取条件'] = drill_item['钻取条件'];
+
+                send_str = JSON.stringify(send_obj);
+                parent.window.goto(drill_item['功能编码'],'钻取-'+drill_item['显示名称'],'frame/init/'+drill_item['功能编码']+'/'+'<?php echo $func_id; ?>'+'/'+send_str);
+
+                win_drill.destructor();
+            });
+
+            win_drill.attach(form_drill);
+            win_drill.show();
         }
 
         function tb_chart()
