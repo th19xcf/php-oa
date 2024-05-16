@@ -1,4 +1,4 @@
-<!-- v7.2.1.1.202405132310, from home -->
+<!-- v7.2.2.1.202405162220, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -258,9 +258,9 @@
         {
             for (var jj in columns_obj)
             {
-                if (columns_obj[jj].列名 != data_columns_arr[ii].field) continue;
+                if (columns_obj[jj].列名 != data_columns_arr[ii].field && data_columns_arr[ii].field != '序号') continue;
 
-                if (columns_obj[jj].类型 == '数值')
+                if (columns_obj[jj].类型 == '数值' || data_columns_arr[ii].type == 'numericColumn')
                 {
                     data_columns_arr[ii].comparator = value_sort;
                 }
