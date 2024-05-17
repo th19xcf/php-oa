@@ -1,5 +1,5 @@
 <?php
-/* v10.5.1.1.202405132310, from home */
+/* v10.5.2.1.202405171125, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -2180,7 +2180,7 @@ class Frame extends Controller
                 $dept_value = '';
                 for ($ii=0; $ii<count($row_arr); $ii++)
                 {
-                    if ($row_arr[$ii]['col_name'] != $column['列名']) continue;
+                    if ($row_arr[$ii]['modified'] == false || $row_arr[$ii]['col_name'] != $column['列名']) continue;
 
                     $dept_arr = explode(',', $row_arr[$ii]['value']);
                     foreach ($dept_arr as $dept)
@@ -2209,7 +2209,7 @@ class Frame extends Controller
                 $budget_value = '';
                 for ($ii=0; $ii<count($row_arr); $ii++)
                 {
-                    if ($row_arr[$ii]['col_name'] != $column['列名']) continue;
+                    if ($row_arr[$ii]['modified'] == false || $row_arr[$ii]['col_name'] != $column['列名']) continue;
 
                     $budget_arr = explode(',', $row_arr[$ii]['value']);
                     foreach ($budget_arr as $budget)
@@ -2238,7 +2238,7 @@ class Frame extends Controller
                 $fd_value = '';
                 for ($ii=0; $ii<count($row_arr); $ii++)
                 {
-                    if ($row_arr[$ii]['col_name'] != $column['列名']) continue;
+                    if ($row_arr[$ii]['modified'] == false || $row_arr[$ii]['col_name'] != $column['列名']) continue;
 
                     $fd_arr = explode(',', $row_arr[$ii]['value']);
                     foreach ($fd_arr as $fd)
