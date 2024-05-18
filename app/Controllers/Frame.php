@@ -1,5 +1,5 @@
 <?php
-/* v10.5.2.1.202405171125, from office */
+/* v10.6.1.1.202405182155, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -808,6 +808,7 @@ class Frame extends Controller
                         $opt_1 = '>';
                         break;
                     case '等于':
+                    case '等于空':
                         $opt_1 = '=';
                         break;
                     case '小于':
@@ -820,6 +821,7 @@ class Frame extends Controller
                         $opt_1 = '<=';
                         break;
                     case '不等于':
+                    case '不等于空':
                         $opt_1 = '!=';
                         break;
                     case '包含':
@@ -832,7 +834,7 @@ class Frame extends Controller
 
                 if ($cond['cond_1'] == '数值')
                 {
-                    if ($opt_1!='in' && $opt_1!='not in')
+                    if ($opt_1 != 'in' && $opt_1 != 'not in')
                     {
                         $cond_1 = sprintf(' %s%s%s ', $cond['fld_name'], $opt_1, $cond['arg_1']);
                     }
@@ -866,6 +868,7 @@ class Frame extends Controller
                         $opt_2 = '>';
                         break;
                     case '等于':
+                    case '等于空':
                         $opt_2 = '=';
                         break;
                     case '小于':
@@ -878,6 +881,7 @@ class Frame extends Controller
                         $opt_2 = '<=';
                         break;
                     case '不等于':
+                    case '不等于空':
                         $opt_2 = '!=';
                         break;
                     case '包含':

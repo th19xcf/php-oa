@@ -1,4 +1,4 @@
-<!-- v7.2.2.1.202405162220, from home -->
+<!-- v7.3.1.1.202405182155, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -404,7 +404,7 @@
                     cellEditor: 'agSelectCellEditor',
                     cellEditorParams: 
                     {
-                        values: ['','大于','等于','小于','大于等于','小于等于','不等于','包含','不包含'],
+                        values: ['','大于','等于','等于空','小于','大于等于','小于等于','不等于','不等于空','包含','不包含'],
                     },
                 },
                 {field:'参数1', width:180, cellEditorSelector:cellEditorSelector},
@@ -421,7 +421,7 @@
                     cellEditor: 'agSelectCellEditor',
                     cellEditorParams: 
                     {
-                        values: ['','大于','等于','小于','大于等于','小于等于','不等于','包含','不包含'],
+                        values: ['','大于','等于','等于空','小于','大于等于','小于等于','不等于','不等于空','包含','不包含'],
                     },
                 },
                 {field:'参数2', width:180, cellEditorSelector:cellEditorSelector},
@@ -1435,12 +1435,13 @@
                     alert("'" + rowNode.data['字段名'] + "'" + '类型不是数值,无法平均,请重新设置');
                     return;
                 }
-                if (rowNode.data['条件1']!='' && rowNode.data['参数1']=='')
+                if (rowNode.data['条件1']!='' && rowNode.data['条件1']!='等于空' && rowNode.data['条件1']!='不等于空' && rowNode.data['参数1']=='')
                 {
+                    console.log(rowNode.data);
                     alert("'" + rowNode.data['字段名'] + "'" + '参数1,错误');
                     return;
                 }
-                if (rowNode.data['条件2']!='' && rowNode.data['参数2']=='')
+                if (rowNode.data['条件2']!=''  && rowNode.data['条件2']!='等于空'&& rowNode.data['条件2']!='不等于空' && rowNode.data['参数2']=='')
                 {
                     alert("'" + rowNode.data['字段名'] + "'" + '参数2,错误');
                     return;
