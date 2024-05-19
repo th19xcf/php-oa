@@ -1,4 +1,4 @@
-<!-- v7.3.1.1.202405182155, from home -->
+<!-- v7.4.1.1.202405191435, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -277,8 +277,10 @@
             defaultColDef: 
             {
                 width: 120,
+                editable: true,
                 resizable: true,
             },
+            readOnlyEdit: true,
             rowData: data_grid_obj,
             rowSelection: 'multiple',
             //onSelectionChanged: onSelectionChanged,
@@ -286,6 +288,10 @@
             paginationPageSize: 500,
             paginationPageSizeSelector: [500, 1000, 2000],
             localeText: AG_GRID_LOCALE_CN,
+            onCellEditRequest: (event) => 
+            {
+                alert('数据在此处修改无效,请点击`单条修改`或`多条修改`按钮进行修改');
+            },
         };
 
         var data_grid_api = agGrid.createGrid($$('data_grid'), data_grid_options);
@@ -1437,7 +1443,6 @@
                 }
                 if (rowNode.data['条件1']!='' && rowNode.data['条件1']!='等于空' && rowNode.data['条件1']!='不等于空' && rowNode.data['参数1']=='')
                 {
-                    console.log(rowNode.data);
                     alert("'" + rowNode.data['字段名'] + "'" + '参数1,错误');
                     return;
                 }
