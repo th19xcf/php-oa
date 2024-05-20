@@ -1,4 +1,4 @@
-<!-- v7.4.1.1.202405191435, from home -->
+<!-- v7.5.1.1.202405202240, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -90,62 +90,17 @@
             this.sum_avg = '';
         }
 
-        function DeptInfo()
+        function PopupInfo()
         {
             this.menu_1 = '';
             this.menu_2 = '';
             this.grid_api;
             this.node_id = '';
-            this.col_name = '';
+            this.col_name = ''; //调用方列名
+            this.obj_name = ''; //对象名称
+            this.full_name = ''; //对象全称
             this.max_rank = 0;
-            this.dept_id = '';
-            this.dept_name = '';
-            this.dept = [];
-            this.dept['一级部门'] = '';
-            this.dept['二级部门'] = '';
-            this.dept['三级部门'] = '';
-            this.dept['四级部门'] = '';
-            this.dept['五级部门'] = '';
-            this.dept['六级部门'] = '';
-            this.dept['七级部门'] = '';
-        }
-
-        function BudgetInfo()
-        {
-            this.menu_1 = '';
-            this.menu_2 = '';
-            this.grid_api;
-            this.node_id = '';
-            this.col_name = '';
-            this.max_rank = 0;
-            this.budget_id = '';
-            this.budget_name = '';
-            this.budget = [];
-            this.budget['一级部门'] = '';
-            this.budget['二级部门'] = '';
-            this.budget['三级部门'] = '';
-            this.budget['四级部门'] = '';
-            this.budget['五级部门'] = '';
-            this.budget['六级部门'] = '';
-            this.budget['七级部门'] = '';
-        }
-
-        function FdInfo()
-        {
-            this.menu_1 = '';
-            this.menu_2 = '';
-            this.grid_api;
-            this.node_id = '';
-            this.col_name = '';
-            this.max_rank = 0;
-            this.fd_id = '';
-            this.fd_name = '';
-            this.fd = [];
-            this.fd['一级科目'] = '无';
-            this.fd['二级科目'] = '';
-            this.fd['三级科目'] = '';
-            this.fd['四级科目'] = '';
-            this.fd['五级科目'] = '';
+            this.obj = [];
         }
 
         function Chart()
@@ -374,7 +329,7 @@
 
         var update_grid_api = agGrid.createGrid($$('update_grid'), update_grid_options);
 
-        // cond_grid
+        // 生成cond_grid
         var cond_grid_obj = JSON.parse('<?php echo $cond_value_json; ?>');
         var cond_model = '<?php echo $cond_model; ?>';
         var cond_col_arr = [];
@@ -484,34 +439,14 @@
         var menu_value = JSON.parse('<?php echo $menu_json; ?>');
 
         // 弹窗选择
+        var popup_grid_options = {};
+        var popup_grid_obj = JSON.parse('<?php echo $popup_grid_json; ?>');
+        var popup_obj_obj = JSON.parse('<?php echo $popup_obj_json; ?>');
         var popup_grid_api = null;
-        var popup_grid_content = '';
 
-        // 运营部门选择
-        var dept_value = JSON.parse('<?php echo $dept_json; ?>');
-        var dept_grid_obj = JSON.parse('<?php echo $dept_rows_json; ?>');
-        var dept_arr = new DeptInfo();
-        dept_arr.menu_1 = menu_value['menu_1'];
-        dept_arr.menu_2 = menu_value['menu_2'];
-        dept_arr.dept['一级部门'] = dept_grid_obj[0]['取值'];
-        dept_arr.dept['二级部门'] = dept_grid_obj[1]['取值'];
-
-        // 预算部门选择
-        var budget_value = JSON.parse('<?php echo $budget_json; ?>');
-        var budget_grid_obj = JSON.parse('<?php echo $budget_rows_json; ?>');
-        var budget_arr = new BudgetInfo();
-        budget_arr.menu_1 = menu_value['menu_1'];
-        budget_arr.menu_2 = menu_value['menu_2'];
-        budget_arr.budget['一级部门'] = budget_grid_obj[0]['取值'];
-        budget_arr.budget['二级部门'] = budget_grid_obj[1]['取值'];
-
-        // 科目选择
-        var fd_value = JSON.parse('<?php echo $fd_json; ?>');
-        var fd_grid_new = false;
-        var fd_grid_obj = JSON.parse('<?php echo $fd_rows_json; ?>');
-        var fd_arr = new FdInfo();
-        fd_arr.menu_1 = menu_value['menu_1'];
-        fd_arr.menu_2 = menu_value['menu_2'];
+        var popup_arr = new PopupInfo();
+        popup_arr.menu_1 = menu_value['menu_1'];
+        popup_arr.menu_2 = menu_value['menu_2'];
 
         // 弹窗选择窗口
         var win_popup_set = new dhx.Window(
@@ -559,212 +494,6 @@
         win_popup_set.attachHTML(html);
         win_popup_set.hide();
 
-        const dept_grid_options = 
-        {
-            columnDefs:
-            [
-                {field:'部门', editable:false},
-                {field:'级别', editable:false},
-                {
-                    field: '取值',
-                    width: 250,
-                    editable: (params) =>
-                    {
-                        if (params.data.部门 == '一级部门' || params.data.部门 == '二级部门') 
-                        {
-                            return false;
-                        }
-                        return true;
-                    },
-                    cellEditorSelector: (params) => 
-                    {
-                        let data_arr = [];
-                        data_arr[0] = '';
-
-                        let item = dept_value[params.data.部门];  // 如:四级部门
-                        if (JSON.stringify(item) != '{}')
-                        {
-                            let parent_value = dept_arr.dept[item['上级部门级别']]; // 如:`三级部门`的值
-
-                            for (let val in item[parent_value])
-                            {
-                                data_arr.push(item[parent_value][val]);
-                            }
-                        }
-
-                        return {
-                            component: 'agSelectCellEditor',
-                            params: {
-                                values: data_arr
-                            },
-                        };
-                    },
-                    onCellValueChanged : (params) => 
-                    {
-                        dept_arr.dept[params.data.部门] = params.newValue;
-                        if (params.data.取值 != '')
-                        {
-                            dept_arr.max_rank = params.data.级别;
-                        }
-
-                        // 清空下级部门
-                        popup_grid_api.forEachNode((rowNode, index) => 
-                        {
-                            if (rowNode.data['级别'] > dept_arr.max_rank)
-                            {
-                                rowNode.setDataValue('取值', '');
-                            }
-                        });
-                    },
-                }
-            ],
-            defaultColDef:
-            {
-                width: 120,
-                editable: true,
-                resizable: true
-            },
-            rowData: dept_grid_obj
-        };
-
-        const budget_grid_options = 
-        {
-            columnDefs:
-            [
-                {field:'部门', editable:false},
-                {field:'级别', editable:false},
-                {
-                    field: '取值',
-                    width: 250,
-                    editable: (params) =>
-                    {
-                        if (params.data.部门 == '一级部门' || params.data.部门 == '二级部门') 
-                        {
-                            return false;
-                        }
-                        return true;
-                    },
-                    cellEditorSelector: (params) => 
-                    {
-                        let data_arr = [];
-                        data_arr[0] = '';
-
-                        let item = budget_value[params.data.部门];  // 如:四级部门
-                        if (JSON.stringify(item) != '{}')
-                        {
-                            let parent_value = budget_arr.budget[item['上级部门级别']]; // 如:`三级部门`的值
-
-                            for (let val in item[parent_value])
-                            {
-                                data_arr.push(item[parent_value][val]);
-                            }
-                        }
-
-                        return {
-                            component: 'agSelectCellEditor',
-                            params: {
-                                values: data_arr
-                            },
-                        };
-                    },
-                    onCellValueChanged : (params) => 
-                    {
-                        budget_arr.budget[params.data.部门] = params.newValue;
-                        if (params.data.取值 != '')
-                        {
-                            budget_arr.max_rank = params.data.级别;
-                        }
-
-                        // 清空下级部门
-                        popup_grid_api.forEachNode((rowNode, index) => 
-                        {
-                            if (rowNode.data['级别'] > budget_arr.max_rank)
-                            {
-                                rowNode.setDataValue('取值', '');
-                            }
-                        });
-                    },
-                }
-            ],
-            defaultColDef:
-            {
-                width: 120,
-                editable: true,
-                resizable: true
-            },
-            rowData: budget_grid_obj
-        };
-
-        const fd_grid_options = 
-        {
-            columnDefs:
-            [
-                {field:'科目', editable:false},
-                {field:'级别', editable:false},
-                {
-                    field: '取值',
-                    width: 250,
-                    cellEditorSelector: (params) =>
-                    {
-                        let data_arr = [];
-                        data_arr[0] = '';
-
-                        let fd = fd_value[params.data.科目];
-                        if (params.data.科目 == '一级科目' && fd['上级科目级别'] == '无')
-                        {
-                            for (let val in fd['无'])
-                            {
-                                data_arr.push(fd['无'][val]);
-                            }
-                        }
-                        else
-                        {
-                            for (let item in fd)
-                            {
-                                if (fd_arr.fd[fd['上级科目级别']] != item) continue;
-                                for (let val in fd[item])
-                                {
-                                    data_arr.push(fd[item][val]);
-                                }
-                            }
-                        }
-
-                        return {
-                            component: 'agSelectCellEditor',
-                            params: {
-                                values: data_arr
-                            },
-                        };
-
-                    },
-                    onCellValueChanged : (params) => 
-                    {
-                        fd_arr.fd[params.data.科目] = params.newValue;
-                        if (params.data.取值 != '')
-                        {
-                            fd_arr.max_rank = params.data.级别;
-                        }
-
-                        // 清空下级部门
-                        popup_grid_api.forEachNode((rowNode, index) => 
-                        {
-                            if (rowNode.data['级别'] > fd_arr.max_rank)
-                            {
-                                rowNode.setDataValue('取值', '');
-                            }
-                        });
-                    },
-                }
-            ],
-            defaultColDef:
-            {
-                width: 120,
-                editable: true,
-                resizable: true
-            },
-            rowData: fd_grid_obj
-        };
-
         // 部门窗口事件
         win_popup_set.events.on('afterShow', function(position, events)
         {
@@ -776,38 +505,41 @@
 
         win_popup_set.footer.events.on('click', function (id)
         {
-            if (id == '清空' && popup_grid_content == 'DEPT')
+            if (id == '清空')
             {
-                dept_grid_obj = JSON.parse('<?php echo $dept_rows_json; ?>');
-                popup_grid_api.setGridOption('rowData', dept_grid_obj);
+                popup_grid_obj = JSON.parse('<?php echo $popup_grid_json; ?>');
+                popup_grid_api.setGridOption('rowData', popup_grid_obj[popup_arr['obj_name']]);
             }
-            else if (id == '清空' && popup_grid_content == 'FD')
-            {
-                fd_grid_obj = JSON.parse('<?php echo $fd_rows_json; ?>');
-                popup_grid_api.setGridOption('rowData', fd_grid_obj);
-            }
-            else if (id == '清空' && popup_grid_content == 'BUDGET')
-            {
-                budget_grid_obj = JSON.parse('<?php echo $budget_rows_json; ?>');
-                popup_grid_api.setGridOption('rowData', budget_grid_obj);
-            }
-            else if (id == '添加' || id == '替换' && popup_grid_content == 'DEPT')
+
+            else if (id == '添加' || id == '替换')
             {
                 popup_grid_api.stopEditing();
 
                 // 获表中的数据
                 let send_obj = {};
                 send_obj['操作'] = id;
-                send_obj['部门级别'] = dept_arr.max_rank;
-                popup_grid_api.stopEditing();
+                send_obj['列名'] = popup_arr['col_name'];
+                send_obj['对象名称'] = popup_arr['obj_name'];
+                send_obj['最大级别'] = popup_arr.max_rank;
+                send_obj['本级全称'] = '';
+
                 popup_grid_api.forEachNode((rowNode, index) => 
                 {
-                    send_obj[rowNode.data['部门']] = rowNode.data['取值'];
+                    send_obj[rowNode.data['表项']] = rowNode.data['取值'];
+
+                    if (rowNode.data['取值'] != '')
+                    {
+                        if (send_obj['本级全称'] != '')
+                        {
+                            send_obj['本级全称'] += '>>';
+                        }
+                        send_obj['本级全称'] += rowNode.data['取值'];
+                    }
                 });
 
-                dhx.ajax.post('<?php base_url(); ?>/popup/dept_verify/<?php echo $func_id; ?>', send_obj).then(function (data)
+                dhx.ajax.post('<?php base_url(); ?>/frame/verify_popup/<?php echo $func_id; ?>', send_obj).then(function (data)
                 {
-                    if (dept_arr.menu_1 != menu_value['menu_1'] || dept_arr.menu_2 != menu_value['menu_2'])
+                    if (popup_arr.menu_1 != menu_value['menu_1'] || popup_arr.menu_2 != menu_value['menu_2'])
                     {
                         alert('页面已切换,请重新输入');
                         return;
@@ -815,17 +547,9 @@
 
                     win_popup_set.hide();
 
-                    dept_arr.dept['一级部门'] = send_obj['一级部门'];
-                    dept_arr.dept['二级部门'] = send_obj['二级部门'];
-                    dept_arr.dept['三级部门'] = send_obj['三级部门'];
-                    dept_arr.dept['四级部门'] = send_obj['四级部门'];
-                    dept_arr.dept['五级部门'] = send_obj['五级部门'];
-                    dept_arr.dept['六级部门'] = send_obj['六级部门'];
-                    dept_arr.dept['七级部门'] = send_obj['七级部门'];
-
-                    let api = dept_arr.grid_api;
+                    let api = popup_arr.grid_api;
                     api.stopEditing();
-                    let row_node = api.getRowNode(dept_arr['node_id']);
+                    let row_node = api.getRowNode(popup_arr.node_id);
 
                     if (id == '添加')
                     {
@@ -845,118 +569,7 @@
                 }).catch(function (err)
                 {
                     console.log(err);
-                    alert('`校验运营部门信息`失败, ' + " " + err.statusText);
-                });
-            }
-            else if (id == '添加' || id == '替换' && popup_grid_content == 'BUDGET')
-            {
-                // 获表中的数据
-                let send_obj = {};
-                send_obj['操作'] = id;
-                send_obj['部门级别'] = budget_arr.max_rank;
-
-                popup_grid_api.stopEditing();
-                popup_grid_api.forEachNode((rowNode, index) => 
-                {
-                    send_obj[rowNode.data['部门']] = rowNode.data['取值'];
-                });
-
-                dhx.ajax.post('<?php base_url(); ?>/popup/budget_verify/<?php echo $func_id; ?>', send_obj).then(function (data)
-                {
-                    if (budget_arr.menu_1 != menu_value['menu_1'] || budget_arr.menu_2 != menu_value['menu_2'])
-                    {
-                        alert('页面已切换,请重新输入');
-                        return;
-                    }
-
-                    win_popup_set.hide();
-
-                    budget_arr.budget['一级部门'] = send_obj['一级部门'];
-                    budget_arr.budget['二级部门'] = send_obj['二级部门'];
-                    budget_arr.budget['三级部门'] = send_obj['三级部门'];
-                    budget_arr.budget['四级部门'] = send_obj['四级部门'];
-                    budget_arr.budget['五级部门'] = send_obj['五级部门'];
-                    budget_arr.budget['六级部门'] = send_obj['六级部门'];
-                    budget_arr.budget['七级部门'] = send_obj['七级部门'];
-
-                    let api = budget_arr.grid_api;
-                    api.stopEditing();
-                    let row_node = api.getRowNode(budget_arr['node_id']);
-
-                    if (id == '添加')
-                    {
-                        if (row_node.data['取值'] == '' || row_node.data['取值'] == undefined)
-                        {
-                            row_node.setDataValue('取值', data);
-                        }
-                        else
-                        {
-                            row_node.setDataValue('取值', row_node.data['取值'] + ',' + data);
-                        }
-                    }
-                    else if (id == '替换')
-                    {
-                        row_node.setDataValue('取值', data);
-                    }
-                }).catch(function (err)
-                {
-                    console.log(err);
-                    alert('`校验预算部门信息`失败, ' + " " + err.statusText);
-                });
-            }
-            else if (id == '添加' || id == '替换' && popup_grid_content == 'FD')
-            {
-                popup_grid_api.stopEditing();
-
-                // 获表中的数据
-                let send_obj = {};
-                send_obj['操作'] = id;
-                send_obj['科目级别'] = fd_arr.max_rank;
-                popup_grid_api.stopEditing();
-                popup_grid_api.forEachNode((rowNode, index) => 
-                {
-                    send_obj[rowNode.data['科目']] = rowNode.data['取值'];
-                });
-
-                dhx.ajax.post('<?php base_url(); ?>/popup/fd_verify/<?php echo $func_id; ?>', send_obj).then(function (data)
-                {
-                    if (fd_arr.menu_1 != menu_value['menu_1'] || fd_arr.menu_2 != menu_value['menu_2'])
-                    {
-                        alert('页面已切换,请重新输入');
-                        return;
-                    }
-
-                    win_popup_set.hide();
-
-                    fd_arr.fd['一级科目'] = send_obj['一级科目'];
-                    fd_arr.fd['二级科目'] = send_obj['二级科目'];
-                    fd_arr.fd['三级科目'] = send_obj['三级科目'];
-                    fd_arr.fd['四级科目'] = send_obj['四级科目'];
-                    fd_arr.fd['五级科目'] = send_obj['五级科目'];
-
-                    let api = fd_arr.grid_api;
-                    api.stopEditing();
-                    let row_node = api.getRowNode(fd_arr['node_id']);
-
-                    if (id == '添加')
-                    {
-                        if (row_node.data['取值'] == '' || row_node.data['取值'] == undefined)
-                        {
-                            row_node.setDataValue('取值', data);
-                        }
-                        else
-                        {
-                            row_node.setDataValue('取值', row_node.data['取值'] + ',' + data);
-                        }
-                    }
-                    else if (id == '替换')
-                    {
-                        row_node.setDataValue('取值', data);
-                    }
-                }).catch(function (err)
-                {
-                    console.log(err);
-                    alert('`校验科目信息`失败, ' + " " + err.statusText);
+                    alert('校验信息失败, ' + " " + err.statusText);
                 });
             }
         });
@@ -2180,63 +1793,109 @@
                             component: 'datePicker',
                         };
                     case '弹窗':
-                        if (columns_obj[ii].对象.indexOf('运营部门') != -1)
+                        if (popup_grid_api != null)
                         {
-                            dept_arr.grid_api = params.api;
-                            dept_arr.node_id = params.node.id;
-                            dept_arr.col_name = col_name;
-
-                            win_popup_set.show();
-
-                            if (popup_grid_content == 'FD' || popup_grid_content == 'BUDGET')
-                            {
-                                popup_grid_api.destroy();
-                                popup_grid_content = '';
-                            }
-                            if (popup_grid_content == '')
-                            {
-                                popup_grid_api = agGrid.createGrid($$('popup_set_grid'), dept_grid_options);
-                                popup_grid_content = 'DEPT';
-                            }
+                            popup_grid_api.destroy();
+                            popup_grid_api = null;
                         }
-                        else if (columns_obj[ii].对象.indexOf('预算部门') != -1)
+
+                        popup_grid_options = {};
+                        popup_grid_obj = JSON.parse('<?php echo $popup_grid_json; ?>');
+                        popup_arr = new PopupInfo();
+                        popup_arr.menu_1 = menu_value['menu_1'];
+                        popup_arr.menu_2 = menu_value['menu_2'];
+
+                        popup_arr.obj_name = columns_obj[ii].对象名称;
+                        popup_arr.grid_api = params.api;
+                        popup_arr.node_id = params.node.id;
+                        popup_arr.col_name = col_name;
+                        let popup_obj = popup_obj_obj[columns_obj[ii].对象名称];
+                        for (let item in popup_obj)
                         {
-                            budget_arr.grid_api = params.api;
-                            budget_arr.node_id = params.node.id;
-                            budget_arr.col_name = col_name;
-
-                            win_popup_set.show();
-
-                            if (popup_grid_content == 'FD' || popup_grid_content == 'DEPT')
-                            {
-                                popup_grid_api.destroy();
-                                popup_grid_content = '';
-                            }
-                            if (popup_grid_content == '')
-                            {
-                                popup_grid_api = agGrid.createGrid($$('popup_set_grid'), budget_grid_options);
-                                popup_grid_content = 'BUDGET';
-                            }
+                            popup_arr.obj[item] = popup_obj[item]['本级初始值'];
                         }
-                        else if (columns_obj[ii].对象.indexOf('科目') != -1)
+
+                        popup_grid_options = 
                         {
-                            fd_arr.grid_api = params.api;
-                            fd_arr.node_id = params.node.id;
-                            fd_arr.col_name = col_name;
+                            columnDefs:
+                            [
+                                {field:'表项', editable:false},
+                                {field:'级别', editable:false},
+                                {
+                                    field: '取值',
+                                    width: 250,
+                                    editable: (params) =>
+                                    {
+                                        if (params.data.取值 != '' && params.data.取值 == popup_obj[params.data.表项]['本级初始值']) 
+                                        {
+                                            return false;
+                                        }
+                                        return true;
+                                    },
+                                    cellEditorSelector: (params) => 
+                                    {
+                                        let data_arr = [];
+                                        data_arr[0] = '';
 
-                            win_popup_set.show();
+                                        let item = popup_obj_obj[columns_obj[ii].对象名称][params.data.表项];  // 如:四级部门
 
-                            if (popup_grid_content == 'DEPT' || popup_grid_content == 'BUDGET')
+                                        if (JSON.stringify(item) != '{}')
+                                        {
+                                            if (params.data.级别 == '1')
+                                            {
+                                                for (let val in item[''])
+                                                {
+                                                    data_arr.push(item[''][val]);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                let parent_value = popup_arr.obj[item['上级级别名称']]; // 如:`三级部门`的值
+
+                                                for (let val in item[parent_value])
+                                                {
+                                                    data_arr.push(item[parent_value][val]);
+                                                }
+                                            }
+                                        }
+
+                                        return {
+                                            component: 'agSelectCellEditor',
+                                            params: {
+                                                values: data_arr
+                                            },
+                                        };
+                                    },
+                                    onCellValueChanged : (params) => 
+                                    {
+                                        popup_arr.obj[params.data.表项] = params.newValue;
+                                        if (params.data.取值 != '')
+                                        {
+                                            popup_arr.max_rank = params.data.级别;
+                                        }
+
+                                        // 清空下级部门
+                                        popup_grid_api.forEachNode((rowNode, index) => 
+                                        {
+                                            if (rowNode.data['级别'] > popup_arr.max_rank)
+                                            {
+                                                rowNode.setDataValue('取值', '');
+                                            }
+                                        });
+                                    },
+                                }
+                            ],
+                            defaultColDef:
                             {
-                                popup_grid_api.destroy();
-                                popup_grid_content = '';
-                            }
-                            if (popup_grid_content == '')
-                            {
-                                popup_grid_api = agGrid.createGrid($$('popup_set_grid'), fd_grid_options);
-                                popup_grid_content = 'FD';
-                            }
-                        }
+                                width: 120,
+                                editable: true,
+                                resizable: true
+                            },
+                            rowData: popup_grid_obj[columns_obj[ii].对象名称]
+                        };
+
+                        win_popup_set.show();
+                        popup_grid_api = agGrid.createGrid($$('popup_set_grid'), popup_grid_options);
                         break;
                 }
                 break;

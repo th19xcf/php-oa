@@ -1,5 +1,5 @@
 <?php
-/* v10.6.1.1.202405182155, from home */
+/* v10.7.1.1.202405202240, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -439,7 +439,7 @@ class Frame extends Controller
         $sql = sprintf('
             select 功能编码,字段模块,部门字段,属地字段,
                 列名,列类型,列宽度,字段名,查询名,
-                赋值类型,对象,主键,
+                赋值类型,对象,对象名称,对象表名,主键,
                 可筛选,可汇总,可新增,可修改,不可为空,
                 提示条件,提示样式设置,异常条件,异常样式设置,
                 列顺序
@@ -468,6 +468,8 @@ class Frame extends Controller
             $arr['主键'] = $row->主键;
             $arr['赋值类型'] = $row->赋值类型;
             $arr['对象'] = $row->对象;
+            $arr['对象名称'] = $row->对象名称;
+            $arr['对象表名'] = $row->对象表名;
             $arr['可汇总'] = $row->可汇总;
             $arr['可修改'] = $row->可修改;
             $arr['可新增'] = $row->可新增;
@@ -708,18 +710,8 @@ class Frame extends Controller
         $tb_arr['导入授权'] = ($import_authz=='1' && $import_func_id!='') ? true : false ;
         $tb_arr['导出授权'] = ($export_authz=='1') ? true : false ;
 
-        $popup_arr = $this->get_popup($menu_id);
-
         //返回页面
-        $send['dept_rows_json'] = json_encode($popup_arr['dept_rows']);
-        $send['dept_json'] = json_encode($popup_arr['dept_value']);
-
-        $send['fd_rows_json'] = json_encode($popup_arr['fd_rows']);
-        $send['fd_json'] = json_encode($popup_arr['fd_value']);
-
-        $send['budget_rows_json'] = json_encode($popup_arr['budget_rows']);
-        $send['budget_json'] = json_encode($popup_arr['budget_value']);
-
+        $send = [];
         $send['menu_json'] = json_encode($menu_arr);
         $send['toolbar_json'] = json_encode($tb_arr);
         $send['columns_json'] = json_encode($send_columns_arr);
@@ -767,6 +759,13 @@ class Frame extends Controller
         $send['import_func_id'] = $import_func_id;
         $send['import_func_name'] = $import_func_name;
         $send['tip_column'] = $tip_column;
+        $popup_arr = $this->get_popup($menu_id);
+
+        //弹窗条件
+        $popup_arr = $this->get_popup($menu_id);
+
+        $send['popup_grid_json'] = json_encode($popup_arr[0]);
+        $send['popup_obj_json'] = json_encode($popup_arr[1]);
 
         echo view('Vgrid_aggrid.php', $send);
     }
@@ -1952,220 +1951,58 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 内部函数,取出弹窗参数
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function get_popup()
+    public function get_popup($menu_id)
     {
+        $popup_grid_arr = [];
+        $popup_obj_arr = [];
         $model = new Mcommon();
 
-        // 取出运营部门信息
-        $sql = sprintf(
-            'select 
-                t1.部门编码,t1.部门名称,t1.部门级别,
-                if(t1.上级部门编码="","无",t1.上级部门编码) as 上级部门编码,
-                ifnull(t2.部门级别,"无") as 上级部门级别,
-                ifnull(t2.部门名称,"无") as 上级部门名称,
-                t1.级别
-            from
-            (
-                select 部门编码,部门名称,
-                    case 部门级别
-                        when 1 then "一级部门"
-                        when 2 then "二级部门"
-                        when 3 then "三级部门"
-                        when 4 then "四级部门"
-                        when 5 then "五级部门"
-                        when 6 then "六级部门"
-                        when 7 then "七级部门"
-                        else "未知级别"
-                    end as 部门级别,
-                    部门级别 as 级别,
-                    上级部门编码
-                from view_dept
-            ) as t1
-            left join
-            (
-                select 部门编码,部门名称,
-                    case 部门级别
-                        when 1 then "一级部门"
-                        when 2 then "二级部门"
-                        when 3 then "三级部门"
-                        when 4 then "四级部门"
-                        when 5 then "五级部门"
-                        when 6 then "六级部门"
-                        when 7 then "七级部门"
-                        else "未知级别"
-                    end as 部门级别
-                from view_dept
-            ) as t2 on t1.上级部门编码=t2.部门编码
-            order by t1.级别');
+        // 取出赋值类型为弹窗的信息
+        $menu_sql = sprintf(
+            'select 赋值类型,对象,对象名称,对象表名
+            from view_function
+            where 赋值类型="弹窗" and 功能编码="%s"
+            group by 对象名称', $menu_id);
 
-        $rows = $model->select($sql)->getResult();
-
-        $dept_arr = [];
-
-        foreach ($rows as $row)
+        $menu_rows = $model->select($menu_sql)->getResult();
+        foreach ($menu_rows as $menu_row)
         {
-            if (array_key_exists($row->部门级别, $dept_arr) == false)
+            $obj_sql = sprintf(
+                'select 对象名称,本级编码,本级名称,本级全称,本级级别名称,本级级别,
+                    上级编码,上级名称,上级全称,上级级别名称,最大级别,
+                    本级初始值
+                from %s
+                order by 对象名称,本级级别,本级全称', 
+                $menu_row->对象表名);
+            $obj_rows = $model->select($obj_sql)->getResult();
+
+            if (array_key_exists($menu_row->对象名称, $popup_obj_arr) == false)
             {
-                $dept_arr[$row->部门级别] = [];
-                $dept_arr[$row->部门级别]['级别'] = $row->级别;
-                $dept_arr[$row->部门级别]['上级部门级别'] = $row->上级部门级别;
+                $popup_obj_arr[$menu_row->对象名称] = [];
+                $popup_grid_arr[$menu_row->对象名称] = [];
             }
-            if (array_key_exists($row->上级部门名称, $dept_arr[$row->部门级别]) == false)
+
+            foreach ($obj_rows as $obj_row)
             {
-                $dept_arr[$row->部门级别][$row->上级部门名称] = [];
+                if (array_key_exists($obj_row->本级级别名称, $popup_obj_arr[$menu_row->对象名称]) == false)
+                {
+                    $popup_obj_arr[$menu_row->对象名称][$obj_row->本级级别名称] = [];
+                    $popup_obj_arr[$menu_row->对象名称][$obj_row->本级级别名称]['本级级别'] = $obj_row->本级级别;
+                    $popup_obj_arr[$menu_row->对象名称][$obj_row->本级级别名称]['本级初始值'] = $obj_row->本级初始值;
+                    $popup_obj_arr[$menu_row->对象名称][$obj_row->本级级别名称]['上级级别名称'] = $obj_row->上级级别名称;
+
+                    // 前端popup_grid数据
+                    array_push($popup_grid_arr[$menu_row->对象名称], array('表项'=>$obj_row->本级级别名称, '级别'=>$obj_row->本级级别, '取值'=>$obj_row->本级初始值));
+                }
+                if (array_key_exists($obj_row->上级名称, $popup_obj_arr[$menu_row->对象名称][$obj_row->本级级别名称]) == false)
+                {
+                    $popup_obj_arr[$menu_row->对象名称][$obj_row->本级级别名称][$obj_row->上级名称] = [];
+                }
+                array_push($popup_obj_arr[$menu_row->对象名称][$obj_row->本级级别名称][$obj_row->上级名称], $obj_row->本级名称);
             }
-            array_push($dept_arr[$row->部门级别][$row->上级部门名称], $row->部门名称);
         }
 
-        // 前端运营部门显示信息
-        $dept_rows_arr = [];
-        array_push($dept_rows_arr, array('部门'=>'一级部门', '级别'=>'1', '取值'=>'公司'));
-        array_push($dept_rows_arr, array('部门'=>'二级部门', '级别'=>'2', '取值'=>'呼叫中心'));
-        array_push($dept_rows_arr, array('部门'=>'三级部门', '级别'=>'3', '取值'=>''));
-        array_push($dept_rows_arr, array('部门'=>'四级部门', '级别'=>'4', '取值'=>''));
-        array_push($dept_rows_arr, array('部门'=>'五级部门', '级别'=>'5', '取值'=>''));
-        array_push($dept_rows_arr, array('部门'=>'六级部门', '级别'=>'6', '取值'=>''));
-        array_push($dept_rows_arr, array('部门'=>'七级部门', '级别'=>'7', '取值'=>''));
-
-        // 取出预算部门信息
-        $sql = sprintf(
-            'select 
-                "" as 部门编码,
-                substring_index(统计部门全称,">>",-1) as 部门名称,
-                统计部门全称 as 部门全称,
-                case 统计部门级别
-                    when 1 then "一级部门"
-                    when 2 then "二级部门"
-                    when 3 then "三级部门"
-                    when 4 then "四级部门"
-                    when 5 then "五级部门"
-                    when 6 then "六级部门"
-                    when 7 then "七级部门"
-                    else "未知级别"
-                end as 部门级别,
-                统计部门级别 as 级别,
-                substring_index(substring_index(统计部门全称,">>",统计部门级别-1),">>",-1) as 上级部门名称,
-                substring_index(统计部门全称,">>",统计部门级别-1) as 上级部门全称,
-                case 统计部门级别-1
-                    when 1 then "一级部门"
-                    when 2 then "二级部门"
-                    when 3 then "三级部门"
-                    when 4 then "四级部门"
-                    when 5 then "五级部门"
-                    when 6 then "六级部门"
-                    when 7 then "七级部门"
-                    else "未知级别"
-                end as 上级部门级别
-            from 中心_预算_部门
-            where 统计部门级别=1 or 有效标识!=0
-            group by 部门全称
-            order by 级别,部门全称');
-
-        $rows = $model->select($sql)->getResult();
-
-        $budget_arr = []; // finace dept
-
-        foreach ($rows as $row)
-        {
-            if (array_key_exists($row->部门级别, $budget_arr) == false)
-            {
-                $budget_arr[$row->部门级别] = [];
-                $budget_arr[$row->部门级别]['级别'] = $row->级别;
-                $budget_arr[$row->部门级别]['上级部门级别'] = $row->上级部门级别;
-            }
-            if (array_key_exists($row->上级部门名称, $budget_arr[$row->部门级别]) == false)
-            {
-                $budget_arr[$row->部门级别][$row->上级部门名称] = [];
-            }
-            array_push($budget_arr[$row->部门级别][$row->上级部门名称], $row->部门名称);
-        }
-
-        // 前端预算部门显示信息
-        $budget_rows_arr = [];
-        array_push($budget_rows_arr, array('部门'=>'一级部门', '级别'=>'1', '取值'=>'公司'));
-        array_push($budget_rows_arr, array('部门'=>'二级部门', '级别'=>'2', '取值'=>'呼叫中心'));
-        array_push($budget_rows_arr, array('部门'=>'三级部门', '级别'=>'3', '取值'=>''));
-        array_push($budget_rows_arr, array('部门'=>'四级部门', '级别'=>'4', '取值'=>''));
-        array_push($budget_rows_arr, array('部门'=>'五级部门', '级别'=>'5', '取值'=>''));
-        array_push($budget_rows_arr, array('部门'=>'六级部门', '级别'=>'6', '取值'=>''));
-        array_push($budget_rows_arr, array('部门'=>'七级部门', '级别'=>'7', '取值'=>''));
-
-        // 取出科目信息
-        $sql = sprintf(
-            'select 
-                t1.科目编码,t1.科目名称,t1.科目级别,
-                if(t1.上级科目编码="","无",t1.上级科目编码) as 上级科目编码,
-                ifnull(t2.科目级别,"无") as 上级科目级别,
-                ifnull(t2.科目名称,"无") as 上级科目名称,
-                t1.级别
-            from
-            (
-                select 
-                    科目编码,科目名称,
-                    case 科目级别
-                        when 1 then "一级科目"
-                        when 2 then "二级科目"
-                        when 3 then "三级科目"
-                        when 4 then "四级科目"
-                        else "未知级别"
-                    end as 科目级别,
-                    科目级别 as 级别,
-                    if(上级科目编码="","无",上级科目编码) as 上级科目编码
-                from 中心_预算_科目
-                where 有效标识="1" and 科目级别>=1
-            ) as t1
-            left join
-            (
-                select 
-                    科目编码,科目名称,
-                    case 科目级别
-                        when 1 then "一级科目"
-                        when 2 then "二级科目"
-                        when 3 then "三级科目"
-                        when 4 then "四级科目"
-                        else "未知级别"
-                    end as 科目级别
-                from 中心_预算_科目
-                where 有效标识="1" and 科目级别>=1
-            ) as t2 on t1.上级科目编码=t2.科目编码
-            order by t1.级别,t1.科目编码');
-
-        $rows = $model->select($sql)->getResult();
-
-        $fd_arr = []; // finace dept
-
-        foreach ($rows as $row)
-        {
-            if (array_key_exists($row->科目级别, $fd_arr) == false)
-            {
-                $fd_arr[$row->科目级别] = [];
-                $fd_arr[$row->科目级别]['级别'] = $row->级别;
-                $fd_arr[$row->科目级别]['上级科目级别'] = $row->上级科目级别;
-            }
-            if (array_key_exists($row->上级科目名称, $fd_arr[$row->科目级别]) == false)
-            {
-                $fd_arr[$row->科目级别][$row->上级科目名称] = [];
-            }
-            array_push($fd_arr[$row->科目级别][$row->上级科目名称], $row->科目名称);
-        }
-
-        // 前端科目显示信息
-        $fd_rows_arr = [];
-        array_push($fd_rows_arr, array('科目'=>'一级科目', '级别'=>'1', '取值'=>''));
-        array_push($fd_rows_arr, array('科目'=>'二级科目', '级别'=>'2', '取值'=>''));
-        array_push($fd_rows_arr, array('科目'=>'三级科目', '级别'=>'3', '取值'=>''));
-        array_push($fd_rows_arr, array('科目'=>'四级科目', '级别'=>'4', '取值'=>''));
-        array_push($fd_rows_arr, array('科目'=>'五级科目', '级别'=>'5', '取值'=>''));
-
-        $popup_arr = [];
-        $popup_arr['dept_value'] = $dept_arr;
-        $popup_arr['dept_rows'] = $dept_rows_arr;
-        $popup_arr['budget_value'] = $budget_arr;
-        $popup_arr['budget_rows'] = $budget_rows_arr;
-        $popup_arr['fd_value'] = $fd_arr;
-        $popup_arr['fd_rows'] = $fd_rows_arr;
-
-        return $popup_arr;
+        return array($popup_grid_arr, $popup_obj_arr);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -2176,91 +2013,65 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $columns_arr = $session->get($menu_id.'-columns_arr');
 
-        //处理运营部门信息
         foreach ($columns_arr as $column)
         {
-            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'运营部门') !== false)
+            if ($column['赋值类型'] == '弹窗')
             {
-                $dept_value = '';
+                $popup_value = '';
                 for ($ii=0; $ii<count($row_arr); $ii++)
                 {
                     if ($row_arr[$ii]['modified'] == false || $row_arr[$ii]['col_name'] != $column['列名']) continue;
 
-                    $dept_arr = explode(',', $row_arr[$ii]['value']);
-                    foreach ($dept_arr as $dept)
+                    $popup_arr = explode(',', $row_arr[$ii]['value']);
+                    foreach ($popup_arr as $popup)
                     {
-                        $arr = explode('^', $dept);
-                        if (strpos($column['对象'],'部门编码') !== false)
+                        $arr = explode('^', $popup);
+                        if (strpos($column['对象'],'编码') !== false)
                         {
-                            $dept_value = ($dept_value=='') ? $arr[0] : $dept_value.','.$arr[0];
+                            $popup_value = ($popup_value=='') ? $arr[0] : $popup_value.','.$arr[0];
                         }
-                        else if (strpos($column['对象'],'部门全称') !== false)
+                        else if (strpos($column['对象'],'全称') !== false)
                         {
-                            $dept_value = ($dept_value=='') ? $arr[1] : $dept_value.','.$arr[1];
+                            $popup_value = ($popup_value=='') ? $arr[1] : $popup_value.','.$arr[1];
                         }
                     }
 
-                    $row_arr[$ii]['value'] = $dept_value;
+                    $row_arr[$ii]['value'] = $popup_value;
                 }
             }
         }
+    }
 
-        //处理预算部门信息
-        foreach ($columns_arr as $column)
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 弹窗输入校验
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function verify_popup($menu_id='')
+    {
+        $arg = $this->request->getJSON(true);
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $columns_arr = $session->get($menu_id.'-columns_arr');
+
+        $obj_table = '';
+
+        $model = new Mcommon();
+        foreach ($columns_arr as $col)
         {
-            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'预算部门') !== false)
-            {
-                $budget_value = '';
-                for ($ii=0; $ii<count($row_arr); $ii++)
-                {
-                    if ($row_arr[$ii]['modified'] == false || $row_arr[$ii]['col_name'] != $column['列名']) continue;
-
-                    $budget_arr = explode(',', $row_arr[$ii]['value']);
-                    foreach ($budget_arr as $budget)
-                    {
-                        $arr = explode('^', $budget);
-                        if (strpos($column['对象'],'部门编码') !== false)
-                        {
-                            $budget_value = ($budget_value=='') ? $arr[0] : $budget_value.','.$arr[0];
-                        }
-                        else if (strpos($column['对象'],'部门全称') !== false)
-                        {
-                            $budget_value = ($budget_value=='') ? $arr[1] : $budget_value.','.$arr[1];
-                        }
-                    }
-
-                    $row_arr[$ii]['value'] = $budget_value;
-                }
-            }
+            if ($col['列名'] != $arg['列名']) continue;
+            $obj_table = $col['对象表名'];
         }
 
-        //处理科目信息
-        foreach ($columns_arr as $column)
-        {
-            if ($column['赋值类型'] == '弹窗' && strpos($column['对象'],'科目') !== false)
-            {
-                $fd_value = '';
-                for ($ii=0; $ii<count($row_arr); $ii++)
-                {
-                    if ($row_arr[$ii]['modified'] == false || $row_arr[$ii]['col_name'] != $column['列名']) continue;
+        $sql = sprintf(
+            'select 对象名称,本级编码,本级名称,本级全称,本级级别名称,本级级别,
+                上级编码,上级名称,上级全称,上级级别名称,最大级别,
+                本级初始值
+            from %s
+            where 本级全称="%s"
+            order by 对象名称,本级级别,本级全称', 
+            $obj_table, $arg['本级全称']);
+        $rows = $model->select($sql)->getResultArray();
 
-                    $fd_arr = explode(',', $row_arr[$ii]['value']);
-                    foreach ($fd_arr as $fd)
-                    {
-                        $arr = explode('^', $fd);
-                        if (strpos($column['对象'],'科目编码') !== false)
-                        {
-                            $fd_value = ($fd_value=='') ? $arr[0] : $fd_value.','.$arr[0];
-                        }
-                        else if (strpos($column['对象'],'科目全称') !== false)
-                        {
-                            $fd_value = ($fd_value=='') ? $arr[1] : $fd_value.','.$arr[1];
-                        }
-                    }
-
-                    $row_arr[$ii]['value'] = $fd_value;
-                }
-            }
-        }
+        exit(sprintf('%s^%s', $rows[0]['本级编码'], $rows[0]['本级全称']));
     }
 }
