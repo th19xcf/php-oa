@@ -1,4 +1,4 @@
-<!-- v7.5.1.1.202405202240, from home -->
+<!-- v7.6.1.1.202405241510, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -137,6 +137,8 @@
         // 工具栏数据
         var tb_obj = JSON.parse('<?php echo $toolbar_json; ?>');
 
+        var table_modify_flag = tb_obj['整表授权'];  // 整表修改标志
+        var table_modify_rows = [];
         var update_flag = '';  // modify或add
 
         // 条件选择
@@ -158,6 +160,11 @@
         {
             data_tb.data.add({id:'单条修改', type:'button', value:'单条修改'});
             data_tb.data.add({id:'多条修改', type:'button', value:'多条修改'});
+        }
+        if (tb_obj['整表授权'] == true)
+        {
+            //data_tb.data.add({id:'整表修改', type:'button', value:'整表修改 - 关闭'});
+            data_tb.data.add({id:'修改提交', type:'button', value:'修改提交'});
         }
         if (tb_obj['新增授权'] == true)
         {
@@ -232,10 +239,21 @@
             defaultColDef: 
             {
                 width: 120,
-                editable: true,
                 resizable: true,
+                editable: (params) =>
+                {
+                    if (table_modify_flag == false) return true;  //readonly时,可以编辑
+
+                    for (var ii in columns_obj)
+                    {
+                        if (columns_obj[ii].列名 != params.colDef.field) continue;
+                        return (columns_obj[ii].可修改 == '1' || columns_obj[ii].可修改 == '2') ? true : false;
+                    }
+
+                    return false;
+                },
             },
-            readOnlyEdit: true,
+            readOnlyEdit: !table_modify_flag,
             rowData: data_grid_obj,
             rowSelection: 'multiple',
             //onSelectionChanged: onSelectionChanged,
@@ -245,7 +263,37 @@
             localeText: AG_GRID_LOCALE_CN,
             onCellEditRequest: (event) => 
             {
-                alert('数据在此处修改无效,请点击`单条修改`或`多条修改`按钮进行修改');
+                if (table_modify_flag == false)
+                {
+                    alert('数据在此处修改无效,请点击`单条修改`或`多条修改`按钮进行修改');
+                }
+            },
+            onCellValueChanged : (params) => 
+            {
+                if (params.newValue != params.oldValue)
+                {
+                    if (table_modify_rows.indexOf(params.rowIndex) == -1)
+                    {
+                        table_modify_rows.push(params.rowIndex);
+                    }
+
+                    params.colDef.cellStyle = (p) =>
+                    {
+                        //p.rowIndex.toString() === params.node.id ? {'background-color':'blue'} : {};
+                        if (p.rowIndex.toString() === params.node.id)
+                        {
+                            return {'background-color':'yellow'};
+                        }
+                        return null;
+                    }
+                }
+
+                params.api.refreshCells(
+                {
+                    force: true,
+                    columns: [params.column.getId()],
+                    rowNodes: [params.node]
+                });
             },
         };
 
@@ -744,6 +792,40 @@
 
                     $$('footbox').innerHTML = '&nbsp&nbsp<b>提交记录:{' + foot_upkeep + '}</b>';
                     div_block('updatebox');
+                    break;
+                case '整表修改':
+                    if (table_modify_flag == false)
+                    {
+                        table_modify_flag = true;
+                        data_tb.data.update('整表修改',{value:'整表修改 - 打开'});
+                    }
+                    else
+                    {
+                        table_modify_flag = false;
+                        data_tb.data.update('整表修改',{value:'整表修改 - 关闭'});
+                    }
+                    break;
+                case '修改提交':
+                    let send_arr = [];
+                    data_grid_api.stopEditing();
+                    data_grid_api.forEachNode((rowNode, index) => 
+                    {
+                        if (table_modify_rows.indexOf(index) != -1)
+                        {
+                            send_arr.push(rowNode.data);
+                        }
+                    });
+
+                    var url = '<?php base_url(); ?>/frame/update_table/<?php echo $func_id; ?>';
+                    dhx.ajax.post(url, send_arr).then(function (data)
+                    {
+                        alert(data);
+                        window.location.reload();
+                    }).catch(function (err)
+                    {
+                        alert('status' + " " + err.statusText);
+                    });
+
                     break;
                 case '新增':
                     if (update_flag != id)

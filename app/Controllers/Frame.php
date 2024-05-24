@@ -1,5 +1,5 @@
 <?php
-/* v10.7.1.1.202405202240, from home */
+/* v10.8.1.1.202405241510, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -36,7 +36,7 @@ class Frame extends Controller
         $sql = sprintf(
             'select 
                 t1.角色编号,t1.角色名称,t1.功能赋权,t1.部门赋权,t1.属地赋权,
-                t1.新增授权,t1.修改授权,t1.删除授权,t1.导入授权,t1.导出授权,
+                t1.新增授权,t1.修改授权,t1.删除授权,t1.整表授权,t1.导入授权,t1.导出授权,
                 ifnull(t2.功能编码,"") as 功能编码,
                 ifnull(t2.一级菜单,"") as 一级菜单,
                 ifnull(t2.二级菜单,"") as 二级菜单,
@@ -130,6 +130,7 @@ class Frame extends Controller
             $session_arr[$row->功能赋权.'-add_authz'] = $row->新增授权;
             $session_arr[$row->功能赋权.'-modify_authz'] = $row->修改授权;
             $session_arr[$row->功能赋权.'-delete_authz'] = $row->删除授权;
+            $session_arr[$row->功能赋权.'-table_authz'] = $row->整表授权;
             $session_arr[$row->功能赋权.'-import_authz'] = $row->导入授权;
             $session_arr[$row->功能赋权.'-export_authz'] = $row->导出授权;
             $session = \Config\Services::session();
@@ -175,6 +176,7 @@ class Frame extends Controller
         $add_authz = $session->get($menu_id.'-add_authz');
         $modify_authz = $session->get($menu_id.'-modify_authz');
         $delete_authz = $session->get($menu_id.'-delete_authz');
+        $table_authz = $session->get($menu_id.'-table_authz');
         $import_authz = $session->get($menu_id.'-import_authz');
         $export_authz = $session->get($menu_id.'-export_authz');
 
@@ -707,6 +709,7 @@ class Frame extends Controller
         $tb_arr['新增授权'] = ($add_authz=='1') ? true : false ;
         $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
         $tb_arr['删除授权'] = ($delete_authz=='1') ? true : false ;
+        $tb_arr['整表授权'] = ($table_authz=='1') ? true : false ;
         $tb_arr['导入授权'] = ($import_authz=='1' && $import_func_id!='') ? true : false ;
         $tb_arr['导出授权'] = ($export_authz=='1') ? true : false ;
 
@@ -2055,7 +2058,6 @@ class Frame extends Controller
 
         $obj_table = '';
 
-        $model = new Mcommon();
         foreach ($columns_arr as $col)
         {
             if ($col['列名'] != $arg['列名']) continue;
@@ -2070,8 +2072,29 @@ class Frame extends Controller
             where 本级全称="%s"
             order by 对象名称,本级级别,本级全称', 
             $obj_table, $arg['本级全称']);
-        $rows = $model->select($sql)->getResultArray();
+
+            $model = new Mcommon();
+            $rows = $model->select($sql)->getResultArray();
 
         exit(sprintf('%s^%s', $rows[0]['本级编码'], $rows[0]['本级全称']));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 整表操作,未完成(2024-5-24)
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function update_table($menu_id='')
+    {
+        $arg = $this->request->getJSON(true);
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $columns_arr = $session->get($menu_id.'-columns_arr');
+        $data_table = $session->get($menu_id.'-data_table');
+
+        $model = new Mcommon();
+
+        $fields = $model->get_fields($data_table);
+        foreach ($fields as $field)
+        {
+        }
     }
 }
