@@ -1,5 +1,5 @@
 <?php
-/* v10.8.1.1.202405241510, from office */
+/* v10.8.2.1.202405301945, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -94,6 +94,12 @@ class Frame extends Controller
                 }
             }
 
+            // or条件要加括号
+            if ($dept_cond != '')
+            {
+                $dept_cond = sprintf('(%s)', $dept_cond);
+            }
+
             // 属地访问权限
             str_replace(' ', '', $row->属地赋权);
             str_replace('，', ',', $row->属地赋权);
@@ -115,6 +121,12 @@ class Frame extends Controller
                 {
                     $location_cond = sprintf('%s or instr(%s,"%s")', $location_cond, $row->属地字段, $location);
                 }
+            }
+
+            // or条件要加括号
+            if ($location_cond != '')
+            {
+                $location_cond = sprintf('(%s)', $location_cond);
             }
 
             // 存入session
@@ -363,9 +375,10 @@ class Frame extends Controller
             array_push($drill_arr, $arr);
         }
 
-        //+=+=+=+=+=+=+=+=+=+=+=+= 
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+= 
         // 处理钻取功能相关数据
-        //+=+=+=+=+=+=+=+=+=+=+=+= 
+        // 钻取条件格式:源表字段^目标表字段 [^类型^操作符]
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+= 
         $cond_arr = json_decode($front_where);
         $front_where = [];
         $caller_col_arr = [];
@@ -403,7 +416,7 @@ class Frame extends Controller
             {
                 foreach ($caller_col_arr as $col_arr)
                 {
-                    if ($key != $col_arr['caller_col']) continue;
+                    if ($key != $col_arr['called_col']) continue;
                     if ($col_arr['type'] == '数值')
                     {
                         $front_where[$col_arr['called_col']] = sprintf('%s%s%s', $col_arr['called_col'], $col_arr['option'], $value);

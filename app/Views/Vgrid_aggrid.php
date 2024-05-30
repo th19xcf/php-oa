@@ -1,4 +1,4 @@
-<!-- v7.6.1.1.202405241510, from office -->
+<!-- v7.7.1.1.202405301945, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1075,8 +1075,20 @@
 
                 for (let ii in nl_arr)
                 {
-                    if (rows[0][nl_arr[ii]] == '') continue;
-                    send_obj[nl_arr[ii]] = rows[0][nl_arr[ii]];
+                    let src_col = '', dst_col = '';
+                    if (nl_arr[ii].indexOf('^') != -1)
+                    {
+                        src_col = nl_arr[ii].split('^')[0];
+                        dst_col = nl_arr[ii].split('^')[1];
+                    }
+                    else
+                    {
+                        src_col = nl_arr[ii];
+                        dst_col = nl_arr[ii];
+                    }
+
+                    if (rows[0][src_col] == '') continue;
+                    send_obj[dst_col] = rows[0][src_col];
                     ajax = true;
                 }
 
