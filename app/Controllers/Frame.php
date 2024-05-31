@@ -1,5 +1,5 @@
 <?php
-/* v10.8.2.1.202405301945, from home */
+/* v10.9.1.1.202405302355, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -355,7 +355,7 @@ class Frame extends Controller
 
         // 读出钻取模块参数
         $sql = sprintf('
-            select 钻取模块,页面选项,t1.功能编码,钻取条件,ifnull(t2.二级菜单,"") as 显示名称
+            select 钻取模块,页面选项,t1.功能编码,钻取字段,钻取条件,ifnull(t2.二级菜单,"") as 显示名称
             from def_drill_config as t1
             left join def_function as t2 on t1.功能编码=t2.功能编码
             where 钻取模块="%s"', $next_func_id);
@@ -363,13 +363,14 @@ class Frame extends Controller
         $results = $model->select($sql)->getResult();
         foreach ($results as $row)
         {
-            str_replace(' ', '', $row->钻取条件);
-            str_replace('；', ';', $row->钻取条件);
+            str_replace(' ', '', $row->钻取字段);
+            str_replace('；', ';', $row->钻取字段);
 
             $arr = [];
             $arr['模块名称'] = $row->钻取模块;
             $arr['页面选项'] = $row->页面选项;
             $arr['功能编码'] = $row->功能编码;
+            $arr['钻取字段'] = $row->钻取字段;
             $arr['钻取条件'] = $row->钻取条件;
             $arr['显示名称'] = $row->显示名称;
             array_push($drill_arr, $arr);
@@ -380,52 +381,17 @@ class Frame extends Controller
         // 钻取条件格式:源表字段^目标表字段 [^类型^操作符]
         //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+= 
         $cond_arr = json_decode($front_where);
-        $front_where = [];
-        $caller_col_arr = [];
+        $front_where = '';
 
         if ($front_id != '')
         {
-            $caller_col = [];
-            $col_arr = explode(';', $cond_arr->钻取条件);
-            foreach ($col_arr as $col_str)
-            {
-                if (strpos($col_str,'^') !== false)
-                {
-                    $arr = explode('^', $col_str);
-                    $caller_col['caller_col'] = $arr[0];
-                    $caller_col['called_col'] = $arr[1];
-                    $caller_col['type'] = '字符';
-                    $caller_col['option'] = '=';
-                    if (count($arr) > 3)
-                    {
-                        $caller_col['type'] = $arr[2];
-                        $caller_col['option'] = $arr[3];
-                    }
-                }
-                else
-                {
-                    $caller_col['caller_col'] = $col_str;
-                    $caller_col['called_col'] = $col_str;
-                    $caller_col['type'] = '字符';
-                    $caller_col['option'] = '=';
-                }
-                array_push($caller_col_arr, $caller_col);
-            }
+            $col_arr = explode(';', $cond_arr->钻取字段);
+            $front_where = str_replace('`', '"', $cond_arr->钻取条件);
 
             foreach ($cond_arr as $key => $value)
             {
-                foreach ($caller_col_arr as $col_arr)
-                {
-                    if ($key != $col_arr['called_col']) continue;
-                    if ($col_arr['type'] == '数值')
-                    {
-                        $front_where[$col_arr['called_col']] = sprintf('%s%s%s', $col_arr['called_col'], $col_arr['option'], $value);
-                    }
-                    if ($col_arr['type'] == '字符')
-                    {
-                        $front_where[$col_arr['called_col']] = sprintf('%s%s"%s"', $col_arr['called_col'], $col_arr['option'], $value);
-                    }
-                }
+                if ($key == '钻取字段' || $key == '钻取条件') continue;
+                $front_where = str_replace(sprintf('$%s',$key), $value, $front_where);
             }
         }
 
@@ -638,10 +604,7 @@ class Frame extends Controller
         // 数据钻取,条件语句加上前端选定的条件
         if ($front_where != '')
         {
-            foreach ($front_where as $key => $value)
-            {
-                $where = ($where == '') ? $value : sprintf('%s and %s',$where,$value);
-            }
+            $where = ($where == '') ? $front_where : sprintf('%s and %s',$where, $front_where);
         }
 
         if ($where != '')

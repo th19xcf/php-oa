@@ -1,4 +1,4 @@
-<!-- v7.7.1.1.202405301945, from home -->
+<!-- v7.8.2.1.202405312350, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -127,7 +127,7 @@
         var back_group = '<?php echo $back_group; ?>';
         var tip_column = '<?php echo $tip_column; ?>';
 
-        foot_data = '&nbsp&nbsp<b>条件:{' + back_where + '}, 汇总:{' + back_group + '}, 合计:{}, 平均:{}, 最大:{}, 最小:{}</b>';
+        foot_data = '&nbsp&nbsp<b>条件:{' + back_where.slice(0,40) + '}, 汇总:{' + back_group + '}, 合计:{}, 平均:{}, 最大:{}, 最小:{}</b>';
         $$('footbox').innerHTML = foot_data;
 
         // 字段数据
@@ -851,6 +851,11 @@
                     }
                     break;
                 case '数据钻取':
+                    if (drill_arr.length == 0)
+                    {
+                        alert('没有设置钻取条件');
+                        return;
+                    }
                     var rows = data_grid_api.getSelectedRows();
                     if (rows.length == 0)
                     {
@@ -1068,36 +1073,25 @@
                     break;
                 }
 
-                drill_item['钻取条件'] = drill_item['钻取条件'].replace('；',';');
-                let nl_arr = drill_item['钻取条件'].split(';');
+                drill_item['钻取字段'] = drill_item['钻取字段'].replace('；',';');
+                let nl_arr = drill_item['钻取字段'].split(';');
                 let send_obj = {};
                 let ajax = false;
 
                 for (let ii in nl_arr)
                 {
-                    let src_col = '', dst_col = '';
-                    if (nl_arr[ii].indexOf('^') != -1)
-                    {
-                        src_col = nl_arr[ii].split('^')[0];
-                        dst_col = nl_arr[ii].split('^')[1];
-                    }
-                    else
-                    {
-                        src_col = nl_arr[ii];
-                        dst_col = nl_arr[ii];
-                    }
-
-                    if (rows[0][src_col] == '') continue;
-                    send_obj[dst_col] = rows[0][src_col];
+                    if (rows[0][nl_arr[ii]] == '') continue;
+                    send_obj[nl_arr[ii]] = rows[0][nl_arr[ii]];
                     ajax = true;
                 }
 
                 if (ajax == false)
                 {
-                    alert('钻取条件都为空,无法钻取');
+                    alert('钻取字段都为空,无法钻取');
                     return;
                 }
 
+                send_obj['钻取字段'] = drill_item['钻取字段'];
                 send_obj['钻取条件'] = drill_item['钻取条件'];
 
                 send_str = JSON.stringify(send_obj);
@@ -1273,7 +1267,7 @@
                     if (group_str != '') disp_group = group_str;
                 }
 
-                foot_data = '&nbsp&nbsp<b>条件:{' + disp_where + '} , 汇总:{' + disp_group + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}, 计数:{' + count_str + '}</b>';
+                foot_data = '&nbsp&nbsp<b>条件:{' + disp_where.slice(0,40) + '} , 汇总:{' + disp_group + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}, 计数:{' + count_str + '}</b>';
                 $$('footbox').innerHTML = foot_data;
             }).catch(function (err)
             {
