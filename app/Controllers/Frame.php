@@ -1,5 +1,5 @@
 <?php
-/* v10.9.1.1.202405302355, from home */
+/* v10.9.2.1.202406021705, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -358,7 +358,8 @@ class Frame extends Controller
             select 钻取模块,页面选项,t1.功能编码,钻取字段,钻取条件,ifnull(t2.二级菜单,"") as 显示名称
             from def_drill_config as t1
             left join def_function as t2 on t1.功能编码=t2.功能编码
-            where 钻取模块="%s"', $next_func_id);
+            where 钻取模块="%s"
+            order by convert(页面选项 using gbk)', $next_func_id);
 
         $results = $model->select($sql)->getResult();
         foreach ($results as $row)
