@@ -1,4 +1,4 @@
-<!-- v7.8.2.1.202405312350, from home -->
+<!-- v7.9.1.1.202406031025, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -103,6 +103,15 @@
             this.obj = [];
         }
 
+        function ColorInfo()
+        {
+            this.col_name_1 = '';
+            this.option = '';
+            this.col_name_2 = '';
+            this.color_col = '';
+            this.style = {'color':'red','font-weight':'bold'};
+        }
+
         function Chart()
         {
             this.type = '';
@@ -116,6 +125,7 @@
             this.y2_data = [];
         }
 
+        var color_arr = new ColorInfo();
         var chart = new Chart();
 
         // footbox显示
@@ -133,6 +143,16 @@
         // 字段数据
         var columns_obj = JSON.parse('<?php echo $columns_json; ?>');
         var columns_arr = Object.values(columns_obj);
+
+        var column_name_arr = [], color_column_arr = [];
+        for (var ii in columns_arr)
+        {
+            column_name_arr.push(columns_arr[ii]['列名']);
+            if (columns_arr[ii]['可颜色标注'] == '1')
+            {
+                color_column_arr.push(columns_arr[ii]['列名']);
+            }
+        }
 
         // 工具栏数据
         var tb_obj = JSON.parse('<?php echo $toolbar_json; ?>');
@@ -153,6 +173,10 @@
         if (tb_obj['钻取授权'] == true)
         {
             data_tb.data.add({id:'数据钻取', type:'button', value:'数据钻取'});
+        }
+        if (color_column_arr.length > 0)
+        {
+            data_tb.data.add({id:'颜色标注', type:'button', value:'颜色标注'});
         }
         data_tb.data.add({id:'图形', type:'button', value:'图形'});
         data_tb.data.add({type:'separator'});
@@ -226,7 +250,7 @@
                 {
                     data_columns_arr[ii].comparator = value_sort;
                 }
-                if (columns_obj[jj].提示条件 != '' || columns_obj[jj].异常条件 != '')
+                if (columns_obj[jj].提示条件 != '' || columns_obj[jj].异常条件 != '' || columns_obj[jj].可颜色标注 == '1')                
                 {
                     data_columns_arr[ii].cellStyle = set_cell_style;
                 }
@@ -321,12 +345,6 @@
         // 生成update_grid
         var update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
         var object_obj = JSON.parse('<?php echo $object_json; ?>');
-
-        var column_name_arr = [];
-        for (var ii in columns_arr)
-        {
-            column_name_arr.push(columns_arr[ii]['列名']);
-        }
 
         const update_grid_options = 
         {
@@ -622,6 +640,58 @@
             }
         });
 
+        //////////////////////////
+        // 颜色设置窗口
+        // 弹窗选择
+        var color_grid_options = {};
+        var color_grid_obj = JSON.parse('<?php echo $popup_grid_json; ?>');
+        var color_grid_api = null;
+
+        var win_color_set = new dhx.Window(
+        {
+            title: '颜色标注输入窗口',
+            footer: true,
+            modal: true,
+            width: 600,
+            height: 500,
+            closable: true,
+            movable: true
+        });
+
+        win_color_set.footer.data.add(
+        {
+            type: 'button',
+            id: '确定',
+            value: '确定',
+            view: 'flat',
+            size: 'medium',
+            color: 'primary',
+        });
+
+        var html = '<div id="color_set_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
+        win_color_set.attachHTML(html);
+        win_color_set.hide();
+
+        win_color_set.footer.events.on('click', function (id)
+        {
+            if (id != '确定') return;
+
+            color_grid_api.stopEditing();
+
+            // 获表中的数据
+            color_grid_api.forEachNode((rowNode, index) => 
+            {
+                color_arr['color_col'] = color_arr['col_name_2'];
+                color_arr['col_name_1'] = rowNode.data['字段一'];
+                color_arr['option'] = rowNode.data['比较符'];
+                color_arr['col_name_2'] = rowNode.data['字段二'];
+            });
+
+            win_color_set.hide();
+        });
+
+        //////////////////////////
+
         // 图形设置
         var chart_grid_obj = [];
         var win_chart_set = new dhx.Window(
@@ -736,6 +806,61 @@
                     break;
                 case '设置条件':
                     div_block('conditionbox');
+                    break;
+                case '颜色标注':
+                    if (color_grid_api != null)
+                    {
+                        color_grid_api.destroy();
+                        color_grid_api = null;
+                    }
+
+                    color_grid_options = 
+                    {
+                        columnDefs:
+                        [
+                            {
+                                field: '字段一',
+                                width: 180,
+                                cellEditor: 'agSelectCellEditor',
+                                cellEditorParams: 
+                                {
+                                    values: color_column_arr,
+                                },
+                            },
+                            {
+                                field: '比较符',
+                                width: 120,
+                                cellEditor: 'agSelectCellEditor',
+                                cellEditorParams: 
+                                {
+                                    values: ['等于','不等于','大于','大于等于','小于','小于等于'],
+                                },
+                            },
+                            {
+                                field: '字段二',
+                                width: 180,
+                                cellEditor: 'agSelectCellEditor',
+                                cellEditorParams: 
+                                {
+                                    values: color_column_arr,
+                                },
+                            },
+                        ],
+                        defaultColDef:
+                        {
+                            width: 120,
+                            editable: true,
+                            resizable: true
+                        },
+                        singleClickEdit: true,
+                        rowData:
+                        [
+                            {'字段一':'', '比较符':'', '字段二':''},
+                        ]
+                    };
+
+                    win_color_set.show();
+                    color_grid_api = agGrid.createGrid($$('color_set_grid'), color_grid_options);
                     break;
                 case '图形':
                     div_block('chartbox');
@@ -1640,7 +1765,7 @@
                         if (val_1 < val_2) error = true;
                         break;
                     case '=':
-                        if (val_1 = val_2) error = true;
+                        if (val_1 == val_2) error = true;
                         break;
                     case '>=':
                         if (val_1 >= val_2) error = true;
@@ -1774,7 +1899,7 @@
             {
                 if (params.colDef.field != columns_obj[jj].列名) continue;
 
-                if (columns_obj[jj].提示样式 == '' && columns_obj[jj].异常样式 == '')
+                if (columns_obj[jj].提示样式 == '' && columns_obj[jj].异常样式 == '' && columns_obj[jj].可颜色标注 != '1')
                 {
                     return null;
                 }
@@ -1802,6 +1927,47 @@
                     if (rc != '')
                     {
                         return rc;
+                    }
+                }
+
+                if (columns_obj[jj].可颜色标注 == '1')
+                {
+                    if (color_arr['color_col'] == columns_obj[jj].列名)
+                    {
+                        return {'color':'black','font-weight':'normal'};
+                    }
+
+                    let rc = false;
+                    if (color_arr['col_name_2'] != columns_obj[jj].列名) continue;
+
+                    val_1 = Number(params.data[color_arr['col_name_1']]);
+                    val_2 = Number(params.data[color_arr['col_name_2']]);
+
+                    switch (color_arr['option'])
+                    {
+                        case '大于':
+                            if (val_1 > val_2) rc = true;
+                            break;
+                        case '小于':
+                            if (val_1 < val_2) rc = true;
+                            break;
+                        case '等于':
+                            if (val_1 == val_2) rc = true;
+                            break;
+                        case '大于等于':
+                            if (val_1 >= val_2) rc = true;
+                            break;
+                        case '小于等于':
+                            if (val_1 <= val_2) rc = true;
+                            break;
+                        case '不等于':
+                            if (val_1 != val_2) rc = true;
+                            break;
+                    }
+
+                    if (rc == true)
+                    {
+                        return color_arr['style'];
                     }
                 }
             }

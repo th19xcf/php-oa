@@ -1,5 +1,5 @@
 <?php
-/* v10.9.2.1.202406021705, from home */
+/* v10.10.1.1.202406030115, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -422,7 +422,7 @@ class Frame extends Controller
             select 功能编码,字段模块,部门字段,属地字段,
                 列名,列类型,列宽度,字段名,查询名,
                 赋值类型,对象,对象名称,对象表名,主键,
-                可筛选,可汇总,可新增,可修改,不可为空,
+                可筛选,可汇总,可新增,可修改,不可为空,可颜色标注,
                 提示条件,提示样式设置,异常条件,异常样式设置,
                 列顺序
             from view_function
@@ -456,6 +456,7 @@ class Frame extends Controller
             $arr['可修改'] = $row->可修改;
             $arr['可新增'] = $row->可新增;
             $arr['不可为空'] = $row->不可为空;
+            $arr['可颜色标注'] = $row->可颜色标注;
             $arr['提示条件'] = $row->提示条件;
             $arr['提示样式'] = $row->提示样式设置;
             $arr['异常条件'] = $row->异常条件;
