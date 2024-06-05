@@ -1,4 +1,4 @@
-<!-- v7.9.1.1.202406031025, from office -->
+<!-- v7.9.2.1.202406032220, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -108,7 +108,8 @@
             this.col_name_1 = '';
             this.option = '';
             this.col_name_2 = '';
-            this.color_col = '';
+            this.color_col_1 = '';
+            this.color_col_2 = '';
             this.style = {'color':'red','font-weight':'bold'};
         }
 
@@ -681,7 +682,8 @@
             // 获表中的数据
             color_grid_api.forEachNode((rowNode, index) => 
             {
-                color_arr['color_col'] = color_arr['col_name_2'];
+                color_arr['color_col_1'] = color_arr['color_name_1'];
+                color_arr['color_col_2'] = color_arr['color_name_2'];
                 color_arr['col_name_1'] = rowNode.data['字段一'];
                 color_arr['option'] = rowNode.data['比较符'];
                 color_arr['col_name_2'] = rowNode.data['字段二'];
@@ -1899,47 +1901,20 @@
             {
                 if (params.colDef.field != columns_obj[jj].列名) continue;
 
-                if (columns_obj[jj].提示样式 == '' && columns_obj[jj].异常样式 == '' && columns_obj[jj].可颜色标注 != '1')
-                {
-                    return null;
-                }
-
-                if (columns_obj[jj].异常条件 != '')
-                {
-                    str = columns_obj[jj].异常条件;
-                    style_str = columns_obj[jj].异常样式;
-                    style_default = {'color':'red','font-weight':'bold','background-color':'#f7acbc'};
-
-                    rc = get_cell_style(params, columns_obj[jj].类型, str, style_str, style_default);
-                    if (rc != '')
-                    {
-                        return rc;
-                    }
-                }
-
-                if (columns_obj[jj].提示条件 != '')
-                {
-                    str = columns_obj[jj].提示条件;
-                    style_str = columns_obj[jj].提示样式;
-                    style_default = {'color':'green','font-weight':'bold'};
-
-                    rc = get_cell_style(params, columns_obj[jj].类型, str, style_str, style_default);
-                    if (rc != '')
-                    {
-                        return rc;
-                    }
-                }
-
                 if (columns_obj[jj].可颜色标注 == '1')
                 {
-                    if (color_arr['color_col'] == columns_obj[jj].列名)
+                    if (color_arr['color_col_1'] == columns_obj[jj].列名 && color_arr['col_name_1'] != columns_obj[jj].列名)
+                    {
+                        return {'color':'black','font-weight':'normal'};
+                    }
+                    if (color_arr['color_col_2'] == columns_obj[jj].列名 && color_arr['col_name_2'] == columns_obj[jj].列名)
                     {
                         return {'color':'black','font-weight':'normal'};
                     }
 
-                    let rc = false;
-                    if (color_arr['col_name_2'] != columns_obj[jj].列名) continue;
+                    if (color_arr['col_name_1'] != columns_obj[jj].列名 && color_arr['col_name_2'] != columns_obj[jj].列名) continue;
 
+                    let rc = false;
                     val_1 = Number(params.data[color_arr['col_name_1']]);
                     val_2 = Number(params.data[color_arr['col_name_2']]);
 
@@ -1968,6 +1943,37 @@
                     if (rc == true)
                     {
                         return color_arr['style'];
+                    }
+                }
+
+                if (columns_obj[jj].提示样式 == '' && columns_obj[jj].异常样式 == '' && columns_obj[jj].可颜色标注 != '1')
+                {
+                    return null;
+                }
+
+                if (columns_obj[jj].异常条件 != '')
+                {
+                    str = columns_obj[jj].异常条件;
+                    style_str = columns_obj[jj].异常样式;
+                    style_default = {'color':'red','font-weight':'bold','background-color':'#f7acbc'};
+
+                    rc = get_cell_style(params, columns_obj[jj].类型, str, style_str, style_default);
+                    if (rc != '')
+                    {
+                        return rc;
+                    }
+                }
+
+                if (columns_obj[jj].提示条件 != '')
+                {
+                    str = columns_obj[jj].提示条件;
+                    style_str = columns_obj[jj].提示样式;
+                    style_default = {'color':'green','font-weight':'bold'};
+
+                    rc = get_cell_style(params, columns_obj[jj].类型, str, style_str, style_default);
+                    if (rc != '')
+                    {
+                        return rc;
                     }
                 }
             }
