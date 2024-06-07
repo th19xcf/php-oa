@@ -1,5 +1,5 @@
 <?php
-/* v10.10.1.1.202406030115, from home */
+/* v10.10.1.1.202406071035, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -248,7 +248,7 @@ class Frame extends Controller
                 查询表名,
                 数据表名,数据模式,
                 查询条件,汇总条件,排序条件,初始条数,
-                新增后处理模块,更新后处理模块,
+                新增后处理模块,更新后处理模块,数据整理模块,
                 钻取模块,钻取条件,ifnull(t2.钻取模块名称,"") as 钻取模块名称,
                 导入模块,ifnull(t3.导入模块名称,"") as 导入模块名称
             from view_function as t1
@@ -299,6 +299,7 @@ class Frame extends Controller
 
             $after_insert = $row->新增后处理模块;
             $after_update = $row->更新后处理模块;
+            $data_upkeep = $row->数据整理模块;
 
             $data_table = $row->数据表名;
             $data_model = $row->数据模式;
@@ -309,6 +310,7 @@ class Frame extends Controller
 
         $tb_arr['钻取授权'] = ($next_func_id!='') ? true : false;
         $tb_arr['导入授权'] = ($import_func_id!='') ? true : false;
+        $tb_arr['数据整理'] = ($data_upkeep!='') ? true : false;
 
         // 读出存储过程参数
         $sp_param_str = '';
@@ -677,6 +679,7 @@ class Frame extends Controller
 
         $session_arr[$menu_id.'-after_insert'] = $after_insert;
         $session_arr[$menu_id.'-after_update'] = $after_update;
+        $session_arr[$menu_id.'-data_upkeep'] = $data_upkeep;
 
         $session_arr[$menu_id.'-data_table'] = $data_table;
         $session_arr[$menu_id.'-data_model'] = $data_model;
@@ -2055,6 +2058,21 @@ class Frame extends Controller
             $rows = $model->select($sql)->getResultArray();
 
         exit(sprintf('%s^%s', $rows[0]['本级编码'], $rows[0]['本级全称']));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 执行数据整理
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function upkeep($menu_id='')
+    {
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $data_upkeep = $session->get($menu_id.'-data_upkeep');
+
+        $model = new Mcommon();
+        $model->select(sprintf('call %s', $data_upkeep));
+
+        exit('执行成功');
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

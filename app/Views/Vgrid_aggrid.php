@@ -1,4 +1,4 @@
-<!-- v7.9.2.1.202406032220, from home -->
+<!-- v7.10.1.1.202406071035, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -200,6 +200,10 @@
             data_tb.data.add({id:'删除', type:'button', value:'删除'});
         }
         data_tb.data.add({type:'spacer'});
+        if (tb_obj['数据整理'] == true)
+        {
+            data_tb.data.add({id:'数据整理', type:'button', value:'数据整理'});
+        }
         if (tb_obj['导入授权'] == true)
         {
             data_tb.data.add({id:'导入', type:'button', value:'导入'});
@@ -997,6 +1001,17 @@
 
                     drill_selected = '';
                     drill_select(rows);
+                    break;
+                case '数据整理':
+                    var url = '<?php base_url(); ?>/frame/upkeep/<?php echo $func_id; ?>';
+                    dhx.ajax.post(url, null).then(function (data)
+                    {
+                        alert(data);
+                        window.location.reload();
+                    }).catch(function (err)
+                    {
+                        alert('status' + " " + err.statusText);
+                    });
                     break;
                 case '导入':
                     parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','upload/init/<?php echo $import_func_id; ?>');
