@@ -1,4 +1,4 @@
-<!-- v7.10.1.1.202406071035, from office -->
+<!-- v7.11.1.1.202406071705, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -127,6 +127,13 @@
         }
 
         var color_arr = new ColorInfo();
+        var color_obj = JSON.parse('<?php echo $color_json; ?>');
+        if (JSON.stringify(color_obj) != '{}')
+        {
+            color_arr = color_obj;
+            color_arr['style'] = {'color':'red','font-weight':'bold'};
+        }
+
         var chart = new Chart();
 
         // footbox显示
@@ -1235,6 +1242,7 @@
 
                 send_obj['钻取字段'] = drill_item['钻取字段'];
                 send_obj['钻取条件'] = drill_item['钻取条件'];
+                send_obj['颜色标注'] = color_arr;
 
                 send_str = JSON.stringify(send_obj);
                 parent.window.goto(drill_item['功能编码'],'钻取-'+drill_item['显示名称'],'frame/init/'+drill_item['功能编码']+'/'+'<?php echo $func_id; ?>'+'/'+send_str);

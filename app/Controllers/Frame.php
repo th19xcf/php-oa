@@ -1,5 +1,5 @@
 <?php
-/* v10.10.1.1.202406071035, from office */
+/* v10.11.1.1.202406071705, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -385,6 +385,7 @@ class Frame extends Controller
         //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+= 
         $cond_arr = json_decode($front_where);
         $front_where = '';
+        $color_arr = [];
 
         if ($front_id != '')
         {
@@ -393,6 +394,12 @@ class Frame extends Controller
 
             foreach ($cond_arr as $key => $value)
             {
+                if ($key == '颜色标注')
+                {
+                    $color_arr = $value;
+                    continue;
+                }
+
                 if ($key == '钻取字段' || $key == '钻取条件') continue;
                 $front_where = str_replace(sprintf('$%s',$key), $value, $front_where);
             }
@@ -739,6 +746,7 @@ class Frame extends Controller
         }
 
         $send['drill_json'] = json_encode($drill_arr);
+        $send['color_json'] = json_encode($color_arr);
 
         $send['import_func_id'] = $import_func_id;
         $send['import_func_name'] = $import_func_name;
