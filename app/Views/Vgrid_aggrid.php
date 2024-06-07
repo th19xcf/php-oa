@@ -1,4 +1,4 @@
-<!-- v7.11.1.1.202406071705, from office -->
+<!-- v7.11.2.1.202406071950, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -128,7 +128,7 @@
 
         var color_arr = new ColorInfo();
         var color_obj = JSON.parse('<?php echo $color_json; ?>');
-        if (JSON.stringify(color_obj) != '{}')
+        if (color_obj.length != 0)
         {
             color_arr = color_obj;
             color_arr['style'] = {'color':'red','font-weight':'bold'};
@@ -693,8 +693,8 @@
             // 获表中的数据
             color_grid_api.forEachNode((rowNode, index) => 
             {
-                color_arr['color_col_1'] = color_arr['color_name_1'];
-                color_arr['color_col_2'] = color_arr['color_name_2'];
+                color_arr['color_col_1'] =  color_arr['col_name_1'];
+                color_arr['color_col_2'] = color_arr['col_name_2'];
                 color_arr['col_name_1'] = rowNode.data['字段一'];
                 color_arr['option'] = rowNode.data['比较符'];
                 color_arr['col_name_2'] = rowNode.data['字段二'];

@@ -1,5 +1,5 @@
 <?php
-/* v10.11.1.1.202406071705, from office */
+/* v10.11.2.1.202406071950, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -386,6 +386,7 @@ class Frame extends Controller
         $cond_arr = json_decode($front_where);
         $front_where = '';
         $color_arr = [];
+        $color_col_num = 0;
 
         if ($front_id != '')
         {
@@ -479,6 +480,15 @@ class Frame extends Controller
             if ($row->提示条件 == 1)
             {
                 $tip_column = $row->列名;
+            }
+
+            foreach ($color_arr as $color_col)
+            {
+                if ($color_col == $row->列名)
+                {
+                    $color_col_num ++;
+                    break;
+                }
             }
 
             // 前端data_grid列信息,用于显示
@@ -746,6 +756,11 @@ class Frame extends Controller
         }
 
         $send['drill_json'] = json_encode($drill_arr);
+
+        if ($color_col_num != 2)
+        {
+            $color_arr = [];
+        }
         $send['color_json'] = json_encode($color_arr);
 
         $send['import_func_id'] = $import_func_id;
