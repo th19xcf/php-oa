@@ -1,5 +1,5 @@
 <?php
-/* v10.11.2.1.202406071950, from home */
+/* v10.11.3.1.202406101150, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -235,6 +235,7 @@ class Frame extends Controller
         $import_func_id = '';
         $after_insert = '';  //新增后处理模块
         $after_update = '';  //更新后处理模块
+        $data_upkeep = '';  //数据整理模块
         $result_count = '';
         $data_table = '';
         $data_model = '';
@@ -361,7 +362,7 @@ class Frame extends Controller
             from def_drill_config as t1
             left join def_function as t2 on t1.功能编码=t2.功能编码
             where 钻取模块="%s"
-            order by convert(页面选项 using gbk)', $next_func_id);
+            order by 顺序,convert(页面选项 using gbk)', $next_func_id);
 
         $results = $model->select($sql)->getResult();
         foreach ($results as $row)
