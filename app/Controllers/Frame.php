@@ -1,5 +1,5 @@
 <?php
-/* v10.11.3.1.202406101150, from home */
+/* v10.12.1.1.202406101605, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -312,6 +312,7 @@ class Frame extends Controller
         $tb_arr['钻取授权'] = ($next_func_id!='') ? true : false;
         $tb_arr['导入授权'] = ($import_func_id!='') ? true : false;
         $tb_arr['数据整理'] = ($data_upkeep!='') ? true : false;
+        $tb_arr['SQL'] = ($user_workid=='金凯龙') ? true : false;
 
         // 读出存储过程参数
         $sp_param_str = '';
@@ -654,19 +655,22 @@ class Frame extends Controller
             $query_sql = sprintf('%s limit %d', $query_sql, $result_count);
         }
 
+        $send_sql = '';
         if ($sp_name != '')
         {
             // 写日志
             $model->sql_log('存储过程', $menu_id, sprintf('sp=%s,条件=%s', $sp_name, str_replace('"','`',$sp_param_str)));
 
-            $results = $model->select($sp_sql)->getResult();    
+            $results = $model->select($sp_sql)->getResult();
+            $send_sql = $sp_sql;
         }
         else
         {
             // 写日志
             $model->sql_log('查询', $menu_id, sprintf('表名=%s,条件=%s', $query_table, str_replace('"','`',$where)));
 
-            $results = $model->select($query_sql)->getResult();    
+            $results = $model->select($query_sql)->getResult();
+            $send_sql = $query_sql;
         }
 
         // 存入session
@@ -714,6 +718,7 @@ class Frame extends Controller
 
         //返回页面
         $send = [];
+        $send['SQL'] = json_encode(($user_workid=='金凯龙') ? $send_sql : '');
         $send['menu_json'] = json_encode($menu_arr);
         $send['toolbar_json'] = json_encode($tb_arr);
         $send['columns_json'] = json_encode($send_columns_arr);

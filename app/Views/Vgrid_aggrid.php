@@ -1,4 +1,4 @@
-<!-- v7.11.2.1.202406071950, from home -->
+<!-- v7.12.1.1.202406101605, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -207,6 +207,10 @@
             data_tb.data.add({id:'删除', type:'button', value:'删除'});
         }
         data_tb.data.add({type:'spacer'});
+        if (tb_obj['SQL'] == true)
+        {
+            data_tb.data.add({id:'SQL', type:'button', value:'SQL'});
+        }
         if (tb_obj['数据整理'] == true)
         {
             data_tb.data.add({id:'数据整理', type:'button', value:'数据整理'});
@@ -1019,6 +1023,9 @@
                     {
                         alert('status' + " " + err.statusText);
                     });
+                    break;
+                case 'SQL':
+                    console.log('SQL=', '<?php echo $SQL; ?>');
                     break;
                 case '导入':
                     parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','upload/init/<?php echo $import_func_id; ?>');
