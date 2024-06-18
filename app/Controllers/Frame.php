@@ -1,5 +1,5 @@
 <?php
-/* v10.12.1.1.202406101605, from home */
+/* v10.13.1.1.202406181840, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -359,7 +359,8 @@ class Frame extends Controller
 
         // 读出钻取模块参数
         $sql = sprintf('
-            select 钻取模块,页面选项,t1.功能编码,钻取字段,钻取条件,ifnull(t2.二级菜单,"") as 显示名称
+            select 钻取模块,页面选项,t1.功能编码,钻取字段,钻取条件,
+                if(t2.二级菜单 is null,"",if(t1.页面提示="",t2.二级菜单,concat(t2.二级菜单,"-",t1.页面提示))) as 显示名称
             from def_drill_config as t1
             left join def_function as t2 on t1.功能编码=t2.功能编码
             where 钻取模块="%s"
