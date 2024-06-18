@@ -1,4 +1,4 @@
-<!-- v7.12.1.1.202406101605, from home -->
+<!-- v7.12.2.1.202406181810, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -63,7 +63,7 @@
         div_block('databox');
         $$('footbox').style.display = 'block';
 
-        foot_data = '&nbsp&nbsp<b>条件:{}, 汇总:{}, 合计:{}, 平均:{}, 最大:{}, 最小:{}, 计数:{}</b>';
+        foot_data = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',条件:{}, 汇总:{}, 合计:{}, 平均:{}, 最大:{}, 最小:{}, 计数:{}</b>';
         $$('footbox').innerHTML = foot_data;
 
         function ColumnInfo()
@@ -145,7 +145,7 @@
         var back_group = '<?php echo $back_group; ?>';
         var tip_column = '<?php echo $tip_column; ?>';
 
-        foot_data = '&nbsp&nbsp<b>条件:{' + back_where.slice(0,40) + '}, 汇总:{' + back_group + '}, 合计:{}, 平均:{}, 最大:{}, 最小:{}</b>';
+        foot_data = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',条件:{' + back_where.slice(0,40) + '}, 汇总:{' + back_group + '}, 合计:{}, 平均:{}, 最大:{}, 最小:{}</b>';
         $$('footbox').innerHTML = foot_data;
 
         // 字段数据
@@ -932,7 +932,7 @@
                         update_grid_api.setGridOption('rowData', rowData);
                     }
 
-                    $$('footbox').innerHTML = '&nbsp&nbsp<b>提交记录:{' + foot_upkeep + '}</b>';
+                    $$('footbox').innerHTML = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',提交记录:{' + foot_upkeep + '}</b>';
                     div_block('updatebox');
                     break;
                 case '整表修改':
@@ -978,7 +978,7 @@
                         update_grid_api.setGridOption('rowData', update_grid_obj);
                     }
 
-                    $$('footbox').innerHTML = '&nbsp&nbsp<b>提交记录:{' + foot_upkeep + '}</b>';
+                    $$('footbox').innerHTML = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',提交记录:{' + foot_upkeep + '}</b>';
                     div_block('updatebox');
                     break;
                 case '删除':
@@ -1424,7 +1424,7 @@
                     if (group_str != '') disp_group = group_str;
                 }
 
-                foot_data = '&nbsp&nbsp<b>条件:{' + disp_where.slice(0,40) + '} , 汇总:{' + disp_group + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}, 计数:{' + count_str + '}</b>';
+                foot_data = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',条件:{' + disp_where.slice(0,40) + '} , 汇总:{' + disp_group + '} , 合计:{' + sum_str + '}, 平均:{' + average_str + '}, 最大:{' + max_str + '}, 最小:{' + min_str + '}, 计数:{' + count_str + '}</b>';
                 $$('footbox').innerHTML = foot_data;
             }).catch(function (err)
             {
@@ -1569,7 +1569,7 @@
                     if (foot_upkeep != '') foot_upkeep = foot_upkeep + ',';
                     foot_upkeep = foot_upkeep + send_arr[ii]['col_name'];
                 }
-                $$('footbox').innerHTML = '&nbsp&nbsp<b>提交记录:{' + foot_upkeep + '}</b>';
+                $$('footbox').innerHTML = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',提交记录:{' + foot_upkeep + '}</b>';
 
                 let key_arr = [];
                 let key = '<?php echo $primary_key; ?>';
@@ -2299,7 +2299,7 @@
             console.log('y1_data', chart.y1_name, chart.y1_data);
             console.log('dataset', chart.dataset);
 
-            foot_chart = '&nbsp&nbsp<b>图型:{' + chart_type + '}, x轴:{' + x_axis + '}, y轴:{' + y_axis + '}</b>';
+            foot_chart = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',图型:{' + chart_type + '}, x轴:{' + x_axis + '}, y轴:{' + y_axis + '}</b>';
             $$('footbox').innerHTML = foot_chart;
 
             var chart_win = echarts.init($$('chart_draw'));
