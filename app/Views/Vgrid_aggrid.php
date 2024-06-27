@@ -1,4 +1,4 @@
-<!-- v7.12.2.1.202406181810, from home -->
+<!-- v7.12.3.1.202406272000, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1025,6 +1025,7 @@
                     });
                     break;
                 case 'SQL':
+                    console.log('ID=', '<?php echo $func_id; ?>');
                     console.log('SQL=', '<?php echo $SQL; ?>');
                     break;
                 case '导入':
