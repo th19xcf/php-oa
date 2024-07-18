@@ -1,5 +1,5 @@
 <?php
-/* v10.13.1.1.202406181840, from home */
+/* v10.13.2.1.202407181625, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1641,7 +1641,7 @@ class Frame extends Controller
             }
         }
 
-        $sql = sprintf('insert into %s (%s) values (%s)', $data_table, $flds_str);
+        $sql = sprintf('insert into %s (%s) values (%s)', $data_table, $flds_str, $values_str);
 
         $model = new Mcommon();
 
