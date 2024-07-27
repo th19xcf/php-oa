@@ -1,5 +1,5 @@
 <?php
-/* v10.13.2.1.202407181625, from office */
+/* v10.13.3.1.202407272000, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -45,7 +45,20 @@ class Frame extends Controller
                 ifnull(t2.菜单显示,"") as 菜单显示,
                 ifnull(t3.部门字段,"") as 部门字段,
                 ifnull(t3.属地字段,"") as 属地字段
-            from def_role as t1
+            from 
+            (
+                select 角色编号,角色名称,功能赋权,部门赋权,属地赋权,
+                    新增授权,修改授权,删除授权,整表授权,导入授权,导出授权
+                from def_role
+                where 有效标识="1" and 角色编号 in (%s)
+                    and concat(功能赋权,length(部门赋权)) in
+                    (
+                        select concat(功能赋权,min(length(部门赋权)))
+                        from def_role
+                        where 有效标识="1" and 角色编号 in (%s)
+                        group by 功能赋权
+                    )
+            ) as t1
             left join
             (
                 select 功能编码,一级菜单,二级菜单,
@@ -59,9 +72,8 @@ class Frame extends Controller
                 select 查询模块,部门字段,属地字段
                 from def_query_config
             ) as t3 on if(t2.功能类型="查询",t2.模块名称,"")=t3.查询模块
-            where t1.有效标识="1" and t1.角色编号 in (%s)
             group by t1.功能赋权
-            order by t2.菜单顺序', $user_role_str);
+            order by t2.菜单顺序', $user_role_str, $user_role_str);
 
         $model = new Mcommon();
         $query = $model->select($sql);
