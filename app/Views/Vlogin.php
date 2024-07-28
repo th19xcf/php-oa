@@ -1,10 +1,10 @@
-<!-- v2.1.1.1.202208262355, from home -->
+<!-- v2.1.2.1.202407281455, from home -->
 
 <!DOCTYPE html>
 <html style="display: block;">
 <head>
     <meta charset="utf-8">
-    <title>客服运营支撑系统</title>
+    <title>运营管理系统</title>
     <link rel="stylesheet" type="text/css" href="assets/css/logincss2.css">
     <script src="assets/js/jquery.js"></script>
 </head>
@@ -18,8 +18,10 @@
         <!--登录框-->
         <div id="loginBlock" class="login tab-2">
             <div class="loginFunc">
+                <!--
                 <div id="lbApp" onClick="tabSlt(1,this)" class="loginFuncApp">管理工号登录</div>
-                <div id="lbNormal" onClick="tabSlt(2,this)" class="loginFuncNormal">客服工号登录</div>
+                -->
+                <div id="lbNormal" onClick="tabSlt(2,this)" class="loginFuncNormal"><b>用户登录</b></div>
             </div>
             <!-- 管理工号登录 -->
             <div id="appLoginTab" class="loginForm">
@@ -55,17 +57,21 @@
                         -->
                         <div class="loginFormCheck">
                             <div id="lfAutoLogin" class="loginFormCheckInner">
+                                <!--
                                 <b class="ico ico-checkbox"></b>
                                 <label id="remAutoLoginTxt" for="remAutoLogin">
                                     <input tabindex="3" title="十天内免登录" class="loginFormCbx" type="checkbox" id="remAutoLogin">
                                     十天内免登录
                                 </label>
+                                -->
                                 <div id="whatAutologinTip">
                                     为了您的信息安全，请不要在网吧或公用电脑上使用此功能！
                                 </div>
                             </div>
                             <div class="forgetPwdLine">
+                                <!--
                                 <a class="forgetPwd" href="javascript:;" target="_blank" title="找回密码">忘记密码了?</a>
+                                -->
                             </div>
                         </div>
                         <div class="loginFormBtn">
@@ -73,8 +79,10 @@
                             <a id="btnReset" class="btn btn-side btn-reg" href="javascript:;" target="_blank" tabindex="7">重&nbsp;&nbsp;置</a>
                         </div>
                     </div>
+                    <!--
                     <div class="msgItem"></div>
                     <div style=" padding-left:20px; margin-top:30px;font-size: 12px;color: rgb(39,159,61);"><span>注：初始密码为身份证后6位</span></div>
+                    -->
                 </div>
             </div>
         </div>
@@ -110,9 +118,10 @@
         /*显示提示信息*/
         var shander;
         function showTip(msg) {
-            clearTimeout(shander);
-            $(".msgItem").text(msg);
-            shander = setTimeout(function () { $(".msgItem").fadeIn(1000).delay(2000).text(""); }, 5000);
+            alert(msg);
+            //clearTimeout(shander);
+            //$(".msgItem").text(msg);
+            //shander = setTimeout(function () { $(".msgItem").fadeIn(1000).delay(2000).text(""); }, 5000);
         }
         /*获取url参数*/
         function getQueryString(name) {
@@ -131,7 +140,7 @@
                 var $lgBtn = $(this);
                 $lgBtn.attr("disabled", "disabled");
                 var parms = {
-                    company_id: gSltTab == 1 ? "-1" : $("#ddl_company").val(),
+                    company_id: gSltTab == 1 ? "北京总公司" : $("#ddl_company").val(),
 
                     userid: $.trim($("#idInput").val()),
                     userpwd: $.trim($("#pwdInput").val()),
@@ -144,7 +153,7 @@
                     $lgBtn.removeAttr("disabled");
                 }
                 else {
-                    showTip("");
+                    //showTip("");
                     $.ajax({
                         type: "POST",
                         url: "<?php echo $NextPage; ?>",
@@ -158,9 +167,10 @@
                             }
                             else if (r == "1") {
                                 var fromurl = getQueryString("from");
-                                window.location.href = gSltTab == 1 ? "Admin/Index" : "Frame/Index";
+                                window.location.href = gSltTab == 1 ? "Frame/Index" : "Frame/Index";
                             }
                             else {
+                                console.log(r);
                                 switch (r) {
                                     case "-2": showTip("密码输入错误5次，工号已锁定！"); break;
                                     case "-1": showTip("你的工号没有公网登录权限！"); break;
