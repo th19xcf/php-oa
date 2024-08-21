@@ -1,5 +1,5 @@
 <?php
-/* v1.8.1.1.202405071805, from office */
+/* v1.8.2.1.202408211705, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -245,8 +245,8 @@ class Dept extends Controller
         }
 
         //增加新记录
-        $fld_str = '部门编码,部门名称,部门级别,' .
-            '上级部门编码,有无下级部门,负责人,预算表部门全称' .
+        $fld_str = '部门编码,部门名称,部门全称,部门级别,' .
+            '上级部门编码,有无下级部门,负责人,预算表部门全称,' .
             '记录开始日期,记录结束日期,' .
             '操作记录,操作来源,操作人员,' .
             '开始操作时间,结束操作时间,' .
