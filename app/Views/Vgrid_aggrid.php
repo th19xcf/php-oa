@@ -1,4 +1,4 @@
-<!-- v7.12.3.1.202406272000, from home -->
+<!-- v7.12.4.1.202409012315, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -756,6 +756,7 @@
         win_chart_set.attachHTML(html);
         win_chart_set.hide();
 
+        var chart_grid_api = null;
         var chart_grid_new = false;
         const chart_grid_options = 
         {
@@ -787,7 +788,7 @@
                 {
                     field: '图形类型',
                     width: 120,
-                    cellEditor: 'agCellEditor',
+                    cellEditor: 'agSelectCellEditor',
                     cellEditorParams:
                     {
                         values: ['饼图','折线图','柱图', '散点图', '雷达图'],
@@ -1264,10 +1265,11 @@
 
         function tb_chart()
         {
+            console.log('tb_chart');
             win_chart_set.show();
             if (chart_grid_new == false)
             {
-                var chart_grid_api = agGrid.createGrid($$('chart_set_grid'), chart_grid_options);
+                chart_grid_api = agGrid.createGrid($$('chart_set_grid'), chart_grid_options);
                 chart_grid_new = true;
             }
         }
@@ -2198,6 +2200,7 @@
         {
             if (id == '新增')
             {
+                console.log('新增');
                 var row = {'行选择':'', '字段名称':'', '坐标轴':'', '图形类型':''};
                 chart_grid_obj.push(row);
                 chart_grid_api.setGridOption('rowData', chart_grid_obj);
@@ -2211,7 +2214,6 @@
                     if (rowNode.isSelected() == true)
                     {
                         chart_grid_obj.splice(pos, 1);
-                        chart_grid_api.setRowData(chart_grid_obj);
                         chart_grid_api.setGridOption('rowData', chart_grid_obj);
                     }
                 });
