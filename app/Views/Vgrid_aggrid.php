@@ -1,4 +1,4 @@
-<!-- v7.12.4.1.202409012315, from home -->
+<!-- v7.13.1.1.202409081850, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -6,16 +6,59 @@
     <meta charset='utf-8'>
     <title>ag-grid_div</title>
 
-    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-grid.css'>
-    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-theme-alpine.css'>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-locale-cn.js'></script>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-community.noStyle.js'></script>
     <script src='<?php base_url(); ?>/assets/js/datepicker_brower.js'></script>
+    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-grid.css'>
+    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-theme-alpine.css'>
 
-    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/dhtmlx/codebase/suite.css'>
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
+    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/dhtmlx/codebase/suite.css'>
 
     <script src='<?php base_url(); ?>/echarts/echarts.js'></script>
+
+    <style type='text/css'>
+        div.box_1-1-1
+        {
+            width: 99%;
+            height: 510px;
+            margin: 4px;
+            background-color: #f9f9f9;
+            border: 1px solid #D0D0D0;
+            box-sizing: border-box;
+            float: left;
+        }
+        div.box_2-1-1
+        {
+            width: 99%;
+            height: 255px;
+            margin: 4px;
+            background-color: #f9f9f9;
+            border: 1px solid #D0D0D0;
+            box-sizing: border-box;
+            float: left;
+        }
+        div.box_2-1-2
+        {
+            width: 48%;
+            height: 255px;
+            margin: 4px;
+            background-color: #f9f9f9;
+            border: 1px solid #D0D0D0;
+            box-sizing: border-box;
+            float: left;
+        }
+        div.box_2-1-3
+        {
+            width: 31%;
+            height: 255px;
+            margin: 4px;
+            background-color: #f9f9f9;
+            border: 1px solid #D0D0D0;
+            box-sizing: border-box;
+            float: left;
+        }
+    </style>
 </head>
 
 <body>
@@ -60,7 +103,18 @@
         $$('chartbox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
         $$('footbox').style.height = document.documentElement.clientHeight * 0.033 + 'px';
 
-        div_block('databox');
+        var chart_data_obj = JSON.parse('<?php echo $chart_data_json; ?>');
+        console.log(chart_data_obj, chart_data_obj.length);
+        if (chart_data_obj.length != 0)
+        {
+            div_block('chartbox');
+            chart_draw_init();
+        }
+        else
+        {
+            div_block('databox');
+        }
+
         $$('footbox').style.display = 'block';
 
         foot_data = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',条件:{}, 汇总:{}, 合计:{}, 平均:{}, 最大:{}, 最小:{}, 计数:{}</b>';
@@ -240,10 +294,10 @@
 
         // 生成图形用工具栏
         var chart_tb = new dhx.Toolbar('chart_tb', {css:'toobar-class'});
+        var chart_now = '初始图形';
         chart_tb.data.add({id:'返回', type:'button', value:'返回'});
-        chart_tb.data.add({type:'separator'});
-        chart_tb.data.add({id:'刷新', type:'button', value:'刷新'});
-        chart_tb.data.add({id:'设置', type:'button', value:'设置'});
+        chart_tb.data.add({id:'初始图形', type:'button', value:'初始图形'});
+        chart_tb.data.add({id:'个性图形', type:'button', value:'个性图形'});
 
         // 生成data_grid
         var data_page = 500;
@@ -1103,10 +1157,12 @@
                     div_block('databox');
                     $$('footbox').innerHTML = foot_data;
                     break;
-                case '刷新':
-                    chart_draw();
+                case '初始图形':
+                    chart_now = '初始图形';
+                    chart_draw_init();
                     break;
-                case '设置':
+                case '个性图形':
+                    chart_now = '个性图形';
                     tb_chart();
                     break;
             }
@@ -1265,7 +1321,6 @@
 
         function tb_chart()
         {
-            console.log('tb_chart');
             win_chart_set.show();
             if (chart_grid_new == false)
             {
@@ -2220,13 +2275,26 @@
             }
             else if (id == '确定')
             {
-                chart_draw();
+                chart_draw_self();
             }
         });
 
-        function chart_draw()
+        function chart_draw_self()
         {
             win_chart_set.hide();
+
+            //删除图形容器
+            let chart_div = $$('chart_draw');
+            let child_div = chart_div.childNodes;
+
+            for (let ii = child_div.length-1; ii >= 0; ii --)
+            {
+                chart_div.removeChild(child_div[child_div.length-1]);
+            }
+
+            let sub_div = document.createElement('div');
+            sub_div.className = 'box_1-1-1';
+            chart_div.appendChild(sub_div);
 
             var chart_type = '';
             var x_axis = ''
@@ -2300,12 +2368,13 @@
 
             console.log('x1_data', chart.x1_name, chart.x1_data);
             console.log('y1_data', chart.y1_name, chart.y1_data);
-            console.log('dataset', chart.dataset);
+            //console.log('dataset', chart.dataset);
 
             foot_chart = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',图型:{' + chart_type + '}, x轴:{' + x_axis + '}, y轴:{' + y_axis + '}</b>';
             $$('footbox').innerHTML = foot_chart;
 
-            var chart_win = echarts.init($$('chart_draw'));
+            //var chart_win = echarts.init($$('chart_draw'));
+            var chart_win = echarts.init(sub_div);
             var data_source = [];
             for (var ii in chart.dataset)
             {
@@ -2318,10 +2387,13 @@
             {
                 toolbox:
                 {
-                    show: true,
-                    magicType: { type: ['line', 'bar'] },
-                    restore: {},
-                    saveAsImage: {}
+                    feature:
+                    {
+                        dataview: { show: true },
+                        magicType: { show: true, type: ['line', 'bar', 'stack'] },
+                        restore: {show: true},
+                        saveAsImage: {show: true}
+                    }
                 },
                 tooltip:
                 {
@@ -2339,10 +2411,127 @@
                     //data: 
                 },
                 yAxis: {},
-                series: [{type:'bar'}]
+                series: [{type:'pie'}]
             };
 
             chart_win.setOption(chart_option);
+        }
+
+        function chart_draw_init()
+        {
+            let chart_div = $$('chart_draw');
+            let child_div = chart_div.childNodes;
+
+            //删除图形容器
+            for (let ii = child_div.length-1; ii >= 0; ii --)
+            {
+                chart_div.removeChild(child_div[child_div.length-1]);
+            }
+
+            //生成图形容器
+            var sub_div = [];
+            for (let ii in chart_data_obj)
+            {
+                sub_div[ii] = document.createElement('div');
+                sub_div[ii].className = 'box_' + chart_data_obj[ii]['页面布局'];
+                chart_div.appendChild(sub_div[ii]);
+
+                let option = {};
+                switch (chart_data_obj[ii]['图形类型'])
+                {
+                    case '饼图':
+                        option = 
+                        {
+                            title:
+                            {
+                                show: true,
+                                text: chart_data_obj[ii]['图形名称'],
+                            },
+                            //legend: {},
+                            tooltip:
+                            {
+                                //trigger: 'item',
+                            },
+                            dataset:
+                            {
+                                source: chart_data_obj[ii]['数据']
+                            },
+                            series:
+                            [{
+                                //radius: ['40%','70%'],
+                                type: 'pie'
+                            }]
+                        }
+                        break;
+                    case '柱状图':
+                        option = 
+                        {
+                            title:
+                            {
+                                show: true,
+                                text: chart_data_obj[ii]['图形名称'],
+                            },
+                            //legend: {},
+                            tooltip:
+                            {
+                                //trigger: 'item',
+                            },
+                            toolbox:
+                            {
+                                feature:
+                                {
+                                    dataview: { show: true },
+                                    magicType: { show: true, type: ['line', 'bar', 'stack'] },
+                                    restore: {show: true},
+                                    saveAsImage: {show: true}
+                                }
+                            },
+                            dataset:
+                            {
+                                source: chart_data_obj[ii]['数据']
+                            },
+                            xAxis: { type: 'category' },
+                            yAxis: {},
+                            series: [ {type:'bar'} ]
+                        }
+                        break;
+                    case '折线图':
+                        option = 
+                        {
+                            title:
+                            {
+                                show: true,
+                                text: chart_data_obj[ii]['图形名称'],
+                            },
+                            //legend: {},
+                            tooltip:
+                            {
+                                //trigger: 'item',
+                            },
+                            toolbox:
+                            {
+                                feature:
+                                {
+                                    dataview: { show: true },
+                                    magicType: { show: true, type: ['line', 'bar', 'stack'] },
+                                    restore: {show: true},
+                                    saveAsImage: {show: true}
+                                }
+                            },
+                            dataset:
+                            {
+                                source: chart_data_obj[ii]['数据']
+                            },
+                            xAxis: { type: 'category' },
+                            yAxis: {},
+                            series: [ {type:'line', smooth:true} ]
+                        }
+                        break;
+                }
+
+                let chart = echarts.init(sub_div[ii]);
+                chart.setOption(option);
+            }
         }
 
     </script>

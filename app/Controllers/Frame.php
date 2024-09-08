@@ -1,5 +1,5 @@
 <?php
-/* v10.13.3.1.202407272000, from home */
+/* v10.14.1.1.202409081850, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -248,6 +248,7 @@ class Frame extends Controller
         $after_insert = '';  //新增后处理模块
         $after_update = '';  //更新后处理模块
         $data_upkeep = '';  //数据整理模块
+        $chart_func_id = '';  //图形模块
         $result_count = '';
         $data_table = '';
         $data_model = '';
@@ -263,7 +264,8 @@ class Frame extends Controller
                 查询条件,汇总条件,排序条件,初始条数,
                 新增后处理模块,更新后处理模块,数据整理模块,
                 钻取模块,钻取条件,ifnull(t2.钻取模块名称,"") as 钻取模块名称,
-                导入模块,ifnull(t3.导入模块名称,"") as 导入模块名称
+                导入模块,ifnull(t3.导入模块名称,"") as 导入模块名称,
+                图形模块
             from view_function as t1
             left join 
             (
@@ -313,6 +315,8 @@ class Frame extends Controller
             $after_insert = $row->新增后处理模块;
             $after_update = $row->更新后处理模块;
             $data_upkeep = $row->数据整理模块;
+
+            $chart_func_id = $row->图形模块;
 
             $data_table = $row->数据表名;
             $data_model = $row->数据模式;
@@ -669,12 +673,13 @@ class Frame extends Controller
         }
 
         $send_sql = '';
+        $send_results = [];
         if ($sp_name != '')
         {
             // 写日志
             $model->sql_log('存储过程', $menu_id, sprintf('sp=%s,条件=%s', $sp_name, str_replace('"','`',$sp_param_str)));
 
-            $results = $model->select($sp_sql)->getResult();
+            $send_results = $model->select($sp_sql)->getResult();
             $send_sql = $sp_sql;
         }
         else
@@ -682,8 +687,54 @@ class Frame extends Controller
             // 写日志
             $model->sql_log('查询', $menu_id, sprintf('表名=%s,条件=%s', $query_table, str_replace('"','`',$where)));
 
-            $results = $model->select($query_sql)->getResult();
+            $send_results = $model->select($query_sql)->getResult();
             $send_sql = $query_sql;
+        }
+
+        // 生成前端图形数据
+        $chart_arr = [];
+
+        $sql = sprintf('
+            select 图形模块,图形编号,图形名称,图形类型,查询语句,页面布局,顺序
+            from def_chart_config
+            where 图形模块="%s"
+            order by 图形模块,图形编号,顺序', 
+            $chart_func_id);
+
+        $query = $model->select($sql);
+        $results = $query->getResult();
+        foreach ($results as $row)
+        {
+            if (array_key_exists($row->图形编号, $chart_arr) == false)
+            {
+                $chart_arr[$row->图形编号] = [];
+            }
+
+            $chart_arr[$row->图形编号]['图形模块'] = $row->图形模块;
+            $chart_arr[$row->图形编号]['图形编号'] = $row->图形编号;
+            $chart_arr[$row->图形编号]['图形名称'] = $row->图形名称;
+            $chart_arr[$row->图形编号]['图形类型'] = $row->图形类型;
+            $chart_arr[$row->图形编号]['字段'] = [];
+            $chart_arr[$row->图形编号]['页面布局'] = $row->页面布局;
+            $chart_arr[$row->图形编号]['数据'] = $model->select($row->查询语句)->getResult();
+        }
+
+        $sql = sprintf('
+            select 图形模块,图形编号,列名,字段名,坐标轴
+            from def_chart_column
+            where 图形模块="%s"', $chart_func_id);
+
+        $query = $model->select($sql);
+        $results = $query->getResult();
+        foreach ($results as $row)
+        {
+            if (array_key_exists($row->字段名, $chart_arr[$row->图形编号]) == false)
+            {
+                $chart_arr[$row->图形编号][$row->字段名] = [];
+            }
+            $chart_arr[$row->图形编号][$row->字段名]['列名'] = $row->列名;
+            $chart_arr[$row->图形编号][$row->字段名]['字段名'] = $row->字段名;
+            $chart_arr[$row->图形编号][$row->字段名]['坐标轴'] = $row->坐标轴;
         }
 
         // 存入session
@@ -736,7 +787,7 @@ class Frame extends Controller
         $send['toolbar_json'] = json_encode($tb_arr);
         $send['columns_json'] = json_encode($send_columns_arr);
         $send['data_col_json'] = json_encode($data_col_arr);
-        $send['data_value_json'] = json_encode($results);
+        $send['data_value_json'] = json_encode($send_results);
         $send['update_value_json'] = json_encode($update_value_arr);
         $send['add_value_json'] = json_encode($add_value_arr);
 
@@ -792,6 +843,9 @@ class Frame extends Controller
 
         $send['popup_grid_json'] = json_encode($popup_arr[0]);
         $send['popup_obj_json'] = json_encode($popup_arr[1]);
+
+        //图形数据
+        $send['chart_data_json'] = json_encode($chart_arr);
 
         echo view('Vgrid_aggrid.php', $send);
     }
