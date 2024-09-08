@@ -1,4 +1,4 @@
-<!-- v7.13.1.1.202409081850, from home -->
+<!-- v7.13.2.1.202409082355, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1158,7 +1158,6 @@
                     $$('footbox').innerHTML = foot_data;
                     break;
                 case '初始图形':
-                    chart_now = '初始图形';
                     chart_draw_init();
                     break;
                 case '个性图形':
@@ -2281,6 +2280,8 @@
 
         function chart_draw_self()
         {
+            chart_now = '个性图形';
+
             win_chart_set.hide();
 
             //删除图形容器
@@ -2419,6 +2420,8 @@
 
         function chart_draw_init()
         {
+            chart_now = '初始图形';
+
             let chart_div = $$('chart_draw');
             let child_div = chart_div.childNodes;
 
@@ -2464,6 +2467,12 @@
                         }
                         break;
                     case '柱状图':
+                        let dem = [];
+                        for (let jj=0; jj<chart_data_obj[ii]['字段数']-1; jj++)
+                        {
+                            dem.push({type:'bar'});
+                        }
+
                         option = 
                         {
                             title:
@@ -2471,7 +2480,7 @@
                                 show: true,
                                 text: chart_data_obj[ii]['图形名称'],
                             },
-                            //legend: {},
+                            legend: {},
                             tooltip:
                             {
                                 //trigger: 'item',
@@ -2492,10 +2501,16 @@
                             },
                             xAxis: { type: 'category' },
                             yAxis: {},
-                            series: [ {type:'bar'} ]
+                            series: dem
                         }
                         break;
                     case '折线图':
+                        dem = [];
+                        for (let jj=0; jj<chart_data_obj[ii]['字段数']-1; jj++)
+                        {
+                            dem.push({type:'line', smooth:true});
+                        }
+
                         option = 
                         {
                             title:
@@ -2524,7 +2539,7 @@
                             },
                             xAxis: { type: 'category' },
                             yAxis: {},
-                            series: [ {type:'line', smooth:true} ]
+                            series: dem
                         }
                         break;
                 }

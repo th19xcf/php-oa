@@ -1,5 +1,5 @@
 <?php
-/* v10.14.1.1.202409081850, from home */
+/* v10.14.2.1.20240902355, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -714,7 +714,7 @@ class Frame extends Controller
             $chart_arr[$row->图形编号]['图形编号'] = $row->图形编号;
             $chart_arr[$row->图形编号]['图形名称'] = $row->图形名称;
             $chart_arr[$row->图形编号]['图形类型'] = $row->图形类型;
-            $chart_arr[$row->图形编号]['字段'] = [];
+            $chart_arr[$row->图形编号]['字段数'] = 0;
             $chart_arr[$row->图形编号]['页面布局'] = $row->页面布局;
             $chart_arr[$row->图形编号]['数据'] = $model->select($row->查询语句)->getResult();
         }
@@ -732,6 +732,7 @@ class Frame extends Controller
             {
                 $chart_arr[$row->图形编号][$row->字段名] = [];
             }
+            $chart_arr[$row->图形编号]['字段数'] += 1;
             $chart_arr[$row->图形编号][$row->字段名]['列名'] = $row->列名;
             $chart_arr[$row->图形编号][$row->字段名]['字段名'] = $row->字段名;
             $chart_arr[$row->图形编号][$row->字段名]['坐标轴'] = $row->坐标轴;
