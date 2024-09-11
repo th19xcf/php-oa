@@ -1,4 +1,4 @@
-<!-- v7.13.2.1.202409082355, from home -->
+<!-- v7.13.3.1.202409112035, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -104,7 +104,6 @@
         $$('footbox').style.height = document.documentElement.clientHeight * 0.033 + 'px';
 
         var chart_data_obj = JSON.parse('<?php echo $chart_data_json; ?>');
-        console.log(chart_data_obj, chart_data_obj.length);
         if (chart_data_obj.length != 0)
         {
             div_block('chartbox');
@@ -298,6 +297,7 @@
         chart_tb.data.add({id:'返回', type:'button', value:'返回'});
         chart_tb.data.add({id:'初始图形', type:'button', value:'初始图形'});
         chart_tb.data.add({id:'个性图形', type:'button', value:'个性图形'});
+        chart_tb.data.add({id:'图形钻取', type:'button', value:'图形钻取'});
 
         // 生成data_grid
         var data_page = 500;
@@ -936,7 +936,6 @@
                     break;
                 case '图形':
                     div_block('chartbox');
-                    tb_chart();
                     break;
                 case '单条修改':
                 case '多条修改':
@@ -1162,6 +1161,10 @@
                     break;
                 case '个性图形':
                     chart_now = '个性图形';
+                    tb_chart();
+                    break;
+                case '图形钻取':
+                    chart_now = '图形钻取';
                     tb_chart();
                     break;
             }
@@ -2367,8 +2370,8 @@
                 chart.y1_data.push(rowNode.data[chart.y1_name])
             });
 
-            console.log('x1_data', chart.x1_name, chart.x1_data);
-            console.log('y1_data', chart.y1_name, chart.y1_data);
+            //console.log('x1_data', chart.x1_name, chart.x1_data);
+            //console.log('y1_data', chart.y1_name, chart.y1_data);
             //console.log('dataset', chart.dataset);
 
             foot_chart = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',图型:{' + chart_type + '}, x轴:{' + x_axis + '}, y轴:{' + y_axis + '}</b>';
@@ -2381,8 +2384,6 @@
             {
                 data_source.push(chart.dataset[ii]);
             }
-
-            console.log('data_source', data_source);
 
             var chart_option =
             {
@@ -2420,6 +2421,8 @@
 
         function chart_draw_init()
         {
+            console.log('chart_data_obj',chart_data_obj);
+
             chart_now = '初始图形';
 
             let chart_div = $$('chart_draw');
@@ -2467,10 +2470,53 @@
                         }
                         break;
                     case '柱状图':
-                        let dem = [];
-                        for (let jj=0; jj<chart_data_obj[ii]['字段数']-1; jj++)
+                    case '折线图':
+                        let dem = [], x_axis = [], y_axis = [];
+                        let x_bottom = false, x_top = false, y_left = false, y_right = false;
+                        for (let jj in chart_data_obj[ii]['字段'])
                         {
-                            dem.push({type:'bar'});
+                            if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'X轴（下方）' && x_bottom == false)
+                            {
+                                x_axis.push({position:'bottom'});
+                                x_bottom = true;
+                            }
+                            else if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'X轴（下方）' && x_top == false)
+                            {
+                                x_axis.push({position:'top'});
+                                x_top = true;
+                            }
+                            else if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（左侧）' && y_left == false)
+                            {
+                                y_axis.push({position:'left'});
+                                y_left = true;
+                            }
+                            else if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（右侧）' && y_right == false)
+                            {
+                                y_axis.push({position:'right'});
+                                y_right = true;
+                            }
+                            if (chart_data_obj[ii]['字段'][jj]['图形类型'] == '柱状图')
+                            {
+                                if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（左侧）')
+                                {
+                                    dem.push({type:'bar', yAxisIndex:0});
+                                }
+                                else if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（右侧）')
+                                {
+                                    dem.push({type:'bar', yAxisIndex:1});
+                                }
+                            }
+                            else if (chart_data_obj[ii]['字段'][jj]['图形类型'] == '折线图')
+                            {
+                                if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（左侧）')
+                                {
+                                    dem.push({type:'line', smooth:true, yAxisIndex:1});
+                                }
+                                else if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（右侧）')
+                                {
+                                    dem.push({type:'line', smooth:true, yAxisIndex:1});
+                                }
+                            }
                         }
 
                         option = 
@@ -2479,10 +2525,13 @@
                             {
                                 show: true,
                                 text: chart_data_obj[ii]['图形名称'],
+                                triggerEvent: true,
                             },
                             legend: {},
                             tooltip:
                             {
+                                trigger: 'axis',
+                                axisPointer: { type:'cross' }
                                 //trigger: 'item',
                             },
                             toolbox:
@@ -2500,17 +2549,11 @@
                                 source: chart_data_obj[ii]['数据']
                             },
                             xAxis: { type: 'category' },
-                            yAxis: {},
+                            yAxis: y_axis,
                             series: dem
                         }
                         break;
-                    case '折线图':
-                        dem = [];
-                        for (let jj=0; jj<chart_data_obj[ii]['字段数']-1; jj++)
-                        {
-                            dem.push({type:'line', smooth:true});
-                        }
-
+                    case '散点图':
                         option = 
                         {
                             title:
@@ -2521,25 +2564,33 @@
                             //legend: {},
                             tooltip:
                             {
-                                //trigger: 'item',
+                                show: true,
+                                trigger: 'item',
+                                formatter: '{a},{b},{c}'
                             },
                             toolbox:
                             {
-                                feature:
-                                {
-                                    dataview: { show: true },
-                                    magicType: { show: true, type: ['line', 'bar', 'stack'] },
-                                    restore: {show: true},
-                                    saveAsImage: {show: true}
-                                }
                             },
                             dataset:
                             {
                                 source: chart_data_obj[ii]['数据']
                             },
-                            xAxis: { type: 'category' },
+                            xAxis: {},
                             yAxis: {},
-                            series: dem
+                            series: 
+                            {
+                                type:'scatter',
+                                /*
+                                label:
+                                {
+                                    show: true,
+                                    formatter: function (params)
+                                    {
+                                        return params.value[1];
+                                    }
+                                }
+                                */
+                            }
                         }
                         break;
                 }

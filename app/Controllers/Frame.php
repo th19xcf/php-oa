@@ -1,5 +1,5 @@
 <?php
-/* v10.14.2.1.20240902355, from home */
+/* v10.14.3.1.202409112030, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -695,9 +695,9 @@ class Frame extends Controller
         $chart_arr = [];
 
         $sql = sprintf('
-            select 图形模块,图形编号,图形名称,图形类型,查询语句,页面布局,顺序
+            select 图形模块,图形编号,图形名称,图形类型,查询语句,字段模块,页面布局,顺序
             from def_chart_config
-            where 图形模块="%s"
+            where 图形模块="%s" and 顺序>0
             order by 图形模块,图形编号,顺序', 
             $chart_func_id);
 
@@ -714,28 +714,31 @@ class Frame extends Controller
             $chart_arr[$row->图形编号]['图形编号'] = $row->图形编号;
             $chart_arr[$row->图形编号]['图形名称'] = $row->图形名称;
             $chart_arr[$row->图形编号]['图形类型'] = $row->图形类型;
-            $chart_arr[$row->图形编号]['字段数'] = 0;
+            $chart_arr[$row->图形编号]['字段模块'] = $row->字段模块;
             $chart_arr[$row->图形编号]['页面布局'] = $row->页面布局;
+            $chart_arr[$row->图形编号]['字段'] = [];
+            $chart_arr[$row->图形编号]['字段数'] = 0;
             $chart_arr[$row->图形编号]['数据'] = $model->select($row->查询语句)->getResult();
-        }
 
-        $sql = sprintf('
-            select 图形模块,图形编号,列名,字段名,坐标轴
-            from def_chart_column
-            where 图形模块="%s"', $chart_func_id);
+            $col_sql = sprintf('
+                select 字段模块,列名,字段名,坐标轴,图形类型
+                from def_chart_column
+                where 字段模块="%s" and 顺序>0
+                order by 字段模块,顺序', $row->字段模块);
 
-        $query = $model->select($sql);
-        $results = $query->getResult();
-        foreach ($results as $row)
-        {
-            if (array_key_exists($row->字段名, $chart_arr[$row->图形编号]) == false)
+            $col_results = $model->select($col_sql)->getResult();
+            foreach ($col_results as $col_row)
             {
-                $chart_arr[$row->图形编号][$row->字段名] = [];
+                if (array_key_exists($col_row->字段名, $chart_arr[$row->图形编号]['字段']) == false)
+                {
+                    $chart_arr[$row->图形编号]['字段'][$col_row->字段名] = [];
+                }
+                $chart_arr[$row->图形编号]['字段数'] += 1;
+                $chart_arr[$row->图形编号]['字段'][$col_row->字段名]['列名'] = $col_row->列名;
+                $chart_arr[$row->图形编号]['字段'][$col_row->字段名]['字段名'] = $col_row->字段名;
+                $chart_arr[$row->图形编号]['字段'][$col_row->字段名]['坐标轴'] = $col_row->坐标轴;
+                $chart_arr[$row->图形编号]['字段'][$col_row->字段名]['图形类型'] = $col_row->图形类型;
             }
-            $chart_arr[$row->图形编号]['字段数'] += 1;
-            $chart_arr[$row->图形编号][$row->字段名]['列名'] = $row->列名;
-            $chart_arr[$row->图形编号][$row->字段名]['字段名'] = $row->字段名;
-            $chart_arr[$row->图形编号][$row->字段名]['坐标轴'] = $row->坐标轴;
         }
 
         // 存入session
