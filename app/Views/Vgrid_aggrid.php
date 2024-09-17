@@ -1,4 +1,4 @@
-<!-- v7.13.3.1.202409112035, from home -->
+<!-- v7.15.1.1.202409180035, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -40,7 +40,7 @@
         }
         div.box_2-1-2
         {
-            width: 48%;
+            width: 49%;
             height: 255px;
             margin: 4px;
             background-color: #f9f9f9;
@@ -104,10 +104,14 @@
         $$('footbox').style.height = document.documentElement.clientHeight * 0.033 + 'px';
 
         var chart_data_obj = JSON.parse('<?php echo $chart_data_json; ?>');
+        var chart_drill_data_obj = [];
+
         if (chart_data_obj.length != 0)
         {
             div_block('chartbox');
-            chart_draw_init();
+
+            chart_now = '初始图形';
+            chart_draw_init(chart_now, chart_data_obj);
         }
         else
         {
@@ -297,7 +301,11 @@
         chart_tb.data.add({id:'返回', type:'button', value:'返回'});
         chart_tb.data.add({id:'初始图形', type:'button', value:'初始图形'});
         chart_tb.data.add({id:'个性图形', type:'button', value:'个性图形'});
-        chart_tb.data.add({id:'图形钻取', type:'button', value:'图形钻取'});
+        chart_tb.data.add({id:'钻取图形', type:'button', value:'钻取图形'});
+        if (tb_obj['SQL'] == true)
+        {
+            chart_tb.data.add({id:'SQL', type:'button', value:'SQL'});
+        }
 
         // 生成data_grid
         var data_page = 500;
@@ -570,6 +578,7 @@
         // 钻取模块参数
         var drill_arr = JSON.parse('<?php echo $drill_json; ?>');
         var drill_selected = '';
+        var drill_from = '', drill_data = {};
 
         // 当前menu
         var menu_value = JSON.parse('<?php echo $menu_json; ?>');
@@ -1047,11 +1056,6 @@
                     }
                     break;
                 case '数据钻取':
-                    if (drill_arr.length == 0)
-                    {
-                        alert('没有设置钻取条件');
-                        return;
-                    }
                     var rows = data_grid_api.getSelectedRows();
                     if (rows.length == 0)
                     {
@@ -1065,7 +1069,27 @@
                     }
 
                     drill_selected = '';
-                    drill_select(rows);
+                    drill_arr = JSON.parse('<?php echo $drill_json; ?>');
+
+                    if (drill_arr.length == 0)
+                    {
+                        alert('没有设置钻取条件');
+                        return;
+                    }
+
+                    var radio_arr = [];
+                    for (let ii in drill_arr)
+                    {
+                        let radio = {};
+                        radio['type'] = 'radioButton';
+                        radio['text'] = drill_arr[ii]['页面选项'];
+                        radio['value'] = drill_arr[ii]['页面选项'];
+                        radio['id'] = drill_arr[ii]['页面选项'];
+                        radio_arr.push(radio);
+                    }
+
+                    drill_from = 'data';
+                    drill_select(radio_arr);
                     break;
                 case '数据整理':
                     var url = '<?php base_url(); ?>/frame/upkeep/<?php echo $func_id; ?>';
@@ -1157,15 +1181,39 @@
                     $$('footbox').innerHTML = foot_data;
                     break;
                 case '初始图形':
-                    chart_draw_init();
+                    chart_now = '初始图形';
+                    chart_draw_init(chart_now, chart_data_obj);
                     break;
                 case '个性图形':
                     chart_now = '个性图形';
                     tb_chart();
                     break;
-                case '图形钻取':
-                    chart_now = '图形钻取';
-                    tb_chart();
+                case '钻取图形':
+                    if (chart_drill_data_obj.length == 0)
+                    {
+                        alert('没有钻取图形');
+                        break;
+                    }
+                    chart_now = '钻取图形';
+                    chart_draw_init(chart_now, chart_drill_data_obj);
+                    break;
+                case 'SQL':
+                    let chart_data = [];
+                    if (chart_now == '初始图形')
+                    {
+                        chart_data = chart_data_obj;
+                    }
+                    else if (chart_now == '钻取图形')
+                    {
+                        chart_data = chart_drill_data_obj;
+                    }
+                    for (let ii in chart_data)
+                    {
+                        for (let jj in chart_data[ii])
+                        {
+                            console.log(chart_data[ii][jj]['图形名称'], chart_data[ii][jj]['SQL']);
+                        }
+                    }
                     break;
             }
         });
@@ -1218,19 +1266,12 @@
         }
 
         // 钻取条件选择
-        function drill_select(rows)
+        function drill_select(radio_arr)
         {
-            var drill_value = '';
-            var radio_arr = [];
-
-            for (let ii in drill_arr)
+            if (radio_arr.length == 0)
             {
-                let radio = {};
-                radio['type'] = 'radioButton';
-                radio['text'] = drill_arr[ii]['页面选项'];
-                radio['value'] = drill_arr[ii]['页面选项'];
-                radio['id'] = drill_arr[ii]['页面选项'];
-                radio_arr.push(radio);
+                alert('没有设置钻取条件');
+                return;
             }
 
             const form_drill = new dhx.Form(null, 
@@ -1281,38 +1322,8 @@
                     return;
                 }
 
-                let drill_item = '';
-                for (let ii in drill_arr)
-                {
-                    if (drill_arr[ii]['页面选项'] != drill_selected) continue;
-                    drill_item = drill_arr[ii];
-                    break;
-                }
-
-                drill_item['钻取字段'] = drill_item['钻取字段'].replace('；',';');
-                let nl_arr = drill_item['钻取字段'].split(';');
-                let send_obj = {};
-                let ajax = false;
-
-                for (let ii in nl_arr)
-                {
-                    if (rows[0][nl_arr[ii]] == '') continue;
-                    send_obj[nl_arr[ii]] = rows[0][nl_arr[ii]];
-                    ajax = true;
-                }
-
-                if (ajax == false)
-                {
-                    alert('钻取字段都为空,无法钻取');
-                    return;
-                }
-
-                send_obj['钻取字段'] = drill_item['钻取字段'];
-                send_obj['钻取条件'] = drill_item['钻取条件'];
-                send_obj['颜色标注'] = color_arr;
-
-                send_str = JSON.stringify(send_obj);
-                parent.window.goto(drill_item['功能编码'],'钻取-'+drill_item['显示名称'],'frame/init/'+drill_item['功能编码']+'/'+'<?php echo $func_id; ?>'+'/'+send_str);
+                // 分发事件
+                window.dispatchEvent(event_drill);
 
                 win_drill.destructor();
             });
@@ -2257,7 +2268,6 @@
         {
             if (id == '新增')
             {
-                console.log('新增');
                 var row = {'行选择':'', '字段名称':'', '坐标轴':'', '图形类型':''};
                 chart_grid_obj.push(row);
                 chart_grid_api.setGridOption('rowData', chart_grid_obj);
@@ -2378,9 +2388,9 @@
             $$('footbox').innerHTML = foot_chart;
 
             //var chart_win = echarts.init($$('chart_draw'));
-            var chart_win = echarts.init(sub_div);
-            var data_source = [];
-            for (var ii in chart.dataset)
+            let chart_win = echarts.init(sub_div);
+            let data_source = [];
+            for (let ii in chart.dataset)
             {
                 data_source.push(chart.dataset[ii]);
             }
@@ -2419,12 +2429,8 @@
             chart_win.setOption(chart_option);
         }
 
-        function chart_draw_init()
+        function chart_draw_init(chart_now, chart_data)
         {
-            console.log('chart_data_obj',chart_data_obj);
-
-            chart_now = '初始图形';
-
             let chart_div = $$('chart_draw');
             let child_div = chart_div.childNodes;
 
@@ -2435,170 +2441,274 @@
             }
 
             //生成图形容器
-            var sub_div = [];
-            for (let ii in chart_data_obj)
+            var sub_div = [], sub_div_num = -1;
+            for (let ii in chart_data)
             {
-                sub_div[ii] = document.createElement('div');
-                sub_div[ii].className = 'box_' + chart_data_obj[ii]['页面布局'];
-                chart_div.appendChild(sub_div[ii]);
-
-                let option = {};
-                switch (chart_data_obj[ii]['图形类型'])
+                for (let jj in chart_data[ii])
                 {
-                    case '饼图':
-                        option = 
-                        {
-                            title:
-                            {
-                                show: true,
-                                text: chart_data_obj[ii]['图形名称'],
-                            },
-                            //legend: {},
-                            tooltip:
-                            {
-                                //trigger: 'item',
-                            },
-                            dataset:
-                            {
-                                source: chart_data_obj[ii]['数据']
-                            },
-                            series:
-                            [{
-                                //radius: ['40%','70%'],
-                                type: 'pie'
-                            }]
-                        }
-                        break;
-                    case '柱状图':
-                    case '折线图':
-                        let dem = [], x_axis = [], y_axis = [];
-                        let x_bottom = false, x_top = false, y_left = false, y_right = false;
-                        for (let jj in chart_data_obj[ii]['字段'])
-                        {
-                            if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'X轴（下方）' && x_bottom == false)
-                            {
-                                x_axis.push({position:'bottom'});
-                                x_bottom = true;
-                            }
-                            else if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'X轴（下方）' && x_top == false)
-                            {
-                                x_axis.push({position:'top'});
-                                x_top = true;
-                            }
-                            else if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（左侧）' && y_left == false)
-                            {
-                                y_axis.push({position:'left'});
-                                y_left = true;
-                            }
-                            else if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（右侧）' && y_right == false)
-                            {
-                                y_axis.push({position:'right'});
-                                y_right = true;
-                            }
-                            if (chart_data_obj[ii]['字段'][jj]['图形类型'] == '柱状图')
-                            {
-                                if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（左侧）')
-                                {
-                                    dem.push({type:'bar', yAxisIndex:0});
-                                }
-                                else if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（右侧）')
-                                {
-                                    dem.push({type:'bar', yAxisIndex:1});
-                                }
-                            }
-                            else if (chart_data_obj[ii]['字段'][jj]['图形类型'] == '折线图')
-                            {
-                                if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（左侧）')
-                                {
-                                    dem.push({type:'line', smooth:true, yAxisIndex:1});
-                                }
-                                else if (chart_data_obj[ii]['字段'][jj]['坐标轴'] == 'Y轴（右侧）')
-                                {
-                                    dem.push({type:'line', smooth:true, yAxisIndex:1});
-                                }
-                            }
-                        }
+                    sub_div_num = sub_div_num + 1;
 
-                        option = 
-                        {
-                            title:
+                    sub_div[sub_div_num] = document.createElement('div');
+                    sub_div[sub_div_num].className = 'box_' + chart_data[ii][jj]['页面布局'];
+                    chart_div.appendChild(sub_div[sub_div_num]);
+
+                    let option = {};
+                    switch (chart_data[ii][jj]['图形类型'])
+                    {
+                        case '饼图':
+                            option = 
                             {
-                                show: true,
-                                text: chart_data_obj[ii]['图形名称'],
-                                triggerEvent: true,
-                            },
-                            legend: {},
-                            tooltip:
-                            {
-                                trigger: 'axis',
-                                axisPointer: { type:'cross' }
-                                //trigger: 'item',
-                            },
-                            toolbox:
-                            {
-                                feature:
-                                {
-                                    dataview: { show: true },
-                                    magicType: { show: true, type: ['line', 'bar', 'stack'] },
-                                    restore: {show: true},
-                                    saveAsImage: {show: true}
-                                }
-                            },
-                            dataset:
-                            {
-                                source: chart_data_obj[ii]['数据']
-                            },
-                            xAxis: { type: 'category' },
-                            yAxis: y_axis,
-                            series: dem
-                        }
-                        break;
-                    case '散点图':
-                        option = 
-                        {
-                            title:
-                            {
-                                show: true,
-                                text: chart_data_obj[ii]['图形名称'],
-                            },
-                            //legend: {},
-                            tooltip:
-                            {
-                                show: true,
-                                trigger: 'item',
-                                formatter: '{a},{b},{c}'
-                            },
-                            toolbox:
-                            {
-                            },
-                            dataset:
-                            {
-                                source: chart_data_obj[ii]['数据']
-                            },
-                            xAxis: {},
-                            yAxis: {},
-                            series: 
-                            {
-                                type:'scatter',
-                                /*
-                                label:
+                                title:
                                 {
                                     show: true,
-                                    formatter: function (params)
+                                    text: chart_data[ii][jj]['图形名称'],
+                                },
+                                //legend: {},
+                                tooltip:
+                                {
+                                    //trigger: 'item',
+                                },
+                                dataset:
+                                {
+                                    source: chart_data[ii][jj]['数据']
+                                },
+                                series:
+                                [{
+                                    //radius: ['40%','70%'],
+                                    type: 'pie'
+                                }]
+                            }
+                            break;
+                        case '柱状图':
+                        case '折线图':
+                            let dem = [], x_axis = [], y_axis = [];
+                            let x_bottom = false, x_top = false, y_left = false, y_right = false;
+                            for (let kk in chart_data[ii][jj]['字段'])
+                            {
+                                if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'X轴（下方）' && x_bottom == false)
+                                {
+                                    x_axis.push({position:'bottom'});
+                                    x_bottom = true;
+                                }
+                                else if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'X轴（下方）' && x_top == false)
+                                {
+                                    x_axis.push({position:'top'});
+                                    x_top = true;
+                                }
+                                else if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（左侧）' && y_left == false)
+                                {
+                                    y_axis.push({position:'left'});
+                                    y_left = true;
+                                }
+                                else if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（右侧）' && y_right == false)
+                                {
+                                    y_axis.push({position:'right'});
+                                    y_right = true;
+                                }
+                                if (chart_data[ii][jj]['字段'][kk]['图形类型'] == '柱状图')
+                                {
+                                    if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（左侧）')
                                     {
-                                        return params.value[1];
+                                        dem.push({type:'bar', yAxisIndex:0});
+                                    }
+                                    else if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（右侧）')
+                                    {
+                                        dem.push({type:'bar', yAxisIndex:1});
                                     }
                                 }
-                                */
+                                else if (chart_data[ii][jj]['字段'][kk]['图形类型'] == '折线图')
+                                {
+                                    if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（左侧）')
+                                    {
+                                        dem.push({type:'line', smooth:true, yAxisIndex:1});
+                                    }
+                                    else if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（右侧）')
+                                    {
+                                        dem.push({type:'line', smooth:true, yAxisIndex:1});
+                                    }
+                                }
                             }
-                        }
-                        break;
+
+                            option = 
+                            {
+                                title:
+                                {
+                                    show: true,
+                                    id: chart_data[ii][jj]['图形编号'],
+                                    text: chart_data[ii][jj]['图形名称'],
+                                    triggerEvent: true,
+                                },
+                                legend:
+                                {
+                                    bottom: 2,
+                                },
+                                tooltip:
+                                {
+                                    trigger: 'axis',
+                                    axisPointer: { type:'cross' }
+                                    //trigger: 'item',
+                                },
+                                toolbox:
+                                {
+                                    feature:
+                                    {
+                                        dataview: { show: true },
+                                        magicType: { show: true, type: ['line', 'bar', 'stack'] },
+                                        restore: {show: true},
+                                        saveAsImage: {show: true}
+                                    }
+                                },
+                                dataset:
+                                {
+                                    source: chart_data[ii][jj]['数据']
+                                },
+                                xAxis: { type: 'category' },
+                                yAxis: y_axis,
+                                series: dem
+                            }
+                            break;
+                        case '散点图':
+                            option = 
+                            {
+                                title:
+                                {
+                                    show: true,
+                                    text: chart_data[ii][jj]['图形名称'],
+                                },
+                                //legend: {},
+                                tooltip:
+                                {
+                                    show: true,
+                                    trigger: 'item',
+                                    formatter: '{a},{b},{c}'
+                                },
+                                toolbox:
+                                {
+                                },
+                                dataset:
+                                {
+                                    source: chart_data[ii][jj]['数据']
+                                },
+                                xAxis: {},
+                                yAxis: {},
+                                series: 
+                                {
+                                    type:'scatter',
+                                    /*
+                                    label:
+                                    {
+                                        show: true,
+                                        formatter: function (params)
+                                        {
+                                            return params.value[1];
+                                        }
+                                    }
+                                    */
+                                }
+                            }
+                            break;
+                    }
+
+                    let chart_win = echarts.init(sub_div[sub_div_num]);
+                    chart_win.setOption(option);
+
+                    chart_win.on('click', chart_drill);
+                }
+            }
+
+            function chart_drill(params)
+            {
+                let chart_data = [];
+                if (chart_now == '个性图形') return;
+                else if (chart_now == '初始图形') chart_data = chart_data_obj;
+                else if (chart_now == '钻取图形') chart_data = chart_drill_data_obj;
+
+                let value = params.value;
+                let arr = value['SID'].split('^');
+                let drill_arr = chart_data[arr[0]][arr[1]]['钻取模块'];
+
+                var radio_arr = [];
+                for (let ii in chart_data[arr[0]][arr[1]]['钻取模块'])
+                {
+                    let radio = {};
+                    radio['type'] = 'radioButton';
+                    radio['text'] = drill_arr[ii]['钻取选项'];
+                    radio['value'] = drill_arr[ii]['钻取选项'];
+                    radio['id'] = drill_arr[ii]['钻取选项'];
+                    radio_arr.push(radio);
                 }
 
-                let chart = echarts.init(sub_div[ii]);
-                chart.setOption(option);
+                drill_from = 'chart';
+                drill_data = params['value'];
+                drill_select(radio_arr);
+                return;
             }
         }
+
+        // 创建事件
+        const event_drill = new CustomEvent('event_drill');
+        // 监听该事件
+        window.addEventListener('event_drill', (e) => 
+        {
+            if (drill_selected == '') return;
+
+            if (drill_from == 'data')
+            {
+                let drill_item = '';
+                for (let ii in drill_arr)
+                {
+                    if (drill_arr[ii]['页面选项'] != drill_selected) continue;
+                    drill_item = drill_arr[ii];
+                    break;
+                }
+
+                drill_item['钻取字段'] = drill_item['钻取字段'].replace('；',';');
+                let nl_arr = drill_item['钻取字段'].split(';');
+                let send_obj = {};
+                let ajax = false;
+
+                let rows = data_grid_api.getSelectedRows();
+                for (let ii in nl_arr)
+                {
+                    if (rows[0][nl_arr[ii]] == '') continue;
+                    send_obj[nl_arr[ii]] = rows[0][nl_arr[ii]];
+                    ajax = true;
+                }
+
+                if (ajax == false)
+                {
+                    alert('钻取字段都为空,无法钻取');
+                    return;
+                }
+
+                send_obj['钻取字段'] = drill_item['钻取字段'];
+                send_obj['钻取条件'] = drill_item['钻取条件'];
+                send_obj['颜色标注'] = color_arr;
+
+                send_str = JSON.stringify(send_obj);
+                parent.window.goto(drill_item['功能编码'],'钻取-'+drill_item['显示名称'],'frame/init/'+drill_item['功能编码']+'/'+'<?php echo $func_id; ?>'+'/'+send_str);
+            }
+            else if (drill_from == 'chart')
+            {
+                let send_arr = [];
+                if(chart_now == '初始图形') send_arr.push({'钻取级别':0});
+                else if(chart_now == '钻取图形') send_arr.push({'钻取级别':1});
+                send_arr.push({'钻取选项':drill_selected});
+                send_arr.push(drill_data);
+
+                let url = '<?php base_url(); ?>/frame/chart_drill/<?php echo $func_id; ?>';
+                dhx.ajax.post(url, send_arr).then(function (data)
+                {
+                    chart_drill_data_obj = JSON.parse(data);
+
+                    chart_now = '钻取图形';
+                    chart_draw_init(chart_now, chart_drill_data_obj);
+                }).catch(function (err)
+                {
+                    alert('status' + " " + err.statusText);
+                });
+            }
+        });
 
     </script>
 
