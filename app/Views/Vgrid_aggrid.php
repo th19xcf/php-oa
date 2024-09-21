@@ -1,4 +1,4 @@
-<!-- v7.15.1.1.202409180035, from home -->
+<!-- v7.15.2.1.202409211350, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -845,7 +845,7 @@
                     cellEditor: 'agSelectCellEditor',
                     cellEditorParams: 
                     {
-                        values: ['X轴 (下方)','X轴 (上方)','Y轴 (左侧)','Y轴 (右侧)'],
+                        values: ['X轴（下方）','X轴（上方）','Y轴（左侧）','Y轴（右侧）'],
                     },
                 },
                 {
@@ -854,7 +854,7 @@
                     cellEditor: 'agSelectCellEditor',
                     cellEditorParams:
                     {
-                        values: ['饼图','折线图','柱图', '散点图', '雷达图'],
+                        values: ['饼图','折线图','柱状图', '散点图', '雷达图'],
                     },
                 },
             ],
@@ -2291,13 +2291,13 @@
             }
         });
 
+
         function chart_draw_self()
         {
             chart_now = '个性图形';
-
             win_chart_set.hide();
 
-            //删除图形容器
+            // 删除图形容器
             let chart_div = $$('chart_draw');
             let child_div = chart_div.childNodes;
 
@@ -2306,127 +2306,48 @@
                 chart_div.removeChild(child_div[child_div.length-1]);
             }
 
+            // 生成图形容器
             let sub_div = document.createElement('div');
             sub_div.className = 'box_1-1-1';
             chart_div.appendChild(sub_div);
 
-            var chart_type = '';
-            var x_axis = ''
-            var y_axis = '';
-
-            chart.dataset[0] = [];
+            let chart_data = [];
+            let num = 0;
             chart_grid_api.forEachNode((rowNode, index) => 
             {
-                if (chart_type == '') chart_type = rowNode.data['图形类型'];
-
-                switch (rowNode.data['图形类型'])
+                let data = [];
+                if (num == 0)
                 {
-                    case '饼图':
-                        chart.type = 'pie';
-                        break;
-                    case '折线图':
-                        chart.type = 'line';
-                        break;
-                    case '柱图':
-                        chart.type = 'bar';
-                        break;
-                    case '散点图':
-                        chart.type = 'scatter';
-                        break;
-                    case '雷达图':
-                        break;
+                    chart_data['图形名称'] = '个性图形';
+                    chart_data['图形类型'] = rowNode.data['图形类型'];
+                    chart_data['字段'] = [];
+                    chart_data['数据'] = [];
                 }
 
-                console.log('坐标轴', rowNode.data['坐标轴']);
-
-                switch (rowNode.data['坐标轴'])
-                {
-                    case 'X轴 (下方)':
-                        chart.x1_name = rowNode.data['字段名称'];
-                        if (x_axis == '') x_axis = rowNode.data['字段名称'];
-                        break;
-                    case 'X轴 (上方)':
-                        chart.x2_name = rowNode.data['字段名称'];
-                        if (x_axis == '') x_axis = rowNode.data['字段名称'];
-                        break;
-                    case 'Y轴 (左侧)':
-                        chart.y1_name = rowNode.data['字段名称'];
-                        if (y_axis == '') y_axis = rowNode.data['字段名称'];
-                        break;
-                    case 'Y轴 (右侧)':
-                        chart.y2_name = rowNode.data['字段名称'];
-                        if (y_axis == '') y_axis = rowNode.data['字段名称'];
-                        break;
-                }
-
-                chart.dataset[0].push(rowNode.data['字段名称']);
+                chart_data['字段'][rowNode.data['字段名称']] = [];
+                chart_data['字段'][rowNode.data['字段名称']]['列名'] = rowNode.data['字段名称'];
+                chart_data['字段'][rowNode.data['字段名称']]['字段名称'] = rowNode.data['字段名称'];
+                chart_data['字段'][rowNode.data['字段名称']]['坐标轴'] = rowNode.data['坐标轴'];
+                chart_data['字段'][rowNode.data['字段名称']]['图形类型'] = rowNode.data['图形类型'];
+                num ++;
             });
 
-            var pos = 1;
-            data_grid_api.forEachNodeAfterFilter((rowNode, index) => 
-            {
-                rowNode.data['字段名称'];
-                chart.dataset[pos] = [];
+            let rows = data_grid_api.getSelectedRows();
 
-                for (var jj in chart.dataset[0])
+            for (let ii in rows)
+            {
+                let row_data = {};
+                for (let jj in chart_data['字段'])
                 {
-                    var fld_name = chart.dataset[0][jj];
-                    chart.dataset[pos].push(rowNode.data[fld_name]);
+                    let fld_name = chart_data['字段'][jj]['字段名称'];
+                    row_data[fld_name] = rows[ii][fld_name];
                 }
-
-                pos = pos + 1;
-
-                chart.x1_data.push(rowNode.data[chart.x1_name])
-                chart.y1_data.push(rowNode.data[chart.y1_name])
-            });
-
-            //console.log('x1_data', chart.x1_name, chart.x1_data);
-            //console.log('y1_data', chart.y1_name, chart.y1_data);
-            //console.log('dataset', chart.dataset);
-
-            foot_chart = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',图型:{' + chart_type + '}, x轴:{' + x_axis + '}, y轴:{' + y_axis + '}</b>';
-            $$('footbox').innerHTML = foot_chart;
-
-            //var chart_win = echarts.init($$('chart_draw'));
-            let chart_win = echarts.init(sub_div);
-            let data_source = [];
-            for (let ii in chart.dataset)
-            {
-                data_source.push(chart.dataset[ii]);
+                chart_data['数据'].push(row_data);
             }
 
-            var chart_option =
-            {
-                toolbox:
-                {
-                    feature:
-                    {
-                        dataview: { show: true },
-                        magicType: { show: true, type: ['line', 'bar', 'stack'] },
-                        restore: {show: true},
-                        saveAsImage: {show: true}
-                    }
-                },
-                tooltip:
-                {
-                    trigger: 'axis',
-                    axisPointer: { type:'cross' }
-                },
-                dataset:
-                {
-                    source: data_source
-                },
-                xAxis:
-                {
-                    name: chart.x1_name,
-                    type: 'category',
-                    //data: 
-                },
-                yAxis: {},
-                series: [{type:'pie'}]
-            };
-
-            chart_win.setOption(chart_option);
+            let option = chart_option(chart_data);
+            let chart_win = echarts.init(sub_div);
+            chart_win.setOption(option);
         }
 
         function chart_draw_init(chart_now, chart_data)
@@ -2434,215 +2355,224 @@
             let chart_div = $$('chart_draw');
             let child_div = chart_div.childNodes;
 
-            //删除图形容器
+            // 删除图形容器
             for (let ii = child_div.length-1; ii >= 0; ii --)
             {
                 chart_div.removeChild(child_div[child_div.length-1]);
             }
 
-            //生成图形容器
             var sub_div = [], sub_div_num = -1;
             for (let ii in chart_data)
             {
                 for (let jj in chart_data[ii])
                 {
+                    // 生成图形容器
                     sub_div_num = sub_div_num + 1;
 
                     sub_div[sub_div_num] = document.createElement('div');
                     sub_div[sub_div_num].className = 'box_' + chart_data[ii][jj]['页面布局'];
                     chart_div.appendChild(sub_div[sub_div_num]);
 
-                    let option = {};
-                    switch (chart_data[ii][jj]['图形类型'])
-                    {
-                        case '饼图':
-                            option = 
-                            {
-                                title:
-                                {
-                                    show: true,
-                                    text: chart_data[ii][jj]['图形名称'],
-                                },
-                                //legend: {},
-                                tooltip:
-                                {
-                                    //trigger: 'item',
-                                },
-                                dataset:
-                                {
-                                    source: chart_data[ii][jj]['数据']
-                                },
-                                series:
-                                [{
-                                    //radius: ['40%','70%'],
-                                    type: 'pie'
-                                }]
-                            }
-                            break;
-                        case '柱状图':
-                        case '折线图':
-                            let dem = [], x_axis = [], y_axis = [];
-                            let x_bottom = false, x_top = false, y_left = false, y_right = false;
-                            for (let kk in chart_data[ii][jj]['字段'])
-                            {
-                                if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'X轴（下方）' && x_bottom == false)
-                                {
-                                    x_axis.push({position:'bottom'});
-                                    x_bottom = true;
-                                }
-                                else if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'X轴（下方）' && x_top == false)
-                                {
-                                    x_axis.push({position:'top'});
-                                    x_top = true;
-                                }
-                                else if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（左侧）' && y_left == false)
-                                {
-                                    y_axis.push({position:'left'});
-                                    y_left = true;
-                                }
-                                else if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（右侧）' && y_right == false)
-                                {
-                                    y_axis.push({position:'right'});
-                                    y_right = true;
-                                }
-                                if (chart_data[ii][jj]['字段'][kk]['图形类型'] == '柱状图')
-                                {
-                                    if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（左侧）')
-                                    {
-                                        dem.push({type:'bar', yAxisIndex:0});
-                                    }
-                                    else if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（右侧）')
-                                    {
-                                        dem.push({type:'bar', yAxisIndex:1});
-                                    }
-                                }
-                                else if (chart_data[ii][jj]['字段'][kk]['图形类型'] == '折线图')
-                                {
-                                    if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（左侧）')
-                                    {
-                                        dem.push({type:'line', smooth:true, yAxisIndex:1});
-                                    }
-                                    else if (chart_data[ii][jj]['字段'][kk]['坐标轴'] == 'Y轴（右侧）')
-                                    {
-                                        dem.push({type:'line', smooth:true, yAxisIndex:1});
-                                    }
-                                }
-                            }
-
-                            option = 
-                            {
-                                title:
-                                {
-                                    show: true,
-                                    id: chart_data[ii][jj]['图形编号'],
-                                    text: chart_data[ii][jj]['图形名称'],
-                                    triggerEvent: true,
-                                },
-                                legend:
-                                {
-                                    bottom: 2,
-                                },
-                                tooltip:
-                                {
-                                    trigger: 'axis',
-                                    axisPointer: { type:'cross' }
-                                    //trigger: 'item',
-                                },
-                                toolbox:
-                                {
-                                    feature:
-                                    {
-                                        dataview: { show: true },
-                                        magicType: { show: true, type: ['line', 'bar', 'stack'] },
-                                        restore: {show: true},
-                                        saveAsImage: {show: true}
-                                    }
-                                },
-                                dataset:
-                                {
-                                    source: chart_data[ii][jj]['数据']
-                                },
-                                xAxis: { type: 'category' },
-                                yAxis: y_axis,
-                                series: dem
-                            }
-                            break;
-                        case '散点图':
-                            option = 
-                            {
-                                title:
-                                {
-                                    show: true,
-                                    text: chart_data[ii][jj]['图形名称'],
-                                },
-                                //legend: {},
-                                tooltip:
-                                {
-                                    show: true,
-                                    trigger: 'item',
-                                    formatter: '{a},{b},{c}'
-                                },
-                                toolbox:
-                                {
-                                },
-                                dataset:
-                                {
-                                    source: chart_data[ii][jj]['数据']
-                                },
-                                xAxis: {},
-                                yAxis: {},
-                                series: 
-                                {
-                                    type:'scatter',
-                                    /*
-                                    label:
-                                    {
-                                        show: true,
-                                        formatter: function (params)
-                                        {
-                                            return params.value[1];
-                                        }
-                                    }
-                                    */
-                                }
-                            }
-                            break;
-                    }
+                    let option = chart_option(chart_data[ii][jj]);
 
                     let chart_win = echarts.init(sub_div[sub_div_num]);
                     chart_win.setOption(option);
-
                     chart_win.on('click', chart_drill);
                 }
             }
+        }
 
-            function chart_drill(params)
+        function chart_option(chart_data)
+        {
+            let option = {};
+            switch (chart_data['图形类型'])
             {
-                let chart_data = [];
-                if (chart_now == '个性图形') return;
-                else if (chart_now == '初始图形') chart_data = chart_data_obj;
-                else if (chart_now == '钻取图形') chart_data = chart_drill_data_obj;
+                case '饼图':
+                    option = 
+                    {
+                        title:
+                        {
+                            show: true,
+                            text: chart_data['图形名称'],
+                        },
+                        legend:
+                        {
+                            bottom: 2,
+                        },
+                        tooltip:
+                        {
+                            //trigger: 'item',
+                        },
+                        dataset:
+                        {
+                            source: chart_data['数据']
+                        },
+                        series:
+                        [{
+                            //radius: ['40%','70%'],
+                            type: 'pie'
+                        }]
+                    }
+                    break;
+                case '柱状图':
+                case '折线图':
+                    let dem = [], x_axis = [], y_axis = [];
+                    let x_bottom = false, x_top = false, y_left = false, y_right = false;
+                    for (let kk in chart_data['字段'])
+                    {
+                        if (chart_data['字段'][kk]['坐标轴'] == 'X轴（下方）' && x_bottom == false)
+                        {
+                            x_axis.push({position:'bottom'});
+                            x_bottom = true;
+                        }
+                        else if (chart_data['字段'][kk]['坐标轴'] == 'X轴（下方）' && x_top == false)
+                        {
+                            x_axis.push({position:'top'});
+                            x_top = true;
+                        }
+                        else if (chart_data['字段'][kk]['坐标轴'] == 'Y轴（左侧）' && y_left == false)
+                        {
+                            y_axis.push({position:'left'});
+                            y_left = true;
+                        }
+                        else if (chart_data['字段'][kk]['坐标轴'] == 'Y轴（右侧）' && y_right == false)
+                        {
+                            y_axis.push({position:'right'});
+                            y_right = true;
+                        }
+                        if (chart_data['字段'][kk]['图形类型'] == '柱状图')
+                        {
+                            if (chart_data['字段'][kk]['坐标轴'] == 'Y轴（左侧）')
+                            {
+                                dem.push({type:'bar', yAxisIndex:0});
+                            }
+                            else if (chart_data['字段'][kk]['坐标轴'] == 'Y轴（右侧）')
+                            {
+                                dem.push({type:'bar', yAxisIndex:1});
+                            }
+                        }
+                        else if (chart_data['字段'][kk]['图形类型'] == '折线图')
+                        {
+                            if (chart_data['字段'][kk]['坐标轴'] == 'Y轴（左侧）')
+                            {
+                                dem.push({type:'line', smooth:true, yAxisIndex:0});
+                            }
+                            else if (chart_data['字段'][kk]['坐标轴'] == 'Y轴（右侧）')
+                            {
+                                dem.push({type:'line', smooth:true, yAxisIndex:1});
+                            }
+                        }
+                    }
 
-                let value = params.value;
-                let arr = value['SID'].split('^');
-                let drill_arr = chart_data[arr[0]][arr[1]]['钻取模块'];
-
-                var radio_arr = [];
-                for (let ii in chart_data[arr[0]][arr[1]]['钻取模块'])
-                {
-                    let radio = {};
-                    radio['type'] = 'radioButton';
-                    radio['text'] = drill_arr[ii]['钻取选项'];
-                    radio['value'] = drill_arr[ii]['钻取选项'];
-                    radio['id'] = drill_arr[ii]['钻取选项'];
-                    radio_arr.push(radio);
-                }
-
-                drill_from = 'chart';
-                drill_data = params['value'];
-                drill_select(radio_arr);
-                return;
+                    option = 
+                    {
+                        title:
+                        {
+                            show: true,
+                            id: chart_data['图形编号'],
+                            text: chart_data['图形名称'],
+                            triggerEvent: true,
+                        },
+                        legend:
+                        {
+                            bottom: 2,
+                        },
+                        tooltip:
+                        {
+                            trigger: 'axis',
+                            axisPointer: { type:'cross' }
+                        },
+                        toolbox:
+                        {
+                            feature:
+                            {
+                                dataview: { show: true },
+                                magicType: { show: true, type: ['line', 'bar', 'stack'] },
+                                restore: {show: true},
+                                saveAsImage: {show: true}
+                            }
+                        },
+                        dataset:
+                        {
+                            source: chart_data['数据']
+                        },
+                        xAxis: { type: 'category' },
+                        yAxis: y_axis,
+                        series: dem
+                    }
+                    break;
+                case '散点图':
+                    option = 
+                    {
+                        title:
+                        {
+                            show: true,
+                            text: chart_data['图形名称'],
+                        },
+                        //legend: {},
+                        tooltip:
+                        {
+                            show: true,
+                            trigger: 'item',
+                            formatter: '{a},{b},{c}'
+                        },
+                        toolbox:
+                        {
+                        },
+                        dataset:
+                        {
+                            source: chart_data['数据']
+                        },
+                        xAxis: {},
+                        yAxis: {},
+                        series: 
+                        {
+                            type:'scatter',
+                            /*
+                            label:
+                            {
+                                show: true,
+                                formatter: function (params)
+                                {
+                                    return params.value[1];
+                                }
+                            }
+                            */
+                        }
+                    }
+                    break;
             }
+
+            return option;
+        }
+
+
+        function chart_drill(params)
+        {
+            let chart_data = [];
+            if (chart_now == '个性图形') return;
+            else if (chart_now == '初始图形') chart_data = chart_data_obj;
+            else if (chart_now == '钻取图形') chart_data = chart_drill_data_obj;
+
+            let value = params.value;
+            let arr = value['SID'].split('^');
+            let drill_arr = chart_data[arr[0]][arr[1]]['钻取模块'];
+
+            var radio_arr = [];
+            for (let ii in chart_data[arr[0]][arr[1]]['钻取模块'])
+            {
+                let radio = {};
+                radio['type'] = 'radioButton';
+                radio['text'] = drill_arr[ii]['钻取选项'];
+                radio['value'] = drill_arr[ii]['钻取选项'];
+                radio['id'] = drill_arr[ii]['钻取选项'];
+                radio_arr.push(radio);
+            }
+
+            drill_from = 'chart';
+            drill_data = params['value'];
+            drill_select(radio_arr);
+            return;
         }
 
         // 创建事件
