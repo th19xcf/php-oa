@@ -1,4 +1,4 @@
-<!-- v7.15.2.1.202409211350, from home -->
+<!-- v7.16.1.1.202410052055, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1225,11 +1225,25 @@
             var key = '<?php echo $primary_key; ?>';
             var columns_arr = data_grid_api.getColumns();
 
-            for (var ii in columns_arr)
+            let col = {};
+            col['type'] = 'checkbox';
+            col['text'] = '全选';
+            col['id'] = '全选';
+            col['checked'] = false;
+            checkbox_arr.push(col);
+
+            col = {};
+            col['type'] = 'checkbox';
+            col['text'] = '全不选';
+            col['id'] = '全不选';
+            col['checked'] = false;
+            checkbox_arr.push(col);
+
+            for (let ii in columns_arr)
             {
                 if (columns_arr[ii]['colId'] == key) continue;
 
-                var col = {};
+                let col = {};
                 col['type'] = 'checkbox';
                 col['text'] = columns_arr[ii]['colId'];
                 col['id'] = columns_arr[ii]['colId'];
@@ -1242,11 +1256,52 @@
                 rows: checkbox_arr
             });
 
+            form_field.getItem('全选').events.on('Change', function(value)
+            {
+                if (form_field.getItem('全选').isChecked())
+                {
+                    form_field.getItem('全不选').setValue(false);
+                }
+
+                for (let ii in columns_arr)
+                {
+                    if (columns_arr[ii]['colId'] == '<?php echo $primary_key; ?>') continue;
+
+                    form_field.getItem(columns_arr[ii]['colId']).setValue(true);
+
+                    let col_arr = [];
+                    col_arr.push(columns_arr[ii]['colId']);
+                    data_grid_api.setColumnsVisible(col_arr, true);
+                }
+            });
+
+            form_field.getItem('全不选').events.on('Change', function(value)
+            {
+                if (form_field.getItem('全不选').isChecked())
+                {
+                    form_field.getItem('全选').setValue(false);
+                }
+
+                for (let ii in columns_arr)
+                {
+                    if (columns_arr[ii]['colId'] == '<?php echo $primary_key; ?>') continue;
+
+                    form_field.getItem(columns_arr[ii]['colId']).setValue(false);
+
+                    let col_arr = [];
+                    col_arr.push(columns_arr[ii]['colId']);
+                    data_grid_api.setColumnsVisible(col_arr, false);
+                }
+            });
+
             form_field.events.on('change', function(value)
             {
+                if (value == '全选' || value == '全不选') return;
+
                 let checked = form_field.getItem(value).getValue();
                 let col_arr = [];
                 col_arr.push(value);
+                console.log('col_arr=', col_arr);
                 data_grid_api.setColumnsVisible(col_arr, checked);
             });
 
@@ -1721,7 +1776,7 @@
             key_arr = selected_key_arr;
 
             // 设置过滤条件记录
-            var filter_rows = [];
+            let filter_rows = [];
             if (data_grid_api.isAnyFilterPresent() == true)
             {
                 data_grid_api.forEachNodeAfterFilter((rowNode, index) => 
@@ -1738,7 +1793,12 @@
             col.col_name = key;
             col.fld_name = key;
             col.type = '主键';
-            col.value = key_arr.join(',');;
+            col.value = key_arr.join(',');
+
+            if (confirm('是否删除记录:'+'`'+key+'`={'+col.value+'}') == false)
+            {
+                return;
+            }
 
             let send_arr = [];
             send_arr.push(col);
