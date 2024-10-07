@@ -1,5 +1,5 @@
 <?php
-/* v10.15.1.1.202409180035, from home */
+/* v10.15.3.1.202410072015, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -328,7 +328,7 @@ class Frame extends Controller
         $tb_arr['钻取授权'] = ($next_func_id!='') ? true : false;
         $tb_arr['导入授权'] = ($import_func_id!='') ? true : false;
         $tb_arr['数据整理'] = ($data_upkeep!='') ? true : false;
-        $tb_arr['SQL'] = ($user_workid=='金凯龙') ? true : false;
+        $tb_arr['SQL'] = ($user_workid=='金凯龙' || $user_workid=='罗力源') ? true : false;
 
         // 读出存储过程参数
         $sp_param_str = '';
@@ -748,7 +748,7 @@ class Frame extends Controller
 
         //返回页面
         $send = [];
-        $send['SQL'] = json_encode(($user_workid=='金凯龙') ? $send_sql : '');
+        $send['SQL'] = json_encode(($user_workid=='金凯龙' || $user_workid=='罗力源') ? $send_sql : '');
         $send['menu_json'] = json_encode($menu_arr);
         $send['toolbar_json'] = json_encode($tb_arr);
         $send['columns_json'] = json_encode($send_columns_arr);
@@ -2309,7 +2309,6 @@ class Frame extends Controller
                 $chart_arr[$row->图形模块][$row->图形编号] = [];
             }
 
-            $data_sql = 'select ' . $row->查询字段 . ' from ' . $row->查询表名;
             $data_sql = sprintf('select %s, "%s^%s" as SID from %s', 
                 $row->查询字段, $row->图形模块, $row->图形编号, $row->查询表名);
 
