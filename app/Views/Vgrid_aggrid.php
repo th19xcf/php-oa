@@ -1,4 +1,4 @@
-<!-- v7.16.2.1.202410082310, from home -->
+<!-- v7.16.3.1.202410092040, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -2444,7 +2444,6 @@
 
         function chart_option(chart_data)
         {
-            console.log(chart_data);
             let option = {};
             switch (chart_data['图形类型'])
             {
