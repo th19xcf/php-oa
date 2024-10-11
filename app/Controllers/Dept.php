@@ -1,5 +1,5 @@
 <?php
-/* v1.8.2.1.202408211705, from office */
+/* v1.8.3.1.202410112035, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -362,13 +362,13 @@ class Dept extends Controller
                 开始操作时间,结束操作时间,
                 校验标识,删除标识,有效标识) 
             values ("%s","%s",%d,
-                "%s","无","%s","%s",
+                "%s","无","%s","",
                 "%s","",
                 "新增", "页面新增", "%s",
                 "%s","",
                 "0","0","1")',
             $arg['下级部门编码'], $arg['下级部门名称'], $arg['下级部门级别'], 
-            $arg['本级部门编码'], $arg['下级部门负责人'],$arg['预算表部门全称'],
+            $arg['本级部门编码'], $arg['下级部门负责人'],
             $arg['生效日期'],
             $user_workid,
             date('Y-m-d H:m:s'));
