@@ -1,4 +1,4 @@
-<!-- v7.16.3.1.202410092040, from home -->
+<!-- v7.16.4.1.202410132235, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1103,8 +1103,8 @@
                     });
                     break;
                 case 'SQL':
-                    console.log('ID=', '<?php echo $func_id; ?>');
-                    console.log('SQL=', '<?php echo $SQL; ?>');
+                    console.log('ID=[ ', '<?php echo $func_id; ?>', ' ]');
+                    console.log('SQL=[ ', '<?php echo $SQL; ?>', ' ]');
                     break;
                 case '导入':
                     parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','upload/init/<?php echo $import_func_id; ?>');
@@ -1211,7 +1211,8 @@
                     {
                         for (let jj in chart_data[ii])
                         {
-                            console.log(chart_data[ii][jj]['图形名称'], chart_data[ii][jj]['SQL']);
+                            console.log('图形名称=[ ', chart_data[ii][jj]['图形名称'], ' ]');
+                            console.log('SQL=[ ', chart_data[ii][jj]['SQL'].replace(/``/g,'"'), ' ]');
                         }
                     }
                     break;
@@ -1963,7 +1964,7 @@
             var str1 = '', str2 = '';
             var rc = true, rc1 = true, rc2 = true;
 
-            str = str.replace('；',';');
+            str = str.replace(/；/g,';');
 
             if (str.indexOf(';') != -1)
             {
@@ -2652,7 +2653,7 @@
                     break;
                 }
 
-                drill_item['钻取字段'] = drill_item['钻取字段'].replace('；',';');
+                drill_item['钻取字段'] = drill_item['钻取字段'].replace(/；/g,';');
                 let nl_arr = drill_item['钻取字段'].split(';');
                 let send_obj = {};
                 let ajax = false;

@@ -1,5 +1,5 @@
 <?php
-/* v10.15.3.1.202410072015, from home */
+/* v10.15.4.1.202410121425, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -84,9 +84,9 @@ class Frame extends Controller
         foreach ($results as $row)
         {
             // 部门访问权限
-            str_replace(' ', '' , $row->部门赋权);
-            str_replace('，', ',' , $row->部门赋权);
-            str_replace(' ', '' , $row->部门字段);
+            str_replace(' ', '', $row->部门赋权);
+            str_replace('，', ',', $row->部门赋权);
+            str_replace(' ', '', $row->部门字段);
 
             $dept_cond = '';
             $dept_arr = explode(',', $row->部门赋权);
@@ -2190,7 +2190,7 @@ class Frame extends Controller
             from
             (
                 select 图形模块,图形编号,图形名称,图形类型,
-                    查询表名,查询字段,查询条件,汇总条件,排序条件,
+                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
             ) as t1
@@ -2200,7 +2200,7 @@ class Frame extends Controller
                 from
                 (
                     select 图形模块,图形编号,图形名称,图形类型,
-                        查询表名,查询字段,查询条件,汇总条件,排序条件,
+                        查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
                         字段模块,页面布局,钻取模块,条件叠加,顺序
                     from def_chart_config
                     where 图形模块="%s" and 图形编号="%s"
@@ -2265,6 +2265,8 @@ class Frame extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+        $user_location_str = $session->get('user_location_str');
         $chart_drill_cond_str = $session->get(sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_id));
         $chart_drill_title_str = $session->get(sprintf('%s^%s-chart_drill_title_str',$menu_id,$chart_id));
 
@@ -2277,7 +2279,7 @@ class Frame extends Controller
         {
             $sql = sprintf('
                 select 图形模块,图形编号,图形名称,图形类型,
-                    查询表名,查询字段,查询条件,汇总条件,排序条件,
+                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
                 where 图形模块="%s" and 顺序>0
@@ -2288,7 +2290,7 @@ class Frame extends Controller
         {
             $sql = sprintf('
                 select 图形模块,图形编号,图形名称,图形类型,
-                    查询表名,查询字段,查询条件,汇总条件,排序条件,
+                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
                 where 图形模块="%s" and 图形编号="%s" and 顺序>0
@@ -2313,9 +2315,20 @@ class Frame extends Controller
                 $row->查询字段, $row->图形模块, $row->图形编号, $row->查询表名);
 
             $where = '';
+            if($row->属地字段 != '')
+            {
+                $where = sprintf("属地 in (%s)", $user_location_str);
+            }
             if ($row->查询条件 != '')
             {
-                $where = $row->查询条件;
+                if ($where != '')
+                {
+                    $where = sprintf('(%s) and (%s)', $where, $row->查询条件);
+                }
+                else
+                {
+                    $where = $row->查询条件;
+                }
             }
             if ($chart_drill_cond_str != '' && $row->条件叠加 == '1')
             {
@@ -2395,7 +2408,7 @@ class Frame extends Controller
             $chart_arr[$row->图形模块][$row->图形编号]['字段数'] = 0;
             $chart_arr[$row->图形模块][$row->图形编号]['数据'] = $model->select($data_sql)->getResult();
             $chart_arr[$row->图形模块][$row->图形编号]['钻取模块'] = [];
-            //$chart_arr[$row->图形模块][$row->图形编号]['SQL'] = $data_sql;
+            $chart_arr[$row->图形模块][$row->图形编号]['SQL'] = ($user_workid=='金凯龙' || $user_workid=='罗力源') ? str_replace('"','``',$data_sql) : '';
 
             // 图形列信息
             $col_sql = sprintf('
