@@ -1,5 +1,5 @@
 <?php
-/* v10.15.4.1.202410121425, from home */
+/* v10.15.5.1.202410161920, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -2193,6 +2193,7 @@ class Frame extends Controller
                     查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
+                where 有效标识="1"
             ) as t1
             left join
             (
@@ -2203,7 +2204,7 @@ class Frame extends Controller
                         查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
                         字段模块,页面布局,钻取模块,条件叠加,顺序
                     from def_chart_config
-                    where 图形模块="%s" and 图形编号="%s"
+                    where 有效标识="1" and 图形模块="%s" and 图形编号="%s"
                 ) as ta
                 left join
                 (
@@ -2282,7 +2283,7 @@ class Frame extends Controller
                     查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
-                where 图形模块="%s" and 顺序>0
+                where 有效标识="1" and 图形模块="%s" and 顺序>0
                 order by 图形模块,图形编号,顺序', 
                 $chart_id);
         }
@@ -2293,7 +2294,7 @@ class Frame extends Controller
                     查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
-                where 图形模块="%s" and 图形编号="%s" and 顺序>0
+                where 有效标识="1" and 图形模块="%s" and 图形编号="%s" and 顺序>0
                 order by 图形模块,图形编号,顺序', 
                 $chart_id, $chart_code);
         }
