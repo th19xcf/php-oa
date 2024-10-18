@@ -1,5 +1,5 @@
 <?php
-/* v10.15.5.1.202410161920, from home */
+/* v10.16.1.1.202410181630, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -35,7 +35,10 @@ class Frame extends Controller
 
         $sql = sprintf(
             'select 
-                t1.角色编号,t1.角色名称,t1.功能赋权,t1.部门赋权,t1.属地赋权,
+                t1.角色编号,t1.角色名称,
+                t1.功能赋权,
+                t1.部门编码赋权,t1.部门全称赋权,
+                t1.属地赋权,
                 t1.新增授权,t1.修改授权,t1.删除授权,t1.整表授权,t1.导入授权,t1.导出授权,
                 ifnull(t2.功能编码,"") as 功能编码,
                 ifnull(t2.一级菜单,"") as 一级菜单,
@@ -44,20 +47,58 @@ class Frame extends Controller
                 ifnull(t2.菜单顺序,"") as 菜单顺序,
                 ifnull(t2.菜单显示,"") as 菜单显示,
                 ifnull(t3.部门字段,"") as 部门字段,
+                ifnull(t3.部门编码字段,"") as 部门编码字段,
+                ifnull(t3.部门全称字段,"") as 部门全称字段,
                 ifnull(t3.属地字段,"") as 属地字段
             from 
             (
-                select 角色编号,角色名称,功能赋权,部门赋权,属地赋权,
-                    新增授权,修改授权,删除授权,整表授权,导入授权,导出授权
-                from def_role
-                where 有效标识="1" and 角色编号 in (%s)
-                    and concat(功能赋权,length(部门赋权)) in
-                    (
-                        select concat(功能赋权,min(length(部门赋权)))
-                        from def_role
-                        where 有效标识="1" and 角色编号 in (%s)
-                        group by 功能赋权
-                    )
+                select 
+                    ta.*,
+                    ifnull(tb.部门编码赋权,"") as 部门编码赋权,
+                    ifnull(tc.部门全称赋权,"") as 部门全称赋权
+                from
+                (
+                    select 角色编号,角色名称,功能赋权,
+                        max(新增授权) as 新增授权,
+                        max(修改授权) as 修改授权,
+                        max(删除授权) as 删除授权,
+                        max(整表授权) as 整表授权,
+                        max(导入授权) as 导入授权,
+                        max(导出授权) as 导出授权,
+                        属地赋权
+                    from def_role
+                    where 有效标识="1" and 角色编号 in (%s)
+                    group by 功能赋权
+                ) as ta
+                left join
+                (
+                    select 功能赋权,部门编码赋权
+                    from def_role
+                    where 有效标识="1" and 角色编号 in (%s)
+                        and concat(功能赋权,length(部门编码赋权)) in
+                        (
+                            select concat(功能赋权,min(length(部门编码赋权)))
+                            from def_role
+                            where 有效标识="1" and 部门编码赋权!=""
+                                and 角色编号 in (%s)
+                            group by 功能赋权
+                        )
+                ) as tb on ta.功能赋权=tb.功能赋权
+                left join
+                (
+                    select 功能赋权,部门全称赋权
+                    from def_role
+                    where 有效标识="1" and 部门全称赋权!=""
+                        and 角色编号 in (%s)
+                        and concat(功能赋权,length(部门全称赋权)) in
+                        (
+                            select concat(功能赋权,min(length(部门全称赋权)))
+                            from def_role
+                            where 有效标识="1" and 部门全称赋权!=""
+                                and 角色编号 in (%s)
+                            group by 功能赋权
+                        )
+                ) as tc on ta.功能赋权=tc.功能赋权
             ) as t1
             left join
             (
@@ -69,11 +110,12 @@ class Frame extends Controller
             ) as t2 on t1.功能赋权=t2.功能编码
             left join
             (
-                select 查询模块,部门字段,属地字段
+                select 查询模块,部门字段,部门编码字段,部门全称字段,属地字段
                 from def_query_config
             ) as t3 on if(t2.功能类型="查询",t2.模块名称,"")=t3.查询模块
             group by t1.功能赋权
-            order by t2.菜单顺序', $user_role_str, $user_role_str);
+            order by t2.菜单顺序', 
+            $user_role_str, $user_role_str,$user_role_str, $user_role_str, $user_role_str);
 
         $model = new Mcommon();
         $query = $model->select($sql);
@@ -83,33 +125,77 @@ class Frame extends Controller
 
         foreach ($results as $row)
         {
-            // 部门访问权限
-            str_replace(' ', '', $row->部门赋权);
-            str_replace('，', ',', $row->部门赋权);
-            str_replace(' ', '', $row->部门字段);
+            // 部门编码访问权限
+            str_replace(' ', '', $row->部门编码赋权);
+            str_replace('，', ',', $row->部门编码赋权);
+            str_replace(' ', '', $row->部门编码字段);
 
-            $dept_cond = '';
-            $dept_arr = explode(',', $row->部门赋权);
+            $dept_id_cond = '';
+            $dept_arr = explode(',', $row->部门编码赋权);
             foreach ($dept_arr as $dept)
             {
-                if ($dept == '' || $row->部门字段 == '')
+                if ($dept == '' || $row->部门编码字段 == '')
                 {
                     break;
                 }
-                if ($dept_cond == '')
+                if ($dept_id_cond == '')
                 {
-                    $dept_cond = sprintf('instr(%s,left(%s,length(%s)))', $row->部门字段, $dept);
+                    $dept_id_cond = sprintf('left(%s,length("%s"))="%s"', $row->部门编码字段, $dept, $dept);
                 }
                 else
                 {
-                    $dept_cond = sprintf('%s or instr(%s,left(%s,length(%s)))', $dept_cond, $row->部门字段, $dept);
+                    $dept_id_cond = sprintf('%s or left(%s,length("%s"))="%s"', $dept_id_cond, $row->部门编码字段, $dept, $dept);
                 }
             }
 
             // or条件要加括号
-            if ($dept_cond != '')
+            if ($dept_id_cond != '')
             {
-                $dept_cond = sprintf('(%s)', $dept_cond);
+                $dept_id_cond = sprintf('(%s)', $dept_id_cond);
+            }
+
+            // 部门全称访问权限
+            str_replace(' ', '', $row->部门全称赋权);
+            str_replace('，', ',', $row->部门全称赋权);
+            str_replace(' ', '', $row->部门全称字段);
+
+            $dept_name_cond = '';
+            $dept_arr = explode(',', $row->部门全称赋权);
+            foreach ($dept_arr as $dept)
+            {
+                if ($dept == '' || $row->部门全称字段 == '')
+                {
+                    break;
+                }
+                if ($dept_name_cond == '')
+                {
+                    $dept_name_cond = sprintf('left(%s,length("%s"))="%s"', $row->部门全称字段, $dept, $dept);
+                }
+                else
+                {
+                    $dept_name_cond = sprintf('%s or left(%s,length("%s"))="%s"', $dept_name_cond, $row->部门全称字段, $dept, $dept);
+                }
+            }
+
+            // or条件要加括号
+            if ($dept_name_cond != '')
+            {
+                $dept_name_cond = sprintf('(%s)', $dept_name_cond);
+            }
+
+            // 部门编码和部门全称条件合并
+            $dept_cond = '';
+            if ($dept_id_cond != '' && $dept_name_cond != '')
+            {
+                $dept_cond = sprintf('(%s or %s)', $dept_id_cond, $dept_name_cond);
+            }
+            else if ($dept_id_cond)
+            {
+                $dept_cond = $dept_id_cond;
+            }
+            else if ($dept_name_cond)
+            {
+                $dept_cond = $dept_name_cond;
             }
 
             // 属地访问权限
@@ -143,7 +229,6 @@ class Frame extends Controller
 
             // 存入session
             $session_arr = [];
-            $session_arr[$row->功能赋权.'-dept_authz'] = $row->部门赋权;
             $session_arr[$row->功能赋权.'-dept_fld'] = $row->部门字段;
             $session_arr[$row->功能赋权.'-dept_cond'] = $dept_cond;
             $session_arr[$row->功能赋权.'-location_authz'] = $row->属地赋权;
@@ -192,10 +277,8 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
         $dept_cond = $session->get($menu_id.'-dept_cond');
-        $dept_fld = $session->get($menu_id.'-dept_fld');
         $location_cond = $session->get($menu_id.'-location_cond');
-        $location_fld = $session->get($menu_id.'-location_fld');
-        $user_role_str = $session->get('user_role');
+        $user_role = $session->get('user_role');
         $user_location_str = $session->get('user_location_str');
         $add_authz = $session->get($menu_id.'-add_authz');
         $modify_authz = $session->get($menu_id.'-modify_authz');
@@ -290,13 +373,14 @@ class Frame extends Controller
             {
                 $sp_name = $row->模块名称;
             }
+
             $query_table = $row->查询表名;
             $result_count = $row->初始条数;
 
             $query_where = $row->查询条件;
             if(strpos($row->查询条件, '$角色') !== false)
             {
-                $query_where = str_replace('$角色', $user_role_str, $row->查询条件);
+                $query_where = str_replace('$角色', $user_role, $row->查询条件);
             }
 
             $query_group = $row->汇总条件;
@@ -630,7 +714,7 @@ class Frame extends Controller
         }
 
         // 条件语句加上部门授权条件
-        if ($dept_cond)
+        if ($dept_cond != '')
         {
             $where = ($where == '') ? $dept_cond : $where . ' and ' . ($dept_cond);
         }
@@ -823,7 +907,8 @@ class Frame extends Controller
     {
         $model = new Mcommon();
 
-        $cond_arr = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $cond_arr = $request->getJSON(true);
 
         $where = '';
         $group = '';
@@ -1125,7 +1210,8 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function set_sp_condition($menu_id='')
     {
-        $cond_arr = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $cond_arr = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -1178,7 +1264,8 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function update_row($menu_id='')
     {
-        $row_arr = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $row_arr = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -1603,7 +1690,8 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function add_row($menu_id='')
     {
-        $row_arr = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $row_arr = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -1789,7 +1877,8 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function delete_row($menu_id='')
     {
-        $row_arr = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $row_arr = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -2093,7 +2182,8 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function verify_popup($menu_id='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -2142,7 +2232,8 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function update_table($menu_id='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -2162,7 +2253,8 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function chart_drill($menu_id='')
     {
-        $drill_arr = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $drill_arr = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -2268,6 +2360,7 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
         $user_location_str = $session->get('user_location_str');
+        $dept_cond = $session->get($menu_id.'-dept_cond');
         $chart_drill_cond_str = $session->get(sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_id));
         $chart_drill_title_str = $session->get(sprintf('%s^%s-chart_drill_title_str',$menu_id,$chart_id));
 
@@ -2303,22 +2396,20 @@ class Frame extends Controller
         $results = $query->getResult();
         foreach ($results as $row)
         {
-            if (array_key_exists($row->图形模块, $chart_arr) == false)
-            {
-                $chart_arr[$row->图形模块] = [];
-            }
-            if (array_key_exists($row->图形编号, $chart_arr[$row->图形模块]) == false)
-            {
-                $chart_arr[$row->图形模块][$row->图形编号] = [];
-            }
-
             $data_sql = sprintf('select %s, "%s^%s" as SID from %s', 
                 $row->查询字段, $row->图形模块, $row->图形编号, $row->查询表名);
 
             $where = '';
+            // 条件语句加上部门授权条件
+            if ($dept_cond != '')
+            {
+                $where = ($where == '') ? $dept_cond : $where . ' and ' . ($dept_cond);
+            }
+            // 条件语句加上属地条件
             if($row->属地字段 != '')
             {
-                $where = sprintf("属地 in (%s)", $user_location_str);
+                $local = sprintf("属地 in (%s)", $user_location_str);
+                $where = ($where == '') ? $local : $where . ' and ' . ($local);
             }
             if ($row->查询条件 != '')
             {
@@ -2399,6 +2490,23 @@ class Frame extends Controller
                 $data_sql = sprintf('%s order by %s', $data_sql, $row->排序条件);
             }
 
+            $chart_data = $model->select($data_sql)->getResult();
+
+            if ($chart_data == [])
+            {
+                continue;
+            }
+
+            // 图形数据
+            if (array_key_exists($row->图形模块, $chart_arr) == false)
+            {
+                $chart_arr[$row->图形模块] = [];
+            }
+            if (array_key_exists($row->图形编号, $chart_arr[$row->图形模块]) == false)
+            {
+                $chart_arr[$row->图形模块][$row->图形编号] = [];
+            }
+
             $chart_arr[$row->图形模块][$row->图形编号]['图形模块'] = $row->图形模块;
             $chart_arr[$row->图形模块][$row->图形编号]['图形编号'] = $row->图形编号;
             $chart_arr[$row->图形模块][$row->图形编号]['图形名称'] = ($chart_drill_title_str == '') ? $row->图形名称 : sprintf('%s(%s)', $row->图形名称, $chart_drill_title_str);
@@ -2407,9 +2515,12 @@ class Frame extends Controller
             $chart_arr[$row->图形模块][$row->图形编号]['页面布局'] = $row->页面布局;
             $chart_arr[$row->图形模块][$row->图形编号]['字段'] = [];
             $chart_arr[$row->图形模块][$row->图形编号]['字段数'] = 0;
-            $chart_arr[$row->图形模块][$row->图形编号]['数据'] = $model->select($data_sql)->getResult();
+            $chart_arr[$row->图形模块][$row->图形编号]['数据'] = $chart_data;
             $chart_arr[$row->图形模块][$row->图形编号]['钻取模块'] = [];
-            $chart_arr[$row->图形模块][$row->图形编号]['SQL'] = ($user_workid=='金凯龙' || $user_workid=='罗力源') ? str_replace('"','``',$data_sql) : '';
+
+            $data_sql = str_replace('\'','``',$data_sql);
+            $data_sql = str_replace('"','``',$data_sql);
+            $chart_arr[$row->图形模块][$row->图形编号]['SQL'] = ($user_workid=='金凯龙' || $user_workid=='罗力源') ? $data_sql : '';
 
             // 图形列信息
             $col_sql = sprintf('

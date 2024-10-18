@@ -1,6 +1,6 @@
 <?php
 
-/* v3.1.1.1.202404041245, from home */
+/* v3.2.1.1.202410172015, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -31,12 +31,13 @@ class Login extends Controller
 	//+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function checkin()
     {
-        $company_id = $this->request->getPost('company_id');
-        $user_workid = $this->request->getPost('userid');
-        $pswd = $this->request->getPost('userpwd');
+        $request = \Config\Services::request();
+        $company_id = $request->getPost('company_id');
+        $user_workid = $request->getPost('userid');
+        $pswd = $request->getPost('userpwd');
 
         $sql = sprintf('
-            select 员工编号,姓名,身份证号,工号,角色,员工属地
+            select 员工编号,姓名,身份证号,工号,角色,员工属地,部门编码
             from def_user
             where 有效标识="1" and 工号="%s" and 密码="%s" ',
             $user_workid, $pswd);
@@ -53,7 +54,6 @@ class Login extends Controller
             exit('2');
         }
 
-        // 验证员工属地
         foreach ($results as $row)
         {
             if (strpos($row->员工属地,$company_id) === false) continue;
@@ -66,16 +66,10 @@ class Login extends Controller
             $role_str = '';
             foreach ($role_arr as $role)
             {
-                if ($role_str == '')
-                {
-                    $role_str = sprintf('"%s"', $role);
-                }
-                else
-                {
-                    $role_str = sprintf('%s,"%s"', $role_str, $role);
-                }
+                $role_str = ($role_str == '') ? sprintf('"%s"', $role) : sprintf('%s,"%s"', $role_str, $role);
             }
 
+            // 验证员工属地
             str_replace(' ', '', $row->员工属地);
             str_replace('，', ',', $row->员工属地);
 
@@ -84,14 +78,19 @@ class Login extends Controller
             $location_str = '';
             foreach ($location_arr as $location)
             {
-                if ($location_str == '')
-                {
-                    $location_str = sprintf('"%s"', $location);
-                }
-                else
-                {
-                    $location_str = sprintf('%s,"%s"', $location_str, $location);
-                }
+                $location_str = ($location_str == '') ? sprintf('"%s"', $location) : sprintf('%s,"%s"', $location_str, $location);
+            }
+
+            // 验证员工部门
+            str_replace(' ', '', $row->部门编码);
+            str_replace('，', ',', $row->部门编码);
+
+            $dept_arr = explode(',', $row->部门编码);
+
+            $dept_str = '';
+            foreach ($dept_arr as $dept)
+            {
+                $dept_str = ($dept_str == '') ? sprintf('"%s"', $dept) : sprintf('%s,"%s"', $dept_str, $dept);
             }
 
             // 存入session
@@ -104,6 +103,8 @@ class Login extends Controller
             $session_arr['user_pswd'] = $pswd;
             $session_arr['user_location'] = $row->员工属地;
             $session_arr['user_location_str'] = $location_str;
+            $session_arr['user_dept'] = $row->部门编码;
+            $session_arr['user_dept_str'] = $dept_str;
 
             $session = \Config\Services::session();
             $session->set($session_arr);
