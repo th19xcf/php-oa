@@ -1,6 +1,6 @@
 <?php
 
-/* v3.2.1.1.202410172015, from home */
+/* v3.2.1.1.202410190020, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -37,7 +37,7 @@ class Login extends Controller
         $pswd = $request->getPost('userpwd');
 
         $sql = sprintf('
-            select 员工编号,姓名,身份证号,工号,角色,员工属地,部门编码
+            select 员工编号,姓名,身份证号,工号,角色,调试赋权,维护赋权,员工属地,部门编码
             from def_user
             where 有效标识="1" and 工号="%s" and 密码="%s" ',
             $user_workid, $pswd);
@@ -101,6 +101,8 @@ class Login extends Controller
             $session_arr['user_role'] = $row->角色;
             $session_arr['user_role_str'] = $role_str;
             $session_arr['user_pswd'] = $pswd;
+            $session_arr['user_debug_authz'] = $row->调试赋权;
+            $session_arr['user_upkeep_authz'] = $row->维护赋权;
             $session_arr['user_location'] = $row->员工属地;
             $session_arr['user_location_str'] = $location_str;
             $session_arr['user_dept'] = $row->部门编码;

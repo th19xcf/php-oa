@@ -1,5 +1,5 @@
 <?php
-/* v1.8.3.1.202410112035, from home */
+/* v1.8.4.1.202410191120, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -20,6 +20,7 @@ class Dept extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $dept_authz = $session->get($menu_id.'-dept_authz');
+        $user_debug_authz = $session->get('user_debug_authz');
         $tree_expand = $session->get('dept_tree_expand');
         $add_authz = $session->get($menu_id.'-add_authz');
         $modify_authz = $session->get($menu_id.'-modify_authz');
@@ -33,6 +34,7 @@ class Dept extends Controller
         $tb_arr['新增授权'] = ($add_authz=='1') ? true : false ;
         $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
         $tb_arr['删除授权'] = ($delete_authz=='1') ? true : false ;
+        $tb_arr['SQL'] = ($user_debug_authz=='1') ? true : false;
 
         $model = new Mcommon();
 
@@ -101,6 +103,8 @@ class Dept extends Controller
         //返回页面
         $send['budget_rows_json'] = json_encode($popup_arr['budget_rows']);
         $send['budget_json'] = json_encode($popup_arr['budget_value']);
+        $send['func_id'] = $menu_id;
+        $send['SQL'] = json_encode(($user_debug_authz=='1') ? $sql : '');
 
         echo view('Vdept.php', $send);
     }
@@ -110,7 +114,8 @@ class Dept extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function ajax($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 记录展开的节点
         if ($arg['操作'] == '展开')
@@ -210,7 +215,8 @@ class Dept extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function upkeep($menu_id='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -345,13 +351,23 @@ class Dept extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function insert($menu_id='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
 
         $model = new Mcommon();
+
+        // 新增前判断是否有重复记录
+        $sql = sprintf('select GUID from def_dept wehre 部门编码="%s"',$arg['下级部门编码']);
+        $query = $model->select($sql);
+        $results = $query->getResult();
+        if (count($results) > 0)
+        {
+            exit('`新增下级部门`失败,部门编码重复');
+        }
 
         $sql = sprintf('
             insert into def_dept 
@@ -384,7 +400,8 @@ class Dept extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function delete_row($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         $model = new Mcommon();
 
@@ -428,7 +445,9 @@ class Dept extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function budget_verify($menu_id='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
+
         $model = new Mcommon();
         $sql = sprintf('
             select "" as 部门编码,统计部门全称

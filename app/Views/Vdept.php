@@ -1,4 +1,4 @@
-<!-- v2.5.1.1.202405071805, from office -->
+<!-- v2.6.1.1.202410191320, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -19,9 +19,9 @@
     <style type='text/css'>
         div.float_box
         {
-            width: 47%;
+            width: 49%;
             height: 510px;
-            margin: 4px;
+            margin: 3px;
             background-color: #f9f9f9;
             border: 1px solid #D0D0D0;
             box-sizing: border-box;
@@ -32,21 +32,28 @@
 
 <body>
     <div id='databox' style='width:100%;'>
-    <div id='main_tb' ></div>
-    <div id='info_box' style='width:100%; height:10px; margin-bottom:3px; background-color: lightblue;'></div>
-    <div class='float_box'>
-        <div id='tree_box' style='height:100%;'></div>
+        <div id='main_tb'></div>
+        <div id='infobox' style='width:100%; height:10px; margin-bottom:4px; background-color: lightblue;'></div>
+        <div id='float_div' style='width:100%;'>
+            <div class='float_box'>
+                <div id='tree_box' style='height:100%;'></div>
+            </div>
+            <div class='float_box'>
+                <div id='grid_box' class='ag-theme-alpine' style='width:100%; height:100%; background-color:lightblue;'></div>
+            </div>
+        </div>
     </div>
-
-    <div class='float_box'>
-        <div id='grid_box' class='ag-theme-alpine' style='width:100%; height:100%; background-color:lightblue;'></div>
-    </div>
+    <div id='footbox' style='width:100%; height:10px; margin-top:1px; background-color: lightblue;'></div>
 
     <script type='text/javascript' charset='utf-8'>
         function $$(id)
         {
             return document.getElementById(id);
         }
+
+        $$('infobox').style.height = document.documentElement.clientHeight * 0.033 + 'px';
+        $$('databox').style.height = document.documentElement.clientHeight * 0.92 + 'px';
+        $$('footbox').style.height = document.documentElement.clientHeight * 0.033 + 'px';
 
         function BudgetInfo()
         {
@@ -91,15 +98,24 @@
             main_tb.data.add({type:'separator'});
             main_tb.data.add({id:'删除部门', type:'button', value:'删除部门'});
         }
+        main_tb.data.add({type:'spacer'});
+        if (tb_obj['SQL'] == true)
+        {
+            main_tb.data.add({id:'SQL', type:'button', value:'SQL'});
+        }
 
-        $$('info_box').style.height = document.documentElement.clientHeight * 0.035 + 'px';
-        $$('info_box').innerHTML = '&nbsp&nbsp选定部门:';
+        $$('infobox').style.height = document.documentElement.clientHeight * 0.035 + 'px';
+        $$('infobox').innerHTML = '&nbsp&nbsp选定部门:';
+        $$('footbox').innerHTML = '&nbsp&nbsp<b>' + <?php echo $func_id; ?>;
 
         var dept_str = '';
         var guid_selected = [];
         var submit_type = '';
         var editable = false;
         var button = '';
+
+        var data_grid_api = null;
+        var popup_grid_api = null;
 
         // tree视图
         var tree_obj = JSON.parse('<?php echo $dept_json; ?>');
@@ -152,7 +168,7 @@
 
                                 if (popup_grid_content == '')
                                 {
-                                    popup_grid_api = new agGrid.Grid($$('popup_set_grid'), budget_grid_options);
+                                    popup_grid_api = agGrid.createGrid($$('popup_set_grid'), budget_grid_options);
                                     popup_grid_content = 'BUDGET';
                                 }
 
@@ -215,7 +231,7 @@
             //rowData: grid_obj,
         };
 
-        new agGrid.Grid($$('grid_box'), grid_options);
+        data_grid_api = agGrid.createGrid($$('grid_box'), grid_options);
 
         // 弹窗选择窗口
         var win_popup_set = new dhx.Window(
@@ -313,7 +329,7 @@
                         }
 
                         // 清空下级部门
-                        budget_grid_options.api.forEachNode((rowNode, index) => 
+                        budget_grid_api.forEachNode((rowNode, index) => 
                         {
                             if (rowNode.data['级别'] > budget_arr.max_rank)
                             {
@@ -337,7 +353,7 @@
             if (id == '清空')
             {
                 budget_grid_obj = JSON.parse('<?php echo $budget_rows_json; ?>');
-                budget_grid_options.api.setRowData(budget_grid_obj);
+                popup_grid_api.setGridOption('rowData', budget_grid_obj);
             }
             else if (id == '确定')
             {
@@ -346,8 +362,8 @@
                 send_obj['操作'] = id;
                 send_obj['部门级别'] = budget_arr.max_rank;
 
-                budget_grid_options.api.stopEditing();
-                budget_grid_options.api.forEachNode((rowNode, index) => 
+                popup_grid_api.stopEditing();
+                popup_grid_api.forEachNode((rowNode, index) => 
                 {
                     send_obj[rowNode.data['部门']] = rowNode.data['取值'];
                 });
@@ -395,15 +411,13 @@
                     break;
                 case '修改部门信息':
                     button = '修改部门信息';
-
-                    var rowNode = grid_options.api.getRowNode(0);
+                    var rowNode = data_grid_api.getRowNode(0);
                     rowNode.setDataValue('值', '修改部门信息');
                     submit_type = 'upkeep';
                     editable = true;
                     break;
                 case '新增下级部门':
                     button = '新增下级部门';
-
                     submit_type = 'insert';
                     editable = true;
                     insert(guid_selected[0]);
@@ -422,6 +436,10 @@
                     submit_type = 'delete';
                     editable = false;
                     delete_row();
+                    break;
+                case 'SQL':
+                    console.log('ID=[ ', '<?php echo $func_id; ?>', ' ]');
+                    console.log('SQL=[ ', '<?php echo $SQL; ?>', ' ]');
                     break;
                 default:
                     alert('功能正在开发中...');
@@ -442,16 +460,18 @@
             guid_selected = [];
             guid_selected.push(item[1]);
 
+            console.log('guid_selected=[', guid_selected, ']');
+
             dhx.ajax.post('<?php base_url(); ?>/dept/ajax/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 value_obj = JSON.parse(data);
                 grid_obj = JSON.parse(data);
-                grid_options.api.setRowData(grid_obj);
+                data_grid_api.setGridOption('rowData', grid_obj);
                 editable = false;
                 button = '查询部门信息';
                 var item = id.split('^');
 
-                $$('info_box').innerHTML = '&nbsp&nbsp选定部门 : ' + item[3];
+                $$('infobox').innerHTML = '&nbsp&nbsp选定部门 : ' + value_obj[4]['值'];
             }).catch(function (err)
             {
                 alert('`查询部门信息`失败, ' + " " + err.statusText);
@@ -519,7 +539,7 @@
 
                     if (popup_grid_content == '')
                     {
-                        popup_grid_api = new agGrid.Grid($$('popup_set_grid'), budget_grid_options);
+                        popup_grid_api = agGrid.createGrid($$('popup_set_grid'), budget_grid_options);
                         popup_grid_content = 'BUDGET';
                     }
 
@@ -555,8 +575,8 @@
         {
             var ajax = 0;
 
-            grid_options.api.stopEditing();
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.stopEditing();
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '修改部门信息')
                 {
@@ -581,7 +601,7 @@
             arg_obj['操作'] = '修改部门信息';
             arg_obj['部门'] = guid_selected;
 
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] != '属性')
                 {
@@ -634,7 +654,7 @@
             {
                 value_obj = JSON.parse(data);
                 grid_obj = JSON.parse(data);
-                grid_options.api.setRowData(grid_obj);
+                data_grid_api.setGridOption('rowData', grid_obj);
                 editable = true;
                 button = '新增下级部门';
             }).catch(function (err)
@@ -648,8 +668,8 @@
         {
             var ajax = 0;
 
-            grid_options.api.stopEditing();
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.stopEditing();
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '新增下级部门')
                 {
@@ -677,7 +697,7 @@
             var arg_obj = {};
             arg_obj['操作'] = '新增下级部门';
 
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] != '属性')
                 {
@@ -710,8 +730,8 @@
             var ajax = 0;
             var dept_name = '';
 
-            grid_options.api.stopEditing();
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.stopEditing();
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 // 校验
                 if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '查询部门信息')

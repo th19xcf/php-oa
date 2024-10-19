@@ -1,5 +1,5 @@
 <?php
-/* v10.16.1.1.202410181630, from office */
+/* v10.17.1.1.202410190020, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -169,11 +169,11 @@ class Frame extends Controller
                 }
                 if ($dept_name_cond == '')
                 {
-                    $dept_name_cond = sprintf('left(%s,length("%s"))="%s"', $row->部门全称字段, $dept, $dept);
+                    $dept_name_cond = sprintf('instr(%s,"%s")', $row->部门全称字段, $dept);
                 }
                 else
                 {
-                    $dept_name_cond = sprintf('%s or left(%s,length("%s"))="%s"', $dept_name_cond, $row->部门全称字段, $dept, $dept);
+                    $dept_name_cond = sprintf('%s or instr(%s,"%s")', $dept_name_cond, $row->部门全称字段, $dept);
                 }
             }
 
@@ -279,6 +279,8 @@ class Frame extends Controller
         $dept_cond = $session->get($menu_id.'-dept_cond');
         $location_cond = $session->get($menu_id.'-location_cond');
         $user_role = $session->get('user_role');
+        $user_debug_authz = $session->get('user_debug_authz');
+        $user_upkeep_authz = $session->get('user_upkeep_authz');
         $user_location_str = $session->get('user_location_str');
         $add_authz = $session->get($menu_id.'-add_authz');
         $modify_authz = $session->get($menu_id.'-modify_authz');
@@ -411,8 +413,8 @@ class Frame extends Controller
 
         $tb_arr['钻取授权'] = ($next_func_id!='') ? true : false;
         $tb_arr['导入授权'] = ($import_func_id!='') ? true : false;
-        $tb_arr['数据整理'] = ($data_upkeep!='') ? true : false;
-        $tb_arr['SQL'] = ($user_workid=='金凯龙' || $user_workid=='罗力源') ? true : false;
+        $tb_arr['数据整理'] = ($user_upkeep_authz=='1' and $data_upkeep!='') ? true : false;
+        $tb_arr['SQL'] = ($user_debug_authz=='1') ? true : false;
 
         // 读出存储过程参数
         $sp_param_str = '';
@@ -832,7 +834,7 @@ class Frame extends Controller
 
         //返回页面
         $send = [];
-        $send['SQL'] = json_encode(($user_workid=='金凯龙' || $user_workid=='罗力源') ? $send_sql : '');
+        $send['SQL'] = json_encode(($user_debug_authz=='1') ? $send_sql : '');
         $send['menu_json'] = json_encode($menu_arr);
         $send['toolbar_json'] = json_encode($tb_arr);
         $send['columns_json'] = json_encode($send_columns_arr);
@@ -2358,7 +2360,7 @@ class Frame extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_workid = $session->get('user_workid');
+        $user_debug_authz = $session->get('user_debug_authz');
         $user_location_str = $session->get('user_location_str');
         $dept_cond = $session->get($menu_id.'-dept_cond');
         $chart_drill_cond_str = $session->get(sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_id));
@@ -2520,7 +2522,7 @@ class Frame extends Controller
 
             $data_sql = str_replace('\'','``',$data_sql);
             $data_sql = str_replace('"','``',$data_sql);
-            $chart_arr[$row->图形模块][$row->图形编号]['SQL'] = ($user_workid=='金凯龙' || $user_workid=='罗力源') ? $data_sql : '';
+            $chart_arr[$row->图形模块][$row->图形编号]['SQL'] = ($user_debug_authz=='1') ? $data_sql : '';
 
             // 图形列信息
             $col_sql = sprintf('
