@@ -1,5 +1,5 @@
 <?php
-/* v10.17.1.1.202410190020, from home */
+/* v10.17.2.1.202410231705, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -651,7 +651,7 @@ class Frame extends Controller
 
             if (strpos($row->赋值类型,'固定值') !== false && array_key_exists($row->对象,$object_arr) == false)
             {
-                $object_obj[$row->对象] = [];
+                $object_arr[$row->对象] = [];
 
                 $cond_obj_arr[$row->列名] = '';
                 $update_obj_arr[$row->列名] = '';
@@ -672,7 +672,7 @@ class Frame extends Controller
                 foreach($rslt as $vv)
                 {
                     $object_arr[$vv->对象名称]['上级对象名称'] = $vv->上级对象名称;
-                    if (array_key_exists($vv->上级对象值, $object_arr[$row->列名]) == false)
+                    if (array_key_exists($vv->上级对象值, $object_arr[$row->对象]) == false)
                     {
                         $object_arr[$row->对象][$vv->上级对象值] = [];
                         $object_arr[$row->对象][$vv->上级对象值]['对象值'] = [];
