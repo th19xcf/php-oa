@@ -1,5 +1,5 @@
 <?php
-/* v10.18.1.1.202410241530, from office */
+/* v10.19.1.1.202410250030, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -183,18 +183,18 @@ class Frame extends Controller
             }
 
             // 部门编码和部门全称条件合并
-            $dept_cond = '';
+            $dept_authz_cond = '';
             if ($dept_id_cond != '' && $dept_name_cond != '')
             {
-                $dept_cond = sprintf('(%s or %s)', $dept_id_cond, $dept_name_cond);
+                $dept_authz_cond = sprintf('(%s or %s)', $dept_id_cond, $dept_name_cond);
             }
-            else if ($dept_id_cond)
+            else if ($dept_id_cond != '')
             {
-                $dept_cond = $dept_id_cond;
+                $dept_authz_cond = $dept_id_cond;
             }
-            else if ($dept_name_cond)
+            else if ($dept_name_cond != '')
             {
-                $dept_cond = $dept_name_cond;
+                $dept_authz_cond = $dept_name_cond;
             }
 
             // 属地访问权限
@@ -202,36 +202,36 @@ class Frame extends Controller
             str_replace('，', ',', $row->属地赋权);
             str_replace(' ', '', $row->属地字段);
 
-            $location_cond = '';
-            $location_arr = explode(',', $row->属地赋权);
-            foreach ($location_arr as $location)
+            $location_authz_cond = '';
+            $location_authz_arr = explode(',', $row->属地赋权);
+            foreach ($location_authz_arr as $location)
             {
                 if ($location == '' || $row->属地字段 == '')
                 {
                     break;
                 }
-                if ($location_cond == '')
+                if ($location_authz_cond == '')
                 {
-                    $location_cond = sprintf('instr(%s,"%s")', $row->属地字段, $location);
+                    $location_authz_cond = sprintf('instr(%s,"%s")', $row->属地字段, $location);
                 }
                 else
                 {
-                    $location_cond = sprintf('%s or instr(%s,"%s")', $location_cond, $row->属地字段, $location);
+                    $location_authz_cond = sprintf('%s or instr(%s,"%s")', $location_authz_cond, $row->属地字段, $location);
                 }
             }
 
             // or条件要加括号
-            if ($location_cond != '')
+            if ($location_authz_cond != '')
             {
-                $location_cond = sprintf('(%s)', $location_cond);
+                $location_authz_cond = sprintf('(%s)', $location_authz_cond);
             }
 
             // 存入session
             $session_arr = [];
-            $session_arr[$row->功能赋权.'-dept_cond'] = $dept_cond;
+            $session_arr[$row->功能赋权.'-dept_authz_cond'] = $dept_authz_cond;
             $session_arr[$row->功能赋权.'-location_authz'] = $row->属地赋权;
             $session_arr[$row->功能赋权.'-location_fld'] = $row->属地字段;
-            $session_arr[$row->功能赋权.'-location_cond'] = $location_cond;
+            $session_arr[$row->功能赋权.'-location_authz_cond'] = $location_authz_cond;
             $session_arr[$row->功能赋权.'-menu_1'] = $row->一级菜单;
             $session_arr[$row->功能赋权.'-menu_2'] = $row->二级菜单;
             $session_arr[$row->功能赋权.'-add_authz'] = $row->新增授权;
@@ -274,8 +274,8 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
-        $dept_cond = $session->get($menu_id.'-dept_cond');
-        $location_cond = $session->get($menu_id.'-location_cond');
+        $dept_authz_cond = $session->get($menu_id.'-dept_authz_cond');
+        $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
         $user_role = $session->get('user_role');
         $user_debug_authz = $session->get('user_debug_authz');
         $user_upkeep_authz = $session->get('user_upkeep_authz');
@@ -721,15 +721,15 @@ class Frame extends Controller
         }
 
         // 条件语句加上部门授权条件
-        if ($dept_cond != '')
+        if ($dept_authz_cond != '')
         {
-            $where = ($where == '') ? $dept_cond : $where . ' and ' . ($dept_cond);
+            $where = ($where == '') ? $dept_authz_cond : $where . ' and ' . ($dept_authz_cond);
         }
 
         // 条件语句加上属地条件
-        if ($location_cond != '')
+        if ($location_authz_cond != '')
         {
-            $where = ($where == '') ? $location_cond : $where . ' and ' . $location_cond;
+            $where = ($where == '') ? $location_authz_cond : $where . ' and ' . $location_authz_cond;
         }
 
         // 数据钻取,条件语句加上前端选定的条件
@@ -2368,7 +2368,8 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $user_debug_authz = $session->get('user_debug_authz');
         $user_location_str = $session->get('user_location_str');
-        $dept_cond = $session->get($menu_id.'-dept_cond');
+        $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
+        $dept_authz_cond = $session->get($menu_id.'-dept_authz_cond');
         $chart_drill_cond_str = $session->get(sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_id));
         $chart_drill_title_str = $session->get(sprintf('%s^%s-chart_drill_title_str',$menu_id,$chart_id));
 
@@ -2409,15 +2410,14 @@ class Frame extends Controller
 
             $where = '';
             // 条件语句加上部门授权条件
-            if ($dept_cond != '')
+            if ($dept_authz_cond != '')
             {
-                $where = ($where == '') ? $dept_cond : $where . ' and ' . ($dept_cond);
+                $where = ($where == '') ? $dept_authz_cond : $where . ' and ' . $dept_authz_cond;
             }
             // 条件语句加上属地条件
             if($row->属地字段 != '')
             {
-                $local = sprintf("属地 in (%s)", $user_location_str);
-                $where = ($where == '') ? $local : $where . ' and ' . ($local);
+                $where = ($where == '') ? $location_authz_cond : $where . ' and ' . $location_authz_cond;
             }
             if ($row->查询条件 != '')
             {
