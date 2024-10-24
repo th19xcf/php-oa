@@ -46,7 +46,6 @@ class Frame extends Controller
                 ifnull(t2.功能模块,"") as 功能模块,
                 ifnull(t2.菜单顺序,"") as 菜单顺序,
                 ifnull(t2.菜单显示,"") as 菜单显示,
-                ifnull(t3.部门字段,"") as 部门字段,
                 ifnull(t3.部门编码字段,"") as 部门编码字段,
                 ifnull(t3.部门全称字段,"") as 部门全称字段,
                 ifnull(t3.属地字段,"") as 属地字段
@@ -110,7 +109,7 @@ class Frame extends Controller
             ) as t2 on t1.功能赋权=t2.功能编码
             left join
             (
-                select 查询模块,部门字段,部门编码字段,部门全称字段,属地字段
+                select 查询模块,部门编码字段,部门全称字段,属地字段
                 from def_query_config
             ) as t3 on if(t2.功能类型="查询",t2.模块名称,"")=t3.查询模块
             group by t1.功能赋权
@@ -229,7 +228,6 @@ class Frame extends Controller
 
             // 存入session
             $session_arr = [];
-            $session_arr[$row->功能赋权.'-dept_fld'] = $row->部门字段;
             $session_arr[$row->功能赋权.'-dept_cond'] = $dept_cond;
             $session_arr[$row->功能赋权.'-location_authz'] = $row->属地赋权;
             $session_arr[$row->功能赋权.'-location_fld'] = $row->属地字段;
@@ -534,7 +532,7 @@ class Frame extends Controller
 
         // 读出列配置信息
         $sql = sprintf('
-            select 功能编码,字段模块,部门字段,属地字段,
+            select 功能编码,字段模块,部门编码字段,部门全称字段,属地字段,
                 列名,列类型,列宽度,字段名,查询名,
                 赋值类型,对象,对象名称,对象表名,主键,
                 可筛选,可汇总,可新增,可修改,不可为空,可颜色标注,
@@ -1106,8 +1104,6 @@ class Frame extends Controller
         $query_table = $session->get($menu_id.'-query_table');
         $columns_arr = $session->get($menu_id.'-columns_arr');
         $select_str = $session->get($menu_id.'-select_str');
-        $dept_cond = $session->get($menu_id.'-dept_cond');
-        $dept_fld = $session->get($menu_id.'-dept_fld');
         $where = $session->get($menu_id.'-back_where');
         $group = $session->get($menu_id.'-back_group');
         $order = $session->get($menu_id.'-back_order');
