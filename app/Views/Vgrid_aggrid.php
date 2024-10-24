@@ -1,4 +1,4 @@
-<!-- v7.16.4.1.202410132235, from home -->
+<!-- v7.17.1.1.202410241520, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -317,10 +317,20 @@
         var data_grid_obj = JSON.parse('<?php echo $data_value_json; ?>');
         var data_last_selected = [];
 
-        // 字段排序,设置cell格式
-        for (var ii in data_columns_arr)
+        // 字符转换
+        for (let ii in columns_obj)
         {
-            for (var jj in columns_obj)
+            if (columns_obj[ii].字符转换 != '1') continue;
+            for (let jj in data_grid_obj)
+            {
+                data_grid_obj[jj][columns_obj[ii].字段名] = data_grid_obj[jj][columns_obj[ii].字段名].replace(/~~/g,'"');
+            }
+        }
+
+        // 字段排序,设置cell格式
+        for (let ii in data_columns_arr)
+        {
+            for (let jj in columns_obj)
             {
                 if (columns_obj[jj].列名 != data_columns_arr[ii].field && data_columns_arr[ii].field != '序号') continue;
 
@@ -1212,7 +1222,7 @@
                         for (let jj in chart_data[ii])
                         {
                             console.log('图形名称=[ ', chart_data[ii][jj]['图形名称'], ' ]');
-                            console.log('SQL=[ ', chart_data[ii][jj]['SQL'].replace(/``/g,'"'), ' ]');
+                            console.log('SQL=[ ', chart_data[ii][jj]['SQL'].replace(/~~/g,'"'), ' ]');
                         }
                     }
                     break;

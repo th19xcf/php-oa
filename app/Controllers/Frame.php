@@ -1,5 +1,5 @@
 <?php
-/* v10.17.2.1.202410231705, from office */
+/* v10.18.1.1.202410241530, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -320,7 +320,6 @@ class Frame extends Controller
         $sp_name = '';  //存储过程模块
         $sp_sql = '';  //存储过程语句
         $query_table = '';
-        $location_fld = '';  //属地字段
         $query_where = '';
         $query_group = '';
         $query_order = '';
@@ -536,7 +535,7 @@ class Frame extends Controller
                 列名,列类型,列宽度,字段名,查询名,
                 赋值类型,对象,对象名称,对象表名,主键,
                 可筛选,可汇总,可新增,可修改,不可为空,可颜色标注,
-                提示条件,提示样式设置,异常条件,异常样式设置,
+                提示条件,提示样式设置,异常条件,异常样式设置,字符转换,
                 列顺序
             from view_function
             where 功能编码="%s" and 列顺序>0
@@ -574,6 +573,7 @@ class Frame extends Controller
             $arr['提示样式'] = $row->提示样式设置;
             $arr['异常条件'] = $row->异常条件;
             $arr['异常样式'] = $row->异常样式设置;
+            $arr['字符转换'] = $row->字符转换;
 
             array_push($columns_arr, $arr);
 
@@ -700,7 +700,14 @@ class Frame extends Controller
             {
                 $select_str = $select_str . ',';
             }
-            $select_str = sprintf('%s %s as `%s`', $select_str, $column['查询名'], $column['列名']);
+            if ($column['字符转换'] == '1')
+            {
+                $select_str = sprintf('%s replace(replace(%s,"\"","~~"),"\'","~~") as `%s`', $select_str, $column['查询名'], $column['列名']);
+            }
+            else
+            {
+                $select_str = sprintf('%s %s as `%s`', $select_str, $column['查询名'], $column['列名']);
+            }
         }
 
         $query_sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
@@ -774,6 +781,9 @@ class Frame extends Controller
             $send_results = $model->select($query_sql)->getResult();
             $send_sql = $query_sql;
         }
+
+        $send_sql = str_replace('\'','~~',$send_sql);
+        $send_sql = str_replace('"','~~',$send_sql);
 
         // chart session初始化
         $session_arr = [];
@@ -2516,8 +2526,8 @@ class Frame extends Controller
             $chart_arr[$row->图形模块][$row->图形编号]['数据'] = $chart_data;
             $chart_arr[$row->图形模块][$row->图形编号]['钻取模块'] = [];
 
-            $data_sql = str_replace('\'','``',$data_sql);
-            $data_sql = str_replace('"','``',$data_sql);
+            $data_sql = str_replace('\'','~~',$data_sql);
+            $data_sql = str_replace('"','~~',$data_sql);
             $chart_arr[$row->图形模块][$row->图形编号]['SQL'] = ($user_debug_authz=='1') ? $data_sql : '';
 
             // 图形列信息
