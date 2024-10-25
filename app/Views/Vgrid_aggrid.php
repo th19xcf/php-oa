@@ -1,4 +1,4 @@
-<!-- v7.17.1.1.202410241520, from office -->
+<!-- v7.17.2.1.202410251310, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -1114,7 +1114,9 @@
                     break;
                 case 'SQL':
                     console.log('ID=[ ', '<?php echo $func_id; ?>', ' ]');
-                    console.log('SQL=[ ', '<?php echo $SQL; ?>', ' ]');
+                    let sql = '<?php echo $SQL; ?>';
+                    sql = sql.replace(/~~/g,'"');
+                    console.log('SQL=[ ', sql, ' ]');
                     break;
                 case '导入':
                     parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','upload/init/<?php echo $import_func_id; ?>');
