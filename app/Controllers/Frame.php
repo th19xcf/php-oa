@@ -1,5 +1,5 @@
 <?php
-/* v10.19.1.1.202410250030, from home */
+/* v10.19.3.1.202410251650, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -694,12 +694,15 @@ class Frame extends Controller
 
         // 拼出查询语句
         $select_str = '';
+        $send_str = '';
         foreach ($columns_arr as $column) 
         {
             if ($select_str != '')
             {
                 $select_str = $select_str . ',';
+                $send_str = $send_str . ',';
             }
+
             if ($column['字符转换'] == '1')
             {
                 $select_str = sprintf('%s replace(replace(%s,"\"","~~"),"\'","~~") as `%s`', $select_str, $column['查询名'], $column['列名']);
@@ -708,11 +711,17 @@ class Frame extends Controller
             {
                 $select_str = sprintf('%s %s as `%s`', $select_str, $column['查询名'], $column['列名']);
             }
+
+            $send_str = sprintf('%s %s as `%s`', $send_str, $column['查询名'], $column['列名']);
         }
 
         $query_sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
             from %s,(select @i:=0) as xh', 
             $select_str, $query_table);
+
+        $send_sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
+            from %s,(select @i:=0) as xh', 
+            $send_str, $query_table);
 
         // 加上初始查询条件
         if ($query_where != '')
@@ -741,6 +750,7 @@ class Frame extends Controller
         if ($where != '')
         {
             $query_sql = sprintf('%s where %s', $query_sql, $where);
+            $send_sql = sprintf('%s where %s', $send_sql, $where);
         }
 
         // 加上group by 条件
@@ -748,6 +758,7 @@ class Frame extends Controller
         {
             $group = $query_group;
             $query_sql = sprintf('%s group by %s', $query_sql, $group);
+            $send_sql = sprintf('%s group by %s', $send_sql, $group);
         }
 
         // 加上order by
@@ -755,15 +766,16 @@ class Frame extends Controller
         {
             $order = $query_order;
             $query_sql = sprintf('%s order by %s', $query_sql, $order);
+            $send_sql = sprintf('%s order by %s', $send_sql, $order);
         }
 
         // 加上初始结果条数
         if ($result_count > 0)
         {
             $query_sql = sprintf('%s limit %d', $query_sql, $result_count);
+            $send_sql = sprintf('%s limit %d', $send_sql, $result_count);
         }
 
-        $send_sql = '';
         $send_results = [];
         if ($sp_name != '')
         {
@@ -777,9 +789,7 @@ class Frame extends Controller
         {
             // 写日志
             $model->sql_log('查询', $menu_id, sprintf('表名=%s,条件=%s', $query_table, str_replace('"','`',$where)));
-
             $send_results = $model->select($query_sql)->getResult();
-            $send_sql = $query_sql;
         }
 
         $send_sql = str_replace('\'','~~',$send_sql);
