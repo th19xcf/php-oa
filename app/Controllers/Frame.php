@@ -1,5 +1,5 @@
 <?php
-/* v10.19.3.1.202410251650, from office */
+/* v10.20.1.1.202411011635, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -487,16 +487,22 @@ class Frame extends Controller
         //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+= 
         $cond_arr = json_decode($front_where);
         $front_where = '';
-        $color_arr = [];
+        $disp_col_arr = [];  // 显示列
+        $color_arr = [];  // 颜色标注
         $color_col_num = 0;
 
         if ($front_id != '')
         {
             $col_arr = explode(';', $cond_arr->钻取字段);
             $front_where = str_replace('`', '"', $cond_arr->钻取条件);
+            $disp_col_arr = $cond_arr->字段选择;
 
             foreach ($cond_arr as $key => $value)
             {
+                if ($key == '字段选择')
+                {
+                    continue;
+                }
                 if ($key == '颜色标注')
                 {
                     $color_arr = $value;
@@ -896,6 +902,7 @@ class Frame extends Controller
         }
 
         $send['drill_json'] = json_encode($drill_arr);
+        $send['disp_col_json'] = json_encode($disp_col_arr);
 
         if ($color_col_num != 2)
         {

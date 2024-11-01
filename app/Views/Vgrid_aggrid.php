@@ -1,4 +1,4 @@
-<!-- v7.17.2.1.202410251310, from office -->
+<!-- v7.18.1.1.202411011635, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -368,11 +368,41 @@
             readOnlyEdit: !table_modify_flag,
             rowData: data_grid_obj,
             rowSelection: 'multiple',
-            //onSelectionChanged: onSelectionChanged,
             pagination: true,
             paginationPageSize: 500,
             paginationPageSizeSelector: [500, 1000, 2000],
             localeText: AG_GRID_LOCALE_CN,
+
+            //onSelectionChanged: onSelectionChanged,
+            onGridReady: (params) => 
+            {
+                console.log('datagrid ready');
+
+                let disp_col_obj = JSON.parse('<?php echo $disp_col_json; ?>')
+                if (disp_col_obj.length == 0) return;
+
+                let columns_arr = params.api.getColumns();
+                let col_arr = [];
+                for (let ii in columns_arr)
+                {
+                    col_arr.push(columns_arr[ii]['colId']);
+                }
+                params.api.setColumnsVisible(col_arr, false);
+
+                col_arr = [];
+                for (let ii in columns_arr)
+                {
+                    for (let jj in disp_col_obj)
+                    {
+                        if (columns_arr[ii]['colId'] == disp_col_obj[jj])
+                        {
+                            col_arr.push(columns_arr[ii]['colId']);
+                            break;
+                        }
+                    }
+                }
+                params.api.setColumnsVisible(col_arr, true);
+            },
             onCellEditRequest: (event) => 
             {
                 if (table_modify_flag == false)
@@ -410,14 +440,6 @@
         };
 
         var data_grid_api = agGrid.createGrid($$('data_grid'), data_grid_options);
-
-        data_grid_options.onGridReady = data_grid_ready;
-
-        function data_grid_ready(event)
-        {
-            data_grid_api.setGridOption('paginationPageSize', 500);
-            console.log('datagrid ready');
-        }
 
         function onSelectionChanged()
         {
@@ -1276,16 +1298,14 @@
                     form_field.getItem('全不选').setValue(false);
                 }
 
+                let col_arr = [];
                 for (let ii in columns_arr)
                 {
                     if (columns_arr[ii]['colId'] == '<?php echo $primary_key; ?>') continue;
-
                     form_field.getItem(columns_arr[ii]['colId']).setValue(true);
-
-                    let col_arr = [];
                     col_arr.push(columns_arr[ii]['colId']);
-                    data_grid_api.setColumnsVisible(col_arr, true);
                 }
+                data_grid_api.setColumnsVisible(col_arr, true);
             });
 
             form_field.getItem('全不选').events.on('Change', function(value)
@@ -1295,16 +1315,14 @@
                     form_field.getItem('全选').setValue(false);
                 }
 
+                let col_arr = [];
                 for (let ii in columns_arr)
                 {
                     if (columns_arr[ii]['colId'] == '<?php echo $primary_key; ?>') continue;
-
                     form_field.getItem(columns_arr[ii]['colId']).setValue(false);
-
-                    let col_arr = [];
                     col_arr.push(columns_arr[ii]['colId']);
-                    data_grid_api.setColumnsVisible(col_arr, false);
                 }
+                data_grid_api.setColumnsVisible(col_arr, false);
             });
 
             form_field.events.on('change', function(value)
@@ -1314,7 +1332,6 @@
                 let checked = form_field.getItem(value).getValue();
                 let col_arr = [];
                 col_arr.push(value);
-
                 data_grid_api.setColumnsVisible(col_arr, checked);
             });
 
@@ -2650,7 +2667,8 @@
 
         // 创建事件
         const event_drill = new CustomEvent('event_drill');
-        // 监听该事件
+
+        // 监听事件
         window.addEventListener('event_drill', (e) => 
         {
             if (drill_selected == '') return;
@@ -2687,6 +2705,29 @@
                 send_obj['钻取字段'] = drill_item['钻取字段'];
                 send_obj['钻取条件'] = drill_item['钻取条件'];
                 send_obj['颜色标注'] = color_arr;
+                send_obj['字段选择'] = [];
+
+                let key = '<?php echo $primary_key; ?>';
+                let columns_arr = data_grid_api.getColumns();
+                //let columns_arr = data_grid_api.getAllDisplayedColumns();
+                let hide_num = 0;
+                for (let ii in columns_arr)
+                {
+                    if (columns_arr[ii]['colId'] == key) continue;
+
+                    if (columns_arr[ii]['visible'] == false)
+                    {
+                        hide_num = hide_num + 1;
+                    }
+                    else
+                    {
+                        send_obj['字段选择'].push(columns_arr[ii]['colId']);
+                    }
+                }
+                if (hide_num == 0) //未做字段选择
+                {
+                    send_obj['字段选择'] = [];
+                }
 
                 send_str = JSON.stringify(send_obj);
                 parent.window.goto(drill_item['功能编码'],'钻取-'+drill_item['显示名称'],'frame/init/'+drill_item['功能编码']+'/'+'<?php echo $func_id; ?>'+'/'+send_str);
