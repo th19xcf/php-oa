@@ -1,4 +1,4 @@
-<!-- v7.18.1.1.202411011635, from office -->
+<!-- v7.18.2.1.202411011635, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -614,6 +614,7 @@
 
         // 当前menu
         var menu_value = JSON.parse('<?php echo $menu_json; ?>');
+        console.log(menu_value);
 
         // 弹窗选择
         var popup_grid_options = {};
@@ -1141,7 +1142,8 @@
                     console.log('SQL=[ ', sql, ' ]');
                     break;
                 case '导入':
-                    parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','upload/init/<?php echo $import_func_id; ?>');
+                    let import_func_id = '<?php echo $func_id; ?>' + '88';
+                    parent.window.goto(import_func_id,'导入-'+'<?php echo $import_tag_name; ?>','upload/init/'+import_func_id+'/<?php echo $import_module; ?>');
                     break;
                 case '导出':
                     var href = '<?php base_url(); ?>/frame/export/<?php echo $func_id; ?>';
@@ -2730,7 +2732,7 @@
                 }
 
                 send_str = JSON.stringify(send_obj);
-                parent.window.goto(drill_item['功能编码'],'钻取-'+drill_item['显示名称'],'frame/init/'+drill_item['功能编码']+'/'+'<?php echo $func_id; ?>'+'/'+send_str);
+                parent.window.goto(drill_item['功能编码'],'钻取-'+drill_item['标签名称'],'frame/init/'+drill_item['功能编码']+'/'+'<?php echo $func_id; ?>'+'/'+send_str);
             }
             else if (drill_from == 'chart')
             {

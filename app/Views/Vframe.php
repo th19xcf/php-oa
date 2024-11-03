@@ -1,4 +1,4 @@
-<!-- v1.2.2.1.202210162340, from surface -->
+<!-- v1.2.3.1.202411031210, from home -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -310,7 +310,7 @@
         /*点击退出链接事件*/
         function onLoginOut()
         {
-            //南京客服工号要进行工单提醒
+            //工单提醒
             if ("1" == "12" && "1" == "1")
             {
                 MsgWorder.closeShow(true);

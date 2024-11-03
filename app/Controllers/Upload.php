@@ -1,5 +1,5 @@
 <?php
-/* v3.1.1.1.202404101320, from office */
+/* v3.1.2.1.202411031810, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -20,20 +20,17 @@ class Upload extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 初始页面
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function init($menu_id='')
+    public function init($menu_id='', $import_module='')
     {
         $send = [];
 
         $sql = sprintf('
             select 
-                功能编码,
                 导入模块,主键,导入条件,
                 表单变量,滤重字段,模板文件,
                 表头行,数据行
-            from def_function as t1
-            left join def_import_config as t2
-            on t1.模块名称=t2.导入模块
-            where 功能编码="%s"', $menu_id);
+            from def_import_config
+            where 导入模块="%s"', $import_module);
 
         $model = new Mcommon();
         $query = $model->select($sql);
@@ -53,7 +50,7 @@ class Upload extends Controller
 
         // 存入session
         $session_arr = [];
-        $session_arr[$menu_id.'-import'] = $row->导入模块;
+        $session_arr[$menu_id.'-import'] = $import_module;
 
         $session = \Config\Services::session();
         $session->set($session_arr);
@@ -70,10 +67,14 @@ class Upload extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function import($menu_id='')
     {
-        $work_month = $this->request->getPost('work_month');
-        $work_date = $this->request->getPost('work_date');
-        $upload_model = $this->request->getPost('model');
-        $primary_key = $this->request->getPost('primary_key');
+        $request = \Config\Services::request();
+        $work_month = $request->getPost('work_month');
+        $work_date = $request->getPost('work_date');
+        $upload_model = $request->getPost('model');
+        $primary_key = $request->getPost('primary_key');
+
+        // 带入功能的menu_id=menu_id+'88',还原
+        $menu_id = substr($menu_id, 0, strlen($menu_id)-2);
 
         if ($upload_model == null)
         {
@@ -82,11 +83,11 @@ class Upload extends Controller
         }
         if ($upload_model == '更新')
         {
-                if ($primary_key == null || $primary_key == '')
-                {
-                        $this->json_data(400, '更新模式必须选择主键字段！', 0);
-                        return;
-                }
+            if ($primary_key == null || $primary_key == '')
+            {
+                    $this->json_data(400, '更新模式必须选择主键字段！', 0);
+                    return;
+            }
         }
 
         $file = isset($_FILES['upfiles']) ? $_FILES['upfiles'] : '';
@@ -350,8 +351,9 @@ class Upload extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function model_insert($menu_id='', $tmp_table_name='')
     {
-        $work_month = $this->request->getPost('work_month');
-        $work_date = $this->request->getPost('work_date');
+        $request = \Config\Services::request();
+        $work_month = $request->getPost('work_month');
+        $work_date = $request->getPost('work_date');
 
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
@@ -507,7 +509,8 @@ class Upload extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function model_update($menu_id='', $src_table_name='')
     {
-        $primary_key = $this->request->getPost('primary_key');
+        $request = \Config\Services::request();
+        $primary_key = $request->getPost('primary_key');
 
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');

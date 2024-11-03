@@ -1,5 +1,5 @@
 <?php
-/* v10.20.1.1.202411011635, from office */
+/* v10.20.2.1.202411031810, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -122,8 +122,12 @@ class Frame extends Controller
 
         $json = [];
 
+        $function_authz_arr = [];  // 功能访问权限
         foreach ($results as $row)
         {
+            // 功能访问权限
+            $function_authz_arr[$row->功能赋权] = $row->功能赋权;
+
             // 部门编码访问权限
             str_replace(' ', '', $row->部门编码赋权);
             str_replace('，', ',', $row->部门编码赋权);
@@ -261,6 +265,12 @@ class Frame extends Controller
             $json[$row->一级菜单]['children'][] = $children;
         }
 
+        // 功能赋权存入session
+        $session_arr = [];
+        $session_arr['function_authz'] = $function_authz_arr;
+        $session = \Config\Services::session();
+        $session->set($session_arr);
+
         echo json_encode($json, 320);  //256+64,不转义中文+反斜杠
     }
 
@@ -274,6 +284,7 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
+        $function_authz = $session->get('function_authz');
         $dept_authz_cond = $session->get($menu_id.'-dept_authz_cond');
         $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
         $user_role = $session->get('user_role');
@@ -323,10 +334,9 @@ class Frame extends Controller
         $query_where = '';
         $query_group = '';
         $query_order = '';
-        $next_func_id = '';  //钻取模块
-        $next_func_name = '';  //钻取模块名称
-        $next_func_condition = '';  //钻取条件
-        $import_func_id = '';
+        $drill_module = '';  //钻取模块
+        $drill_func_id = '';  //钻取功能编码
+        $import_module = '';  //导入模块
         $after_insert = '';  //新增后处理模块
         $after_update = '';  //更新后处理模块
         $data_upkeep = '';  //数据整理模块
@@ -339,30 +349,18 @@ class Frame extends Controller
 
         $sql = sprintf('
             select 
-                t1.功能编码,
+                功能编码,
                 模块名称,模块类型,
                 查询表名,
                 数据表名,数据模式,
                 查询条件,汇总条件,排序条件,初始条数,
                 新增后处理模块,更新后处理模块,数据整理模块,
-                钻取模块,钻取条件,ifnull(t2.钻取模块名称,"") as 钻取模块名称,
-                导入模块,ifnull(t3.导入模块名称,"") as 导入模块名称,
+                钻取模块,钻取功能编码,
+                导入模块,导入标签名称,
                 图形模块
-            from view_function as t1
-            left join 
-            (
-                select 功能编码,二级菜单 as 钻取模块名称
-                from view_function
-                group by 功能编码
-            ) as t2 on t1.钻取模块=t2.功能编码
-            left join 
-            (
-                select 功能编码,二级菜单 as 导入模块名称
-                from view_function
-                group by 功能编码
-            ) as t3 on t1.导入模块=t3.功能编码
-            where t1.功能编码="%s"
-            group by t1.功能编码', $menu_id);
+            from view_function
+            where 功能编码="%s"
+            group by 功能编码', $menu_id);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -385,15 +383,11 @@ class Frame extends Controller
             $query_group = $row->汇总条件;
             $query_order = $row->排序条件;
 
-            $next_func_id = $row->钻取模块;
-            $next_func_name = $row->钻取模块名称;
+            $drill_module = $row->钻取模块;
+            $drill_func_id = $row->钻取功能编码;
 
-            $next_func_condition = $row->钻取条件;
-            str_replace(' ', '', $next_func_condition);
-            str_replace('；', ';', $next_func_condition);
-
-            $import_func_id = $row->导入模块;
-            $import_func_name = $row->导入模块名称;
+            $import_module = $row->导入模块;
+            $import_tag_name = $row->导入标签名称;
 
             $after_insert = $row->新增后处理模块;
             $after_update = $row->更新后处理模块;
@@ -408,9 +402,9 @@ class Frame extends Controller
 
         $tb_arr = [];  // 控制菜单栏
 
-        $tb_arr['钻取授权'] = ($next_func_id!='') ? true : false;
-        $tb_arr['导入授权'] = ($import_func_id!='') ? true : false;
-        $tb_arr['数据整理'] = ($user_upkeep_authz=='1' and $data_upkeep!='') ? true : false;
+        $tb_arr['钻取授权'] = ($drill_module!='' && array_key_exists($drill_func_id,$function_authz) == true) ? true : false;
+        $tb_arr['导入授权'] = ($import_module!='') ? true : false;
+        $tb_arr['数据整理'] = ($user_upkeep_authz=='1' && $data_upkeep!='') ? true : false;
         $tb_arr['SQL'] = ($user_debug_authz=='1') ? true : false;
 
         // 读出存储过程参数
@@ -459,11 +453,11 @@ class Frame extends Controller
         // 读出钻取模块参数
         $sql = sprintf('
             select 钻取模块,页面选项,t1.功能编码,钻取字段,钻取条件,
-                if(t2.二级菜单 is null,"",if(t1.页面提示="",t2.二级菜单,concat(t2.二级菜单,"-",t1.页面提示))) as 显示名称
+                if(t2.二级菜单 is null,"",if(t1.标签副名称="",t2.二级菜单,concat(t2.二级菜单,"-",t1.标签副名称))) as 标签名称
             from def_drill_config as t1
             left join def_function as t2 on t1.功能编码=t2.功能编码
             where 钻取模块="%s"
-            order by 顺序,convert(页面选项 using gbk)', $next_func_id);
+            order by 顺序,convert(页面选项 using gbk)', $drill_module);
 
         $results = $model->select($sql)->getResult();
         foreach ($results as $row)
@@ -477,7 +471,7 @@ class Frame extends Controller
             $arr['功能编码'] = $row->功能编码;
             $arr['钻取字段'] = $row->钻取字段;
             $arr['钻取条件'] = $row->钻取条件;
-            $arr['显示名称'] = $row->显示名称;
+            $arr['标签名称'] = $row->标签名称;
             array_push($drill_arr, $arr);
         }
 
@@ -826,18 +820,8 @@ class Frame extends Controller
         $session_arr[$menu_id.'-sp_name'] = $sp_name;
         $session_arr[$menu_id.'-sp_str'] = $sp_sql;
 
-        if ($next_func_id != '')
-        {
-            $session_arr[$menu_id.'-next_func_id'] = $next_func_id;
-            $session_arr[$menu_id.'-next_func_name'] = $next_func_name;
-            $session_arr[$menu_id.'-next_func_condition'] = $next_func_condition;
-
-            $session_arr[$next_func_id.'-caller_func_id_'.$menu_id] = $menu_id;
-            $session_arr[$next_func_id.'-caller_func_condition_'.$menu_id] = $next_func_condition;
-        }
-
-        $session_arr[$menu_id.'-import_func_id'] = $import_func_id;
-        $session_arr[$menu_id.'-import_func_name'] = $import_func_name;
+        $session_arr[$menu_id.'-import_module'] = $import_module;
+        $session_arr[$menu_id.'-import_tag_name'] = $import_tag_name;
 
         $session_arr[$menu_id.'-after_insert'] = $after_insert;
         $session_arr[$menu_id.'-after_update'] = $after_update;
@@ -853,7 +837,7 @@ class Frame extends Controller
         $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
         $tb_arr['删除授权'] = ($delete_authz=='1') ? true : false ;
         $tb_arr['整表授权'] = ($table_authz=='1') ? true : false ;
-        $tb_arr['导入授权'] = ($import_authz=='1' && $import_func_id!='') ? true : false ;
+        $tb_arr['导入授权'] = ($import_authz=='1' && $import_module!='') ? true : false ;
         $tb_arr['导出授权'] = ($export_authz=='1') ? true : false ;
 
         //返回页面
@@ -886,20 +870,6 @@ class Frame extends Controller
         $send['primary_key'] = $primary_key;
         $send['back_where'] = strtr($where, '"', '');
         $send['back_group'] = $group;
-        $send['next_func_id'] = $next_func_id;
-        $send['next_func_name'] = $next_func_name;
-
-        $send['next_func_condition'] = '';
-        $col_arr = explode(';', $next_func_condition);
-        foreach ($col_arr as $col)
-        {
-            $arr = explode('^', $col);
-            if ($send['next_func_condition'] != '')
-            {
-                $send['next_func_condition'] = $send['next_func_condition'] . ',';
-            }
-            $send['next_func_condition'] = $send['next_func_condition'] . $arr[0];
-        }
 
         $send['drill_json'] = json_encode($drill_arr);
         $send['disp_col_json'] = json_encode($disp_col_arr);
@@ -910,8 +880,8 @@ class Frame extends Controller
         }
         $send['color_json'] = json_encode($color_arr);
 
-        $send['import_func_id'] = $import_func_id;
-        $send['import_func_name'] = $import_func_name;
+        $send['import_module'] = $import_module;
+        $send['import_tag_name'] = $import_tag_name;
         $send['tip_column'] = $tip_column;
         $popup_arr = $this->get_popup($menu_id);
 
@@ -2395,7 +2365,7 @@ class Frame extends Controller
 
         $chart_arr = [];
 
-        if ($chart_code == '')  // 初始
+        if ($chart_code == '')  // 图形初始
         {
             $sql = sprintf('
                 select 图形模块,图形编号,图形名称,图形类型,
@@ -2406,7 +2376,7 @@ class Frame extends Controller
                 order by 图形模块,图形编号,顺序', 
                 $chart_id);
         }
-        else  // 钻取
+        else  // 图形钻取
         {
             $sql = sprintf('
                 select 图形模块,图形编号,图形名称,图形类型,
