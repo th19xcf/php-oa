@@ -1,5 +1,5 @@
 <?php
-/* v10.20.2.1.202411031810, from home */
+/* v10.20.3.1.202411032040, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -2369,7 +2369,7 @@ class Frame extends Controller
         {
             $sql = sprintf('
                 select 图形模块,图形编号,图形名称,图形类型,
-                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
+                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,记录条数,
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
                 where 有效标识="1" and 图形模块="%s" and 顺序>0
@@ -2380,7 +2380,7 @@ class Frame extends Controller
         {
             $sql = sprintf('
                 select 图形模块,图形编号,图形名称,图形类型,
-                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
+                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,记录条数
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
                 where 有效标识="1" and 图形模块="%s" and 图形编号="%s" and 顺序>0
@@ -2483,6 +2483,10 @@ class Frame extends Controller
             if ($row->排序条件 != '')
             {
                 $data_sql = sprintf('%s order by %s', $data_sql, $row->排序条件);
+            }
+            if ($row->记录条数 > 0)
+            {
+                $data_sql = sprintf('%s limit %d', $data_sql, $row->记录条数);
             }
 
             $chart_data = $model->select($data_sql)->getResult();
