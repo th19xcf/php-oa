@@ -1,4 +1,4 @@
-<!-- v7.18.2.1.202411011635, from office -->
+<!-- v7.18.3.1.202411032215, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -614,7 +614,6 @@
 
         // 当前menu
         var menu_value = JSON.parse('<?php echo $menu_json; ?>');
-        console.log(menu_value);
 
         // 弹窗选择
         var popup_grid_options = {};
