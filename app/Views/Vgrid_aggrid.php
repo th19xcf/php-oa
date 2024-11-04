@@ -1,4 +1,4 @@
-<!-- v7.18.3.1.202411032215, from home -->
+<!-- v7.19.1.1.202411041715, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -299,9 +299,11 @@
         var chart_tb = new dhx.Toolbar('chart_tb', {css:'toobar-class'});
         var chart_now = '初始图形';
         chart_tb.data.add({id:'返回', type:'button', value:'返回'});
+        chart_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         chart_tb.data.add({id:'初始图形', type:'button', value:'初始图形'});
         chart_tb.data.add({id:'个性图形', type:'button', value:'个性图形'});
         chart_tb.data.add({id:'钻取图形', type:'button', value:'钻取图形'});
+        chart_tb.data.add({type:'spacer'});
         if (tb_obj['SQL'] == true)
         {
             chart_tb.data.add({id:'SQL', type:'button', value:'SQL'});
@@ -1214,6 +1216,9 @@
                 case '返回':
                     div_block('databox');
                     $$('footbox').innerHTML = foot_data;
+                    break;
+                case '刷新':
+                    window.location.reload();
                     break;
                 case '初始图形':
                     chart_now = '初始图形';
