@@ -1,4 +1,4 @@
-<!-- v7.19.1.1.202411041715, from office -->
+<!-- v7.19.2.1.202411052300, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1648,7 +1648,6 @@
             // 获得要提交的数据
             if (update_flag == '多条修改')  // 多条
             {
-                update_grid_api.stopEditing();
                 update_grid_api.forEachNode((rowNode, index) => 
                 {
                     if (rowNode.data['取值'] != '')
@@ -1692,9 +1691,9 @@
             }
 
             // 数据不可为空校验
-            for (var ii in send_arr)
+            for (let ii in send_arr)
             {
-                for (var jj in columns_obj)
+                for (let jj in columns_obj)
                 {
                     if (columns_obj[jj].列名 != send_arr[ii]['col_name']) continue;
 
@@ -1711,6 +1710,10 @@
                 dhx.ajax.post('<?php base_url(); ?>/frame/add_row/<?php echo $func_id; ?>', send_arr).then(function (data)
                 {
                     alert(data);
+                    if (str.indexOf('成功') != -1)
+                    {
+                        window.location.reload();
+                    }
                 }).catch(function (err)
                 {
                     alert('新增记录错误, ' + ' ' + err.statusText);
@@ -1792,7 +1795,10 @@
                 dhx.ajax.post(url, send_arr).then(function (data)
                 {
                     alert(data);
-                    window.location.reload();
+                    if (str.indexOf('成功') != -1)
+                    {
+                        window.location.reload();
+                    }
                 }).catch(function (err)
                 {
                     alert('status' + " " + err.statusText);

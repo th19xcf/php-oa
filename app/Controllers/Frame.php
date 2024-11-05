@@ -1,5 +1,5 @@
 <?php
-/* v10.21.1.1.202411051700, from office */
+/* v10.22.1.1.202411052300, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -337,7 +337,9 @@ class Frame extends Controller
         $drill_module = '';  //钻取模块
         $drill_func_id = '';  //钻取功能编码
         $import_module = '';  //导入模块
+        $before_insert = '';  //新增前处理模块
         $after_insert = '';  //新增后处理模块
+        $before_update = '';  //更新后处理模块
         $after_update = '';  //更新后处理模块
         $data_upkeep = '';  //数据整理模块
         $chart_func_id = '';  //图形模块
@@ -354,7 +356,9 @@ class Frame extends Controller
                 查询表名,
                 数据表名,数据模式,
                 查询条件,汇总条件,排序条件,初始条数,
-                新增后处理模块,更新后处理模块,数据整理模块,
+                新增前处理模块,新增后处理模块,
+                更新前处理模块,更新后处理模块,
+                数据整理模块,
                 钻取模块,钻取功能编码,
                 导入模块,导入标签名称,
                 图形模块
@@ -389,7 +393,9 @@ class Frame extends Controller
             $import_module = $row->导入模块;
             $import_tag_name = $row->导入标签名称;
 
+            $before_insert = $row->新增前处理模块;
             $after_insert = $row->新增后处理模块;
+            $before_update = $row->更新后处理模块;
             $after_update = $row->更新后处理模块;
             $data_upkeep = $row->数据整理模块;
 
@@ -823,8 +829,10 @@ class Frame extends Controller
         $session_arr[$menu_id.'-import_module'] = $import_module;
         $session_arr[$menu_id.'-import_tag_name'] = $import_tag_name;
 
+        $session_arr[$menu_id.'-before_insert'] = $before_insert;
         $session_arr[$menu_id.'-after_insert'] = $after_insert;
         $session_arr[$menu_id.'-after_update'] = $after_update;
+        $session_arr[$menu_id.'-before_update'] = $before_update;
         $session_arr[$menu_id.'-data_upkeep'] = $data_upkeep;
 
         $session_arr[$menu_id.'-data_table'] = $data_table;
@@ -1265,10 +1273,33 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $data_model = $session->get($menu_id.'-data_model');
+        $before_update = $session->get($menu_id.'-before_update');
         $after_update = $session->get($menu_id.'-after_update');
         $primary_key = $session->get($menu_id.'-primary_key');
 
         $this->set_popup($menu_id, $row_arr);
+
+        $model = new Mcommon();
+
+        // 执行前处理
+        if ($before_update != '')
+        {
+            foreach ($row_arr as $row)
+            {
+                if (strpos($before_update,$row['fld_name']) === false) continue;
+                $before_update = str_replace(sprintf('$%s',$row['fld_name']), $row['value'], $before_update);
+            }
+
+            $arr = $model->select(sprintf('call %s', $before_update))->getResultArray();
+            foreach ($arr as $item)  // 非空,退出
+            {
+                foreach ($item as $key => $value)
+                {
+                    if ($value != '') exit($value);
+                }
+                break;
+            }
+        }
 
         $num = 0;
         switch ($data_model)
@@ -1289,7 +1320,6 @@ class Frame extends Controller
         // 执行后处理
         if ($after_update != '')
         {
-            $model = new Mcommon();
             $key_str = $this->get_where($row_arr, $primary_key, 'str');
             $model->select(sprintf('call %s("更新","%s")', $after_update, $key_str));
         }
@@ -1691,10 +1721,33 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $data_model = $session->get($menu_id.'-data_model');
+        $before_insert = $session->get($menu_id.'-before_insert');
         $after_insert = $session->get($menu_id.'-after_insert');
         $primary_key = $session->get($menu_id.'-primary_key');
 
         $this->set_popup($menu_id, $row_arr);
+
+        $model = new Mcommon();
+
+        // 执行前处理
+        if ($before_insert != '')
+        {
+            foreach ($row_arr as $row)
+            {
+                if (strpos($before_insert,$row['fld_name']) === false) continue;
+                $before_insert = str_replace(sprintf('$%s',$row['fld_name']), $row['value'], $before_insert);
+            }
+
+            $arr = $model->select(sprintf('call %s', $before_insert))->getResultArray();
+            foreach ($arr as $item)  // 非空,退出
+            {
+                foreach ($item as $key => $value)
+                {
+                    if ($value != '') exit($value);
+                }
+                break;
+            }
+        }
 
         $num = 0;
         switch ($data_model)
@@ -1715,12 +1768,11 @@ class Frame extends Controller
         // 执行后处理
         if ($after_insert != '')
         {
-            $model = new Mcommon();
             $key_str = $this->get_where($row_arr, $primary_key, 'str');
             $model->select(sprintf('call %s("新增","%s")', $after_insert, $key_str));
         }
 
-        exit(sprintf('更新[%d]成功,更新 %d 条记录',$data_model,$num));
+        exit(sprintf('新增[%d]成功,新增 %d 条记录',$data_model,$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -2150,7 +2202,7 @@ class Frame extends Controller
                 $popup_value = '';
                 for ($ii=0; $ii<count($row_arr); $ii++)
                 {
-                    if ($row_arr[$ii]['modified'] == false || $row_arr[$ii]['col_name'] != $column['列名']) continue;
+                    if ($row_arr[$ii]['modified'] == false || $row_arr[$ii]['col_name'] != $column['列名'] || $row_arr[$ii]['value'] == '') continue;
 
                     $popup_arr = explode(',', $row_arr[$ii]['value']);
                     foreach ($popup_arr as $popup)
