@@ -1,5 +1,5 @@
 <?php
-/* v10.20.3.1.202411032040, from home */
+/* v10.21.1.1.202411051700, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -65,19 +65,19 @@ class Frame extends Controller
                         max(导入授权) as 导入授权,
                         max(导出授权) as 导出授权,
                         属地赋权
-                    from def_role
+                    from view_role
                     where 有效标识="1" and 角色编号 in (%s)
                     group by 功能赋权
                 ) as ta
                 left join
                 (
                     select 功能赋权,部门编码赋权
-                    from def_role
+                    from view_role
                     where 有效标识="1" and 角色编号 in (%s)
                         and concat(功能赋权,length(部门编码赋权)) in
                         (
                             select concat(功能赋权,min(length(部门编码赋权)))
-                            from def_role
+                            from view_role
                             where 有效标识="1" and 部门编码赋权!=""
                                 and 角色编号 in (%s)
                             group by 功能赋权
@@ -86,13 +86,13 @@ class Frame extends Controller
                 left join
                 (
                     select 功能赋权,部门全称赋权
-                    from def_role
+                    from view_role
                     where 有效标识="1" and 部门全称赋权!=""
                         and 角色编号 in (%s)
                         and concat(功能赋权,length(部门全称赋权)) in
                         (
                             select concat(功能赋权,min(length(部门全称赋权)))
-                            from def_role
+                            from view_role
                             where 有效标识="1" and 部门全称赋权!=""
                                 and 角色编号 in (%s)
                             group by 功能赋权
