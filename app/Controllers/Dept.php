@@ -1,5 +1,5 @@
 <?php
-/* v1.8.4.1.202410191120, from home */
+/* v1.8.5.1.202411051425, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -361,7 +361,7 @@ class Dept extends Controller
         $model = new Mcommon();
 
         // 新增前判断是否有重复记录
-        $sql = sprintf('select GUID from def_dept wehre 部门编码="%s"',$arg['下级部门编码']);
+        $sql = sprintf('select GUID from def_dept where 部门编码="%s"',$arg['下级部门编码']);
         $query = $model->select($sql);
         $results = $query->getResult();
         if (count($results) > 0)
