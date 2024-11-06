@@ -1,4 +1,4 @@
-<!-- v7.19.3.1.202411061335, from office -->
+<!-- v7.19.4.1.202411061335, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -1710,7 +1710,7 @@
                 dhx.ajax.post('<?php base_url(); ?>/frame/add_row/<?php echo $func_id; ?>', send_arr).then(function (data)
                 {
                     alert(data);
-                    if (str.indexOf('成功') != -1)
+                    if (data.indexOf('成功') != -1)
                     {
                         window.location.reload();
                     }
@@ -1795,7 +1795,7 @@
                 dhx.ajax.post(url, send_arr).then(function (data)
                 {
                     alert(data);
-                    if (str.indexOf('成功') != -1)
+                    if (data.indexOf('成功') != -1)
                     {
                         window.location.reload();
                     }

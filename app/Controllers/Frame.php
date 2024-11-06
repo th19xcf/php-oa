@@ -1,5 +1,5 @@
 <?php
-/* v10.22.2.1.202411061335, from office */
+/* v10.23.1.1.202411061645, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -290,6 +290,7 @@ class Frame extends Controller
         $user_role = $session->get('user_role');
         $user_debug_authz = $session->get('user_debug_authz');
         $user_upkeep_authz = $session->get('user_upkeep_authz');
+        $user_location = $session->get('user_location');
         $user_location_str = $session->get('user_location_str');
         $add_authz = $session->get($menu_id.'-add_authz');
         $modify_authz = $session->get($menu_id.'-modify_authz');
@@ -539,8 +540,8 @@ class Frame extends Controller
         $sql = sprintf('
             select 功能编码,字段模块,部门编码字段,部门全称字段,属地字段,
                 列名,列类型,列宽度,字段名,查询名,
-                赋值类型,对象,对象名称,对象表名,主键,
-                可筛选,可汇总,可新增,可修改,不可为空,可颜色标注,
+                赋值类型,对象,对象名称,对象表名,缺省值,
+                主键,可筛选,可汇总,可新增,可修改,不可为空,可颜色标注,
                 提示条件,提示样式设置,异常条件,异常样式设置,字符转换,
                 列顺序
             from view_function
@@ -661,6 +662,18 @@ class Frame extends Controller
             if ($row->可新增 == 1)
             {
                 $value_arr['是否可修改'] = ($row->可新增=='1') ? '1' : '0';
+                switch ($row->缺省值)
+                {
+                    case '$当日日期':
+                        $value_arr['取值'] = date('Y-m-d');
+                        break;
+                    case '$属地':
+                        $value_arr['取值'] = $user_location;
+                        break;
+                    case '$工号':
+                        $value_arr['取值'] = $user_workid;
+                        break;
+                }
                 array_push($add_value_arr, $value_arr);
             }
 
