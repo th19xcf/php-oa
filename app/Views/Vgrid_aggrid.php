@@ -1,4 +1,4 @@
-<!-- v7.19.2.1.202411052300, from home -->
+<!-- v7.19.3.1.202411061335, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -490,7 +490,7 @@
                     for (var ii in columns_obj)
                     {
                         if (columns_obj[ii].列名 != col_name) continue;
-                        return (columns_obj[ii].可修改 == '1' || columns_obj[ii].可修改 == '2') ? true : false;
+                        return (columns_obj[ii].可新增 == '1' || columns_obj[ii].可修改 == '1' || columns_obj[ii].可修改 == '2') ? true : false;
                     }
 
                     return false;

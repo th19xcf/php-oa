@@ -1,5 +1,5 @@
 <?php
-/* v10.22.1.1.202411052300, from home */
+/* v10.22.2.1.202411061335, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -653,6 +653,17 @@ class Frame extends Controller
             $value_arr['是否必填'] = ($row->不可为空=='1') ? '是' : '否';
             $value_arr['取值'] = '';
 
+            if ($row->可修改 == 1 || $row->可修改 == 2)
+            {
+                $value_arr['是否可修改'] = ($row->可修改=='1' || $row->可修改=='2') ? $row->可修改 : '0';
+                array_push($update_value_arr, $value_arr);
+            }
+            if ($row->可新增 == 1)
+            {
+                $value_arr['是否可修改'] = ($row->可新增=='1') ? '1' : '0';
+                array_push($add_value_arr, $value_arr);
+            }
+
             if (strpos($row->赋值类型,'固定值') !== false && array_key_exists($row->对象,$object_arr) == false)
             {
                 $object_arr[$row->对象] = [];
@@ -686,15 +697,6 @@ class Frame extends Controller
                     array_push($object_arr[$row->对象][$vv->上级对象值]['对象值'], $vv->对象值);
                     array_push($object_arr[$row->对象][$vv->上级对象值]['对象显示值'], $vv->对象显示值);
                 }
-            }
-
-            if ($row->可修改 == 1 || $row->可修改 == 2)
-            {
-                array_push($update_value_arr, $value_arr);
-            }
-            if ($row->可新增 == 1)
-            {
-                array_push($add_value_arr, $value_arr);
             }
         }
 
