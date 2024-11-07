@@ -1,4 +1,4 @@
-<!-- v7.19.4.1.202411061335, from office -->
+<!-- v7.19.5.1.202411071125, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -384,14 +384,8 @@
                 if (disp_col_obj.length == 0) return;
 
                 let columns_arr = params.api.getColumns();
-                let col_arr = [];
-                for (let ii in columns_arr)
-                {
-                    col_arr.push(columns_arr[ii]['colId']);
-                }
-                params.api.setColumnsVisible(col_arr, false);
 
-                col_arr = [];
+                let col_arr = [];
                 for (let ii in columns_arr)
                 {
                     for (let jj in disp_col_obj)
@@ -403,7 +397,18 @@
                         }
                     }
                 }
-                params.api.setColumnsVisible(col_arr, true);
+
+                if ((disp_col_obj.length - col_arr.length) <= 2) // 基本相符
+                {
+                    let arr = [];
+                    for (let ii in columns_arr)
+                    {
+                        arr.push(columns_arr[ii]['colId']);
+                    }
+                    params.api.setColumnsVisible(arr, false);
+
+                    params.api.setColumnsVisible(col_arr, true);
+                }
             },
             onCellEditRequest: (event) => 
             {
