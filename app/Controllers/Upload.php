@@ -1,5 +1,5 @@
 <?php
-/* v3.1.3.1.202411120940, from office */
+/* v3.1.4.1.202411121700, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -188,7 +188,7 @@ class Upload extends Controller
             $col_arr[$row->列名] = [];
             $col_arr[$row->列名]['列名'] = $row->列名;
             $col_arr[$row->列名]['字段名'] = $row->字段名;
-    
+
             #array_push($col_arr, $row->列名);
 
             if ($fld_ceate_str != '') $fld_ceate_str = $fld_ceate_str . ',';
@@ -241,7 +241,7 @@ class Upload extends Controller
         //数据校验
         foreach ($results as $row)
         {
-            if (in_array($row->列名, $col_arr) == false)
+            if (array_key_exists($row->列名, $col_arr) == false)
             {
                 continue;
             }
