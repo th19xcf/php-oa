@@ -1,5 +1,5 @@
 <?php
-/* v3.1.2.1.202411031810, from home */
+/* v3.1.3.1.202411120940, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -103,7 +103,7 @@ class Upload extends Controller
         $user_location_str = $session->get('user_location_str');
         $menu_1 = $session->get($menu_id.'-menu_1');
         $menu_2 = $session->get($menu_id.'-menu_2');
-        $import = $session->get($menu_id.'-import');
+        $import_module = $session->get($menu_id.'-import_module');
 
         $file_name = $file['name'];
         $ext = substr($file_name, strrpos($file_name, '.'));
@@ -161,7 +161,7 @@ class Upload extends Controller
                 校验信息,校验类型,对象,系统变量,顺序
             from def_import_column
             where 导入模块="%s" and 系统变量="" and 顺序>0
-            order by 顺序', $import);
+            order by 顺序', $import_module);
 
         $model = new Mcommon();
         $query = $model->select($sql);
@@ -358,7 +358,7 @@ class Upload extends Controller
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
         $user_location = $session->get('user_location');
-        $import = $session->get($menu_id.'-import');
+        $import_module = $session->get($menu_id.'-import_module');
 
         $model = new Mcommon();
 
@@ -366,7 +366,7 @@ class Upload extends Controller
         $sql = sprintf('
             select 表名,导入条件,表单变量,滤重字段,后处理模块
             from def_import_config
-            where 导入模块="%s"', $import);
+            where 导入模块="%s"', $import_module);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -404,7 +404,7 @@ class Upload extends Controller
         $sql = sprintf('
             select 表名,导入条件,表单变量
             from def_import_config
-            where 导入模块="%s"', $import);
+            where 导入模块="%s"', $import_module);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -424,7 +424,7 @@ class Upload extends Controller
                 replace(系统变量," ","") as 系统变量,
                 replace(表单变量," ","") as 表单变量
             from def_import_column
-            where 导入模块="%s" and 顺序>0', $import);
+            where 导入模块="%s" and 顺序>0', $import_module);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -515,13 +515,13 @@ class Upload extends Controller
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
         $user_location = $session->get('user_location');
-        $import = $session->get($menu_id.'-import');
+        $import_module = $session->get($menu_id.'-import_module');
 
         $model = new Mcommon();
         $sql = sprintf('
             select 表名,导入条件,表单变量,后处理模块
             from def_import_config
-            where 导入模块="%s"', $import);
+            where 导入模块="%s"', $import_module);
 
         $query = $model->select($sql);
         $results = $query->getResult();
