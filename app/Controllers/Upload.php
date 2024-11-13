@@ -1,5 +1,5 @@
 <?php
-/* v3.1.4.1.202411121700, from home */
+/* v3.1.5.1.202411131600, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -157,7 +157,7 @@ class Upload extends Controller
         $tmp_table_name = sprintf('tmp_%s_%s_%s_%s', $menu_id, $menu_1, $menu_2, $user_workid);
 
         $sql = sprintf('
-            select 列名,字段名,字段类型,字段长度,
+            select 列名,字段名,字段类型,字段长度,匹配标识,
                 校验信息,校验类型,对象,系统变量,顺序
             from def_import_column
             where 导入模块="%s" and 系统变量="" and 顺序>0
@@ -178,11 +178,12 @@ class Upload extends Controller
                 {
                     continue;
                 }
-                else
+                if ($row->匹配标识 == '1')
                 {
                     $this->json_data(400, sprintf('导入失败,没有要求的字段"%s"',$row->列名), 0);
                     return;
                 }
+                continue;
             }
 
             $col_arr[$row->列名] = [];

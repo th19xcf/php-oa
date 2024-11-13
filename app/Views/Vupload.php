@@ -1,4 +1,4 @@
-<!-- v1.3.1.1.202310011715, from home -->
+<!-- v1.3.2.1.202411131600, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -176,9 +176,9 @@
             },
             onError: function(err)
             {
-                console.log('err', err.responseText);
+                console.log('err=', err);
                 $('.progress-text').text('失败');
-                alert('onError, 请联系管理员', err);
+                alert('onError, 请联系管理员', err.responseText);
                 window.location.reload();
             },
         });
