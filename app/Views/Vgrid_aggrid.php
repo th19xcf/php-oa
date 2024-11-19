@@ -1,4 +1,4 @@
-<!-- v7.19.5.1.202411071125, from office -->
+<!-- v7.19.6.1.202411192140, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -229,6 +229,10 @@
         // 条件选择
         var cond_object_value = JSON.parse('<?php echo $cond_obj_json; ?>');
         var update_object_value = JSON.parse('<?php echo $update_obj_json; ?>');
+
+        // 调试数据
+        var debug_sql = '<?php echo $SQL; ?>';
+        debug_sql = debug_sql.replace(/~~/g, '"');
 
         // 生成主工具栏
         var data_tb = new dhx.Toolbar('data_tb', {css:'toobar-class'});
@@ -1143,9 +1147,7 @@
                     break;
                 case 'SQL':
                     console.log('ID=[ ', '<?php echo $func_id; ?>', ' ]');
-                    let sql = '<?php echo $SQL; ?>';
-                    sql = sql.replace(/~~/g,'"');
-                    console.log('SQL=[ ', sql, ' ]');
+                    console.log('SQL=[ ', debug_sql, ' ]');
                     break;
                 case '导入':
                     let import_func_id = '<?php echo $func_id; ?>' + '88';
@@ -1564,7 +1566,11 @@
 
             dhx.ajax.post('<?php base_url(); ?>/frame/set_query_condition/<?php echo $func_id; ?>', cond_arr).then(function (data)
             {
-                data_grid_obj = JSON.parse(data);
+                let val = JSON.parse(data);
+                debug_sql = val['SQL'];
+                debug_sql = debug_sql.replace(/~~/g,'"');
+
+                data_grid_obj = val['results'];
                 data_grid_api.setGridOption('rowData', data_grid_obj);
 
                 div_block('databox');

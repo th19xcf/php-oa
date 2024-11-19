@@ -1,5 +1,5 @@
 <?php
-/* v10.23.1.1.202411061645, from office */
+/* v10.23.2.1.202411192140, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1121,6 +1121,7 @@ class Frame extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
+        $user_debug_authz = $session->get('user_debug_authz');
         $query_table = $session->get($menu_id.'-query_table');
         $columns_arr = $session->get($menu_id.'-columns_arr');
         $select_str = $session->get($menu_id.'-select_str');
@@ -1220,7 +1221,15 @@ class Frame extends Controller
         $query = $model->select($sql);
         $results = $query->getResult();
 
-        exit(json_encode($results));
+        //返回页面
+        $send = [];
+        $send['results'] = $results;
+
+        $sql = str_replace('\'','~~',$sql);
+        $sql = str_replace('"','~~',$sql);
+        $send['SQL'] = ($user_debug_authz=='1') ? $sql : '';
+
+        exit(json_encode($send));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -1233,6 +1242,7 @@ class Frame extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
+        $user_debug_authz = $session->get('user_debug_authz');
         $sp_name = $session->get($menu_id.'-sp_name');
         $query_table = $session->get($menu_id.'-query_table');
 
@@ -1274,7 +1284,15 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $session->set($session_arr);
 
-        exit(json_encode($results));
+        //返回页面
+        $send = [];
+        $send['results'] = $results;
+
+        $sp_sql = str_replace('\'','~~',$sp_sql);
+        $sp_sql = str_replace('"','~~',$sp_sql);
+        $send['SQL'] = ($user_debug_authz=='1') ? $sp_sql : '';
+
+        exit(json_encode($send));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
