@@ -1,5 +1,5 @@
 <?php
-/* v3.1.5.1.202411131600, from office */
+/* v3.1.6.1.202411141325, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -280,7 +280,7 @@ class Upload extends Controller
                     {
                         array_push($err_arr, $err['字段值']);
                     }
-                    $this->json_data(400, sprintf('导入失败,列"%s"有不符合固定值的记录 {%s}', $row->列名, implode(',', $err_arr)), 0);
+                    $this->json_data(400, sprintf('导入失败,列"%s"有不符合固定值的记录 {"%s"}', $row->列名, implode(',', $err_arr)), 0);
                     return;
                 }
             }
@@ -301,7 +301,7 @@ class Upload extends Controller
                     {
                         array_push($err_arr, $err['字段值']);
                     }
-                    $this->json_data(400, sprintf('导入失败,列"%s"有不符合条件的记录 {%s}', $row->列名, implode(',', $err_arr)), 0);
+                    $this->json_data(400, sprintf('导入失败,列"%s"有不符合条件的记录 {"%s"}', $row->列名, implode(',', $err_arr)), 0);
                     return;
                 }
             }
@@ -324,13 +324,13 @@ class Upload extends Controller
                         //检测是否为日期
                         if(checkdate($parts[2],$parts[3],$parts[1]) == false)
                         {
-                            $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录{%s},必须为YYYY-mm-dd (如2023-01-02) 格式', $row->列名,$date->字段值), 0);
+                            $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录{"%s"},必须为YYYY-mm-dd (如2023-01-02) 格式', $row->列名,$date->字段值), 0);
                             return;
                         }
                     }
                     else
                     {
-                        $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录{%s},必须为YYYY-mm-dd (如2023-01-02) 格式', $row->列名,$date->字段值), 0);
+                        $this->json_data(400, sprintf('导入失败,列"%s"有不符合的记录{"%s"},必须为YYYY-mm-dd (如2023-01-02) 格式', $row->列名,$date->字段值), 0);
                         return;
                     }
                 }
@@ -396,7 +396,7 @@ class Upload extends Controller
                     }
                     array_push($err_arr, $str);
                 }
-                $this->json_data(400, sprintf('导入失败,滤重列"%s"有重复记录 {%s}', $results[0]->滤重字段, implode(',', $err_arr)), 0);
+                $this->json_data(400, sprintf('导入失败,滤重列"%s"有重复记录 {"%s"}', $results[0]->滤重字段, implode(',', $err_arr)), 0);
                 return;
             }
         }
@@ -559,7 +559,7 @@ class Upload extends Controller
                 }
                 array_push($err_arr, $str);
             }
-            $this->json_data(400, sprintf('导入失败,主键字段`%s`有新记录 {%s},无法更新', $primary_key, implode(',', $err_arr)), 0);
+            $this->json_data(400, sprintf('导入失败,主键字段`%s`有新记录 {"%s"},无法更新', $primary_key, implode(',', $err_arr)), 0);
             return;
         }
 
