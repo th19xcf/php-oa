@@ -1,5 +1,5 @@
 <?php
-/* v10.23.2.1.202411192140, from home */
+/* v10.24.1.1.202411212315, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -33,13 +33,17 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $user_role_str = $session->get('user_role_str');
 
+        $session_arr = [];
+
+        $model = new Mcommon();
+
+        // 读出角色对应的功能赋权
         $sql = sprintf(
             'select 
                 t1.角色编号,t1.角色名称,
                 t1.功能赋权,
-                t1.部门编码赋权,t1.部门全称赋权,
-                t1.属地赋权,
-                t1.新增授权,t1.修改授权,t1.删除授权,t1.整表授权,t1.导入授权,t1.导出授权,
+                t1.新增授权,t1.修改授权,t1.删除授权,t1.整表授权,
+                t1.导入授权,t1.导出授权,
                 ifnull(t2.功能编码,"") as 功能编码,
                 ifnull(t2.一级菜单,"") as 一级菜单,
                 ifnull(t2.二级菜单,"") as 二级菜单,
@@ -51,53 +55,16 @@ class Frame extends Controller
                 ifnull(t3.属地字段,"") as 属地字段
             from 
             (
-                select 
-                    ta.*,
-                    ifnull(tb.部门编码赋权,"") as 部门编码赋权,
-                    ifnull(tc.部门全称赋权,"") as 部门全称赋权
-                from
-                (
-                    select 角色编号,角色名称,功能赋权,
-                        max(新增授权) as 新增授权,
-                        max(修改授权) as 修改授权,
-                        max(删除授权) as 删除授权,
-                        max(整表授权) as 整表授权,
-                        max(导入授权) as 导入授权,
-                        max(导出授权) as 导出授权,
-                        属地赋权
-                    from view_role
-                    where 有效标识="1" and 角色编号 in (%s)
-                    group by 功能赋权
-                ) as ta
-                left join
-                (
-                    select 功能赋权,部门编码赋权
-                    from view_role
-                    where 有效标识="1" and 角色编号 in (%s)
-                        and concat(功能赋权,length(部门编码赋权)) in
-                        (
-                            select concat(功能赋权,min(length(部门编码赋权)))
-                            from view_role
-                            where 有效标识="1" and 部门编码赋权!=""
-                                and 角色编号 in (%s)
-                            group by 功能赋权
-                        )
-                ) as tb on ta.功能赋权=tb.功能赋权
-                left join
-                (
-                    select 功能赋权,部门全称赋权
-                    from view_role
-                    where 有效标识="1" and 部门全称赋权!=""
-                        and 角色编号 in (%s)
-                        and concat(功能赋权,length(部门全称赋权)) in
-                        (
-                            select concat(功能赋权,min(length(部门全称赋权)))
-                            from view_role
-                            where 有效标识="1" and 部门全称赋权!=""
-                                and 角色编号 in (%s)
-                            group by 功能赋权
-                        )
-                ) as tc on ta.功能赋权=tc.功能赋权
+                select 角色编号,角色名称,功能赋权,
+                    max(新增授权) as 新增授权,
+                    max(修改授权) as 修改授权,
+                    max(删除授权) as 删除授权,
+                    max(整表授权) as 整表授权,
+                    max(导入授权) as 导入授权,
+                    max(导出授权) as 导出授权
+                from view_role
+                where 有效标识="1" and 角色编号 in (%s)
+                group by 角色编号,功能赋权
             ) as t1
             left join
             (
@@ -113,129 +80,19 @@ class Frame extends Controller
                 from def_query_config
             ) as t3 on if(t2.功能类型="查询",t2.模块名称,"")=t3.查询模块
             group by t1.功能赋权
-            order by t2.菜单顺序', 
-            $user_role_str, $user_role_str,$user_role_str, $user_role_str, $user_role_str);
+            order by t2.菜单顺序', $user_role_str);
 
-        $model = new Mcommon();
         $query = $model->select($sql);
         $results = $query->getResult();
 
         $json = [];
-
         $function_authz_arr = [];  // 功能访问权限
+
         foreach ($results as $row)
         {
             // 功能访问权限
             $function_authz_arr[$row->功能赋权] = $row->功能赋权;
 
-            // 部门编码访问权限
-            str_replace(' ', '', $row->部门编码赋权);
-            str_replace('，', ',', $row->部门编码赋权);
-            str_replace(' ', '', $row->部门编码字段);
-
-            $dept_id_cond = '';
-            $dept_arr = explode(',', $row->部门编码赋权);
-            foreach ($dept_arr as $dept)
-            {
-                if ($dept == '' || $row->部门编码字段 == '')
-                {
-                    break;
-                }
-                if ($dept_id_cond == '')
-                {
-                    $dept_id_cond = sprintf('left(%s,length("%s"))="%s"', $row->部门编码字段, $dept, $dept);
-                }
-                else
-                {
-                    $dept_id_cond = sprintf('%s or left(%s,length("%s"))="%s"', $dept_id_cond, $row->部门编码字段, $dept, $dept);
-                }
-            }
-
-            // or条件要加括号
-            if ($dept_id_cond != '')
-            {
-                $dept_id_cond = sprintf('(%s)', $dept_id_cond);
-            }
-
-            // 部门全称访问权限
-            str_replace(' ', '', $row->部门全称赋权);
-            str_replace('，', ',', $row->部门全称赋权);
-            str_replace(' ', '', $row->部门全称字段);
-
-            $dept_name_cond = '';
-            $dept_arr = explode(',', $row->部门全称赋权);
-            foreach ($dept_arr as $dept)
-            {
-                if ($dept == '' || $row->部门全称字段 == '')
-                {
-                    break;
-                }
-                if ($dept_name_cond == '')
-                {
-                    $dept_name_cond = sprintf('instr(%s,"%s")', $row->部门全称字段, $dept);
-                }
-                else
-                {
-                    $dept_name_cond = sprintf('%s or instr(%s,"%s")', $dept_name_cond, $row->部门全称字段, $dept);
-                }
-            }
-
-            // or条件要加括号
-            if ($dept_name_cond != '')
-            {
-                $dept_name_cond = sprintf('(%s)', $dept_name_cond);
-            }
-
-            // 部门编码和部门全称条件合并
-            $dept_authz_cond = '';
-            if ($dept_id_cond != '' && $dept_name_cond != '')
-            {
-                $dept_authz_cond = sprintf('(%s or %s)', $dept_id_cond, $dept_name_cond);
-            }
-            else if ($dept_id_cond != '')
-            {
-                $dept_authz_cond = $dept_id_cond;
-            }
-            else if ($dept_name_cond != '')
-            {
-                $dept_authz_cond = $dept_name_cond;
-            }
-
-            // 属地访问权限
-            str_replace(' ', '', $row->属地赋权);
-            str_replace('，', ',', $row->属地赋权);
-            str_replace(' ', '', $row->属地字段);
-
-            $location_authz_cond = '';
-            $location_authz_arr = explode(',', $row->属地赋权);
-            foreach ($location_authz_arr as $location)
-            {
-                if ($location == '' || $row->属地字段 == '')
-                {
-                    break;
-                }
-                if ($location_authz_cond == '')
-                {
-                    $location_authz_cond = sprintf('instr(%s,"%s")', $row->属地字段, $location);
-                }
-                else
-                {
-                    $location_authz_cond = sprintf('%s or instr(%s,"%s")', $location_authz_cond, $row->属地字段, $location);
-                }
-            }
-
-            // or条件要加括号
-            if ($location_authz_cond != '')
-            {
-                $location_authz_cond = sprintf('(%s)', $location_authz_cond);
-            }
-
-            // 存入session
-            $session_arr = [];
-            $session_arr[$row->功能赋权.'-dept_authz_cond'] = $dept_authz_cond;
-            $session_arr[$row->功能赋权.'-location_authz'] = $row->属地赋权;
-            $session_arr[$row->功能赋权.'-location_fld'] = $row->属地字段;
-            $session_arr[$row->功能赋权.'-location_authz_cond'] = $location_authz_cond;
             $session_arr[$row->功能赋权.'-menu_1'] = $row->一级菜单;
             $session_arr[$row->功能赋权.'-menu_2'] = $row->二级菜单;
             $session_arr[$row->功能赋权.'-add_authz'] = $row->新增授权;
@@ -244,8 +101,14 @@ class Frame extends Controller
             $session_arr[$row->功能赋权.'-table_authz'] = $row->整表授权;
             $session_arr[$row->功能赋权.'-import_authz'] = $row->导入授权;
             $session_arr[$row->功能赋权.'-export_authz'] = $row->导出授权;
-            $session = \Config\Services::session();
-            $session->set($session_arr);
+            $session_arr[$row->功能赋权.'-dept_id_fld'] = $row->部门编码字段;
+            $session_arr[$row->功能赋权.'-dept_name_fld'] = $row->部门全称字段;
+            $session_arr[$row->功能赋权.'-location_fld'] = $row->属地字段;
+
+            $session_arr[$row->功能赋权.'-dept_id_authz'] = '';
+            $session_arr[$row->功能赋权.'-dept_name_authz'] = '';
+            $session_arr[$row->功能赋权.'-dept_authz'] = '';
+            $session_arr[$row->功能赋权.'-location_authz'] = '';
 
             // 显示标志不等于1,不生成菜单
             if ($row->菜单显示 != 1)
@@ -265,8 +128,145 @@ class Frame extends Controller
             $json[$row->一级菜单]['children'][] = $children;
         }
 
-        // 功能赋权存入session
-        $session_arr = [];
+        // 读出角色对应的部门编码赋权
+        $sql = sprintf(
+            'select 
+                t1.GUID,角色编号,功能赋权,编码赋权,
+                substring_index(substring_index(编码赋权,",",t2.GUID+1),",",-1) as 部门编码赋权
+            from
+            (
+                select GUID,角色编号,功能赋权,replace(replace(部门编码赋权,"，",",")," ","") as 编码赋权
+                from view_role
+                where 有效标识="1" and 部门编码赋权!="" and 角色编号 in (%s)
+            ) as t1
+            inner join def_GUID as t2 on t2.GUID<(length(编码赋权)-length(replace(编码赋权,",",""))+1)
+            group by 角色编号,功能赋权,部门编码赋权
+            order by 角色编号,功能赋权,部门编码赋权', $user_role_str);
+
+        $query = $model->select($sql);
+        $results = $query->getResult();
+
+        $func_id = '';
+        foreach ($results as $row)
+        {
+            if ($func_id != $row->功能赋权)
+            {
+                $func_id = $row->功能赋权;
+                $session_arr[$row->功能赋权.'-dept_id_authz']= '';
+            }
+
+            if ($session_arr[$row->功能赋权.'-dept_id_fld'] == '')
+            {
+                continue;
+            }
+
+            if ($session_arr[$row->功能赋权.'-dept_id_authz'] == '')
+            {
+                $session_arr[$row->功能赋权.'-dept_id_authz'] = sprintf('left(%s,length("%s"))="%s"', $session_arr[$row->功能赋权.'-dept_id_fld'], $row->部门编码赋权, $row->部门编码赋权);
+            }
+            else
+            {
+                $session_arr[$row->功能赋权.'-dept_id_authz'] = sprintf('%s or left(%s,length("%s"))="%s"', $session_arr[$row->功能赋权.'-dept_id_authz'], $session_arr[$row->功能赋权.'-dept_id_fld'], $row->部门编码赋权, $row->部门编码赋权);
+            }
+        }
+
+        // 读出角色对应的部门全称赋权
+        $sql = sprintf(
+            'select 
+                t1.GUID,角色编号,功能赋权,全称赋权,
+                substring_index(substring_index(全称赋权,",",t2.GUID+1),",",-1) as 部门全称赋权
+            from
+            (
+                select GUID,角色编号,功能赋权,replace(replace(部门全称赋权,"，",",")," ","") as 全称赋权
+                FROM view_role
+                where 有效标识="1" and 部门全称赋权!="" and 角色编号 in (%s)
+            ) as t1
+            inner join def_GUID as t2 on t2.GUID<(length(全称赋权)-length(replace(全称赋权,",",""))+1)
+            group by 角色编号,功能赋权,部门全称赋权
+            order by 角色编号,功能赋权,部门全称赋权', $user_role_str);
+
+        $query = $model->select($sql);
+        $results = $query->getResult();
+
+        foreach ($results as $row)
+        {
+            if ($session_arr[$row->功能赋权.'-dept_name_fld'] == '')
+            {
+                continue;
+            }
+
+            if ($session_arr[$row->功能赋权.'-dept_name_authz'] == '')
+            {
+                $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('instr(%s,"%s")', $session_arr[$row->功能赋权.'-dept_name_fld'], $row->部门全称赋权);
+            }
+            else
+            {
+                $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('%s or instr(%s,"%s")', $session_arr[$row->功能赋权.'-dept_name_authz'], $session_arr[$row->功能赋权.'-dept_name_fld'], $row->部门全称赋权);
+            }
+        }
+
+        // 读出角色对应的属地赋权
+        $sql = sprintf(
+            'select 
+                t1.GUID,角色编号,功能赋权,属地,
+                substring_index(substring_index(属地,",",t2.GUID+1),",",-1) as 属地赋权
+            from
+            (
+                select GUID,角色编号,功能赋权,replace(replace(属地赋权,"，",",")," ","") as 属地
+                from view_role
+                where 有效标识="1" and 属地赋权!="" and 角色编号 in (%s)
+            ) as t1
+            inner join def_GUID as t2 on t2.GUID<(length(属地)-length(replace(属地,",",""))+1)
+            group by 角色编号,功能赋权,属地赋权
+            order by 角色编号,功能赋权,属地赋权', $user_role_str);
+
+        $query = $model->select($sql);
+        $results = $query->getResult();
+
+        foreach ($results as $row)
+        {
+            if ($session_arr[$row->功能赋权.'-location_fld'] == '')
+            {
+                continue;
+            }
+
+            if ($session_arr[$row->功能赋权.'-location_authz'] == '')
+            {
+                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('instr(%s,"%s")', $session_arr[$row->功能赋权.'-location_fld'], $row->属地赋权);
+            }
+            else
+            {
+                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('%s or instr(%s,"%s")', $session_arr[$row->功能赋权.'-location_authz'], $session_arr[$row->功能赋权.'-location_fld'], $row->属地赋权);
+            }
+        }
+
+        // 条件合并
+        foreach ($function_authz_arr as $func_id)
+        {
+            // 部门编码和部门全称条件合并
+            if ($session_arr[$func_id.'-dept_id_authz'] != '' && $session_arr[$func_id.'-dept_name_authz'] != '')
+            {
+                $session_arr[$func_id.'-dept_authz'] = sprintf('(%s or %s)', $session_arr[$func_id.'-dept_id_authz'], $session_arr[$func_id.'-dept_name_authz']);
+            }
+            else if ($session_arr[$func_id.'-dept_id_authz'] != '')
+            {
+                $session_arr[$func_id.'-dept_authz'] = sprintf('(%s)', $session_arr[$func_id.'-dept_id_authz']);
+            }
+            else if ($session_arr[$func_id.'-dept_name_authz'] != '')
+            {
+                $session_arr[$func_id.'-dept_authz'] = sprintf('(%s)', $session_arr[$func_id.'-dept_name_authz']);
+            }
+
+            if ($session_arr[$func_id.'-location_authz'] != '')
+            {
+                $session_arr[$func_id.'-location_authz'] = sprintf('(%s)', $session_arr[$func_id.'-location_authz']);
+            }
+
+            $session_arr[$func_id.'-dept_authz_cond'] = $session_arr[$func_id.'-dept_authz'];
+            $session_arr[$func_id.'-location_authz_cond'] = $session_arr[$func_id.'-location_authz'];
+        }
+
+        // 存入session
         $session_arr['function_authz'] = $function_authz_arr;
         $session = \Config\Services::session();
         $session->set($session_arr);
@@ -352,20 +352,28 @@ class Frame extends Controller
 
         $sql = sprintf('
             select 
-                功能编码,
-                模块名称,模块类型,
-                查询表名,
-                数据表名,数据模式,
+                查询模块,模块类型,字段模块,
+                库名,查询表名,数据表名,数据模式,
+                主键字段,部门编码字段,部门全称字段,工号字段,属地字段,
                 查询条件,汇总条件,排序条件,初始条数,
                 新增前处理模块,新增后处理模块,
                 更新前处理模块,更新后处理模块,
                 数据整理模块,
-                钻取模块,钻取功能编码,
-                导入模块,导入标签名称,
+                钻取模块,
+                t1.导入模块,t2.标签名称,
                 图形模块
-            from view_function
-            where 功能编码="%s"
-            group by 功能编码', $menu_id);
+            from def_query_config as t1
+            left join
+            (
+                select 导入模块,标签名称
+                from def_import_config
+            ) as t2 on t1.导入模块=t2.导入模块
+            where 查询模块 in 
+                (
+                    select 模块名称 
+                    from def_function
+                    where 有效标识="1" and 功能编码="%s"
+                )', $menu_id);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -389,10 +397,9 @@ class Frame extends Controller
             $query_order = $row->排序条件;
 
             $drill_module = $row->钻取模块;
-            $drill_func_id = $row->钻取功能编码;
 
             $import_module = $row->导入模块;
-            $import_tag_name = $row->导入标签名称;
+            $import_tag_name = $row->标签名称;
 
             $before_insert = $row->新增前处理模块;
             $after_insert = $row->新增后处理模块;
@@ -408,11 +415,15 @@ class Frame extends Controller
         }
 
         $tb_arr = [];  // 控制菜单栏
+        $tb_arr['钻取授权'] = false;
+        $tb_arr['导入授权'] = false;
+        $tb_arr['数据整理'] = false;
+        $tb_arr['SQL'] = false;
 
-        $tb_arr['钻取授权'] = ($drill_module!='' && array_key_exists($drill_func_id,$function_authz) == true) ? true : false;
-        $tb_arr['导入授权'] = ($import_module!='') ? true : false;
-        $tb_arr['数据整理'] = ($user_upkeep_authz=='1' && $data_upkeep!='') ? true : false;
-        $tb_arr['SQL'] = ($user_debug_authz=='1') ? true : false;
+        $tb_arr['钻取授权'] = ($tb_arr['钻取授权']==true or $drill_module!='') ? true : false;
+        $tb_arr['导入授权'] = ($tb_arr['导入授权']==true or $import_module!='') ? true : false;
+        $tb_arr['数据整理'] = ($tb_arr['数据整理']==true or ($user_upkeep_authz=='1' && $data_upkeep!='')) ? true : false;
+        $tb_arr['SQL'] = ($tb_arr['SQL']==true or $user_debug_authz=='1') ? true : false;
 
         // 读出存储过程参数
         $sp_param_str = '';
@@ -459,7 +470,8 @@ class Frame extends Controller
 
         // 读出钻取模块参数
         $sql = sprintf('
-            select 钻取模块,页面选项,t1.功能编码,钻取字段,钻取条件,
+            select 
+                钻取模块,页面选项,t1.功能编码,钻取字段,钻取条件,
                 if(t2.二级菜单 is null,"",if(t1.标签副名称="",t2.二级菜单,concat(t2.二级菜单,"-",t1.标签副名称))) as 标签名称
             from def_drill_config as t1
             left join def_function as t2 on t1.功能编码=t2.功能编码
@@ -469,6 +481,11 @@ class Frame extends Controller
         $results = $model->select($sql)->getResult();
         foreach ($results as $row)
         {
+            if (array_key_exists($row->功能编码,$function_authz) == false)
+            {
+                continue;
+            }
+
             str_replace(' ', '', $row->钻取字段);
             str_replace('；', ';', $row->钻取字段);
 
@@ -479,6 +496,7 @@ class Frame extends Controller
             $arr['钻取字段'] = $row->钻取字段;
             $arr['钻取条件'] = $row->钻取条件;
             $arr['标签名称'] = $row->标签名称;
+
             array_push($drill_arr, $arr);
         }
 
@@ -2439,7 +2457,6 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $user_debug_authz = $session->get('user_debug_authz');
-        $user_location_str = $session->get('user_location_str');
         $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
         $dept_authz_cond = $session->get($menu_id.'-dept_authz_cond');
         $chart_drill_cond_str = $session->get(sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_id));

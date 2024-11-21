@@ -1,6 +1,6 @@
 <?php
 
-/* v3.2.1.1.202410190020, from home */
+/* v3.2.2.1.202411202150, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -111,7 +111,7 @@ class Login extends Controller
             $session = \Config\Services::session();
             $session->set($session_arr);
 
-            $model->sql_log('登录成功','',sprintf('角色=%s',$row->角色));
+            $model->sql_log('登录成功','',sprintf('角色=`%s`',$row->角色));
 
             exit('1');
         }
