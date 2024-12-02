@@ -1,5 +1,5 @@
 <?php
-/* v10.24.1.1.202411212315, from home */
+/* v10.24.2.1.202412022210, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -2482,7 +2482,7 @@ class Frame extends Controller
         {
             $sql = sprintf('
                 select 图形模块,图形编号,图形名称,图形类型,
-                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,记录条数
+                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,记录条数,
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
                 where 有效标识="1" and 图形模块="%s" and 图形编号="%s" and 顺序>0
@@ -2504,7 +2504,7 @@ class Frame extends Controller
                 $where = ($where == '') ? $dept_authz_cond : $where . ' and ' . $dept_authz_cond;
             }
             // 条件语句加上属地条件
-            if($row->属地字段 != '')
+            if($row->属地字段 != '' && $location_authz_cond != '')
             {
                 $where = ($where == '') ? $location_authz_cond : $where . ' and ' . $location_authz_cond;
             }

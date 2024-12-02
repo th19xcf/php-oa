@@ -1,6 +1,6 @@
 <?php
 
-/* v3.3.1.1.202412021515, from office */
+/* v3.3.2.1.202412022005, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -50,7 +50,7 @@ class Login extends Controller
             $sql = sprintf('
                 select 员工编号,姓名,身份证号,工号,角色,调试赋权,维护赋权,员工属地,部门编码
                 from def_user
-                where 有效标识="1" and 工号="%s" and 密码="%s")',
+                where 有效标识="1" and 工号="%s" and 密码="%s"',
                 $user_workid, $pswd);
         }
 
