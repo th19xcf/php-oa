@@ -1,5 +1,5 @@
 <?php
-/* v10.24.2.1.202412022210, from home */
+/* v10.25.1.1.202412031400, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -2363,6 +2363,7 @@ class Frame extends Controller
         // 生成前端图形数据
         $arr = explode('^', $drill_arr[2]['SID']);
 
+        $chart_arr = [];
         if ($chart_drill_arr == [])
         {
             $chart_arr = $this->get_chart_data($menu_id, $arr[0], $arr[1], []);
@@ -2408,41 +2409,43 @@ class Frame extends Controller
             having t2.钻取字段 is not null', 
             $arr[0], $arr[1], $arr[0], $arr[1], $drill_arr[1]['钻取选项']);
 
-        $arr = $model->select($sql)->getResultArray()[0];
-
-        $drill_where = array('条件'=>'', '副标题'=>'');
-        if ($arr['钻取条件'] != '')
+        $results = $model->select($sql)->getResult();
+        foreach ($results as $row)
         {
-            $col_arr = explode(';', $arr['钻取字段']);
-            $drill_where['条件'] = str_replace('`', '"', $arr['钻取条件']);
-
-            foreach ($drill_arr[2] as $key => $value)
+            $drill_where = array('条件'=>'', '副标题'=>'');
+            if ($row->钻取条件 != '')
             {
-                $drill_where['条件'] = str_replace(sprintf('$%s',$key), $value, $drill_where['条件']);
-
-                if(strpos($arr['钻取字段'], $key) !== false)
+                $col_arr = explode(';', $row->钻取字段);
+                $drill_where['条件'] = str_replace('`', '"', $row->钻取条件);
+    
+                foreach ($drill_arr[2] as $key => $value)
                 {
-                    $drill_where['副标题'] = ($drill_where['副标题']=='') ? $value : $drill_where['副标题'].','.$value;
+                    $drill_where['条件'] = str_replace(sprintf('$%s',$key), $value, $drill_where['条件']);
+    
+                    if(strpos($row->钻取字段, $key) !== false)
+                    {
+                        $drill_where['副标题'] = ($drill_where['副标题']=='') ? $value : $drill_where['副标题'].','.$value;
+                    }
                 }
             }
-        }
-
-        // 生成钻取图形数据
-        $arr = $this->get_chart_data($menu_id, $arr['图形模块'], $arr['图形编号'], $drill_where);
-        foreach ($arr as $key => $value)
-        {
-            if (array_key_exists($key, $chart_arr) == false)
+    
+            // 生成钻取图形数据
+            $arr = $this->get_chart_data($menu_id, $row->图形模块, $row->图形编号, $drill_where);
+            foreach ($arr as $key => $value)
             {
-                $chart_arr[$key] = [];
+                if (array_key_exists($key, $chart_arr) == false)
+                {
+                    $chart_arr[$key] = [];
+                }
+                $chart_arr[$key][$row->图形编号] = $value[$row->图形编号];
             }
-            $chart_arr[$key] = $value;
-        }
 
-        // 存入session
-        $session_arr = [];
-        $session_arr[$menu_id.'-chart_drill_arr'] = $chart_arr;
-        $session = \Config\Services::session();
-        $session->set($session_arr);
+            // 存入session
+            $session_arr = [];
+            $session_arr[$menu_id.'-chart_drill_arr'] = $chart_arr;
+            $session = \Config\Services::session();
+            $session->set($session_arr);
+        }
 
         exit(json_encode($chart_arr));
     }
