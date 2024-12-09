@@ -1,4 +1,4 @@
-<!-- v7.19.6.1.202411192140, from home -->
+<!-- v7.19.7.1.202412072045, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -300,13 +300,13 @@
         cond_tb.data.add({id:'提交', type:'button', value:'提交'});
 
         // 生成图形用工具栏
-        var chart_tb = new dhx.Toolbar('chart_tb', {css:'toobar-class'});
         var chart_now = '初始图形';
+        var chart_tb = new dhx.Toolbar('chart_tb', {css:'toobar-class'});
         chart_tb.data.add({id:'返回', type:'button', value:'返回'});
         chart_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         chart_tb.data.add({id:'初始图形', type:'button', value:'初始图形'});
-        chart_tb.data.add({id:'个性图形', type:'button', value:'个性图形'});
         chart_tb.data.add({id:'钻取图形', type:'button', value:'钻取图形'});
+        chart_tb.data.add({id:'个性图形', type:'button', value:'个性图形'});
         chart_tb.data.add({type:'spacer'});
         if (tb_obj['SQL'] == true)
         {
@@ -2677,7 +2677,7 @@
                 let radio = {};
                 radio['type'] = 'radioButton';
                 radio['text'] = drill_arr[ii]['钻取选项'];
-                radio['value'] = drill_arr[ii]['钻取选项'];
+                radio['value'] = drill_arr[ii]['钻取选项']+'^'+drill_arr[ii]['图形模块']+'^'+drill_arr[ii]['模块名称'];
                 radio['id'] = drill_arr[ii]['钻取选项'];
                 radio_arr.push(radio);
             }
@@ -2721,7 +2721,7 @@
 
                 if (ajax == false)
                 {
-                    alert('钻取字段都为空,无法钻取');
+                    alert('钻取字段为空,无法钻取');
                     return;
                 }
 

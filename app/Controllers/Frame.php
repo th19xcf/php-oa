@@ -1,5 +1,5 @@
 <?php
-/* v10.25.1.1.202412031400, from office */
+/* v10.26.1.1.202412072045, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -837,14 +837,14 @@ class Frame extends Controller
         // chart session初始化
         $session_arr = [];
         $session_arr[$menu_id.'-chart_drill_arr'] = [];
-        $session_arr[$menu_id.'-chart_drill_cond_str'] = '';
-        $session_arr[$menu_id.'-chart_drill_title_str'] = '';
+        $session_arr[sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_func_id)] = '';
+        $session_arr[sprintf('%s^%s-chart_drill_title_str',$menu_id,$chart_func_id)] = '';
 
         $session = \Config\Services::session();
         $session->set($session_arr);
 
         // 生成前端图形数据
-        $chart_arr = $this->get_chart_data($menu_id, $chart_func_id, '', []);
+        $chart_arr = $this->get_chart_data($menu_id, $chart_func_id, '', '');
 
         // 存入session
         $session_arr = [];
@@ -2354,11 +2354,42 @@ class Frame extends Controller
         $request = \Config\Services::request();
         $drill_arr = $request->getJSON(true);
 
+        $option = explode('^', $drill_arr[1]['钻取选项'])[0];
+        $chart_id = explode('^', $drill_arr[1]['钻取选项'])[1];
+        $drill_id = explode('^', $drill_arr[1]['钻取选项'])[2];
+
+        $model = new Mcommon();
+
+        $sql = sprintf('
+            select 钻取模块,钻取选项,钻取字段,钻取条件,图形模块
+            from def_chart_drill_config
+            where 顺序>0 and 钻取选项="%s" and 图形模块="%s" and 钻取模块="%s"',
+            $option, $chart_id, $drill_id);
+
+        $results = $model->select($sql)->getResult();
+
+        foreach ($results as $row)
+        {
+            if ($row->钻取字段 == '') continue;
+
+            $col_arr = explode(';', $row->钻取字段);
+            for ($ii=0; $ii<count($col_arr); $ii++)
+            {
+                if (array_key_exists('钻取参数', $drill_arr[2]) == false)
+                {
+                    $drill_arr[2]['钻取参数'] = '';
+                    continue;
+                }
+                $drill_arr[2]['钻取参数'] = sprintf('%s;%s^%s', $drill_arr[2]['钻取参数'], $col_arr[$ii], $drill_arr[2][$col_arr[$ii]]);
+            }
+        }
+
+        $chart_arr = $this->get_chart_data($menu_id, $chart_id, '', $drill_arr[2]['钻取参数']);
+        exit(json_encode($chart_arr));
+
         // 从session中取出数据
         $session = \Config\Services::session();
         $chart_drill_arr = $session->get($menu_id.'-chart_drill_arr');
-
-        $model = new Mcommon();
 
         // 生成前端图形数据
         $arr = explode('^', $drill_arr[2]['SID']);
@@ -2366,7 +2397,7 @@ class Frame extends Controller
         $chart_arr = [];
         if ($chart_drill_arr == [])
         {
-            $chart_arr = $this->get_chart_data($menu_id, $arr[0], $arr[1], []);
+            $chart_arr = $this->get_chart_data($menu_id, $arr[0], $arr[1], '');
         }
         else
         {
@@ -2375,13 +2406,13 @@ class Frame extends Controller
 
         $sql = sprintf('
             select t1.图形模块,图形编号,图形名称,图形类型,
-                查询表名,查询字段,查询条件,汇总条件,排序条件,
+                取数方式,查询表名,查询字段,查询条件,汇总条件,排序条件,
                 字段模块,页面布局,钻取模块,条件叠加,顺序,
                 钻取字段,钻取条件
             from
             (
                 select 图形模块,图形编号,图形名称,图形类型,
-                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
+                    取数方式,查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
                 where 有效标识="1"
@@ -2428,7 +2459,7 @@ class Frame extends Controller
                     }
                 }
             }
-    
+
             // 生成钻取图形数据
             $arr = $this->get_chart_data($menu_id, $row->图形模块, $row->图形编号, $drill_where);
             foreach ($arr as $key => $value)
@@ -2453,28 +2484,30 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 取出前端图形数据
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function get_chart_data($menu_id, $chart_id, $chart_code='', $front_where=[])
+    public function get_chart_data($menu_id, $chart_id, $chart_code='', $front_where='')
     {
         $model = new Mcommon();
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_debug_authz = $session->get('user_debug_authz');
         $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
         $dept_authz_cond = $session->get($menu_id.'-dept_authz_cond');
         $chart_drill_cond_str = $session->get(sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_id));
         $chart_drill_title_str = $session->get(sprintf('%s^%s-chart_drill_title_str',$menu_id,$chart_id));
 
-        $drill_where = ($front_where == []) ? '' : $front_where['条件'];
-        $drill_title = ($front_where == []) ? '' : $front_where['副标题'];
+        //$drill_where = ($front_where == []) ? '' : $front_where['条件'];
+        //$drill_title = ($front_where == []) ? '' : $front_where['副标题'];
+        $drill_where = '';
+        $drill_title = '';
 
+        $chart_data = [];
         $chart_arr = [];
 
         if ($chart_code == '')  // 图形初始
         {
             $sql = sprintf('
                 select 图形模块,图形编号,图形名称,图形类型,
-                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,记录条数,
+                    取数方式,查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,记录条数,
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
                 where 有效标识="1" and 图形模块="%s" and 顺序>0
@@ -2485,7 +2518,7 @@ class Frame extends Controller
         {
             $sql = sprintf('
                 select 图形模块,图形编号,图形名称,图形类型,
-                    查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,记录条数,
+                    取数方式,查询表名,查询字段,属地字段,查询条件,汇总条件,排序条件,记录条数,
                     字段模块,页面布局,钻取模块,条件叠加,顺序
                 from def_chart_config
                 where 有效标识="1" and 图形模块="%s" and 图形编号="%s" and 顺序>0
@@ -2493,190 +2526,299 @@ class Frame extends Controller
                 $chart_id, $chart_code);
         }
 
-        $query = $model->select($sql);
-        $results = $query->getResult();
+        $results = $model->select($sql)->getResult();
+
         foreach ($results as $row)
         {
-            $data_sql = sprintf('select %s, "%s^%s" as SID from %s', 
-                $row->查询字段, $row->图形模块, $row->图形编号, $row->查询表名);
+            $arr = [];
 
-            $where = '';
-            // 条件语句加上部门授权条件
-            if ($dept_authz_cond != '')
+            if ($row->取数方式 == '存储过程')
             {
-                $where = ($where == '') ? $dept_authz_cond : $where . ' and ' . $dept_authz_cond;
-            }
-            // 条件语句加上属地条件
-            if($row->属地字段 != '' && $location_authz_cond != '')
-            {
-                $where = ($where == '') ? $location_authz_cond : $where . ' and ' . $location_authz_cond;
-            }
-            if ($row->查询条件 != '')
-            {
-                if ($where != '')
+                $data_sql = sprintf('call %s', $row->查询表名);
+
+                if ($front_where != '')
                 {
-                    $where = sprintf('(%s) and (%s)', $where, $row->查询条件);
-                }
-                else
-                {
-                    $where = $row->查询条件;
-                }
-            }
-            if ($chart_drill_cond_str != '' && $row->条件叠加 == '1')
-            {
-                if ($where != '')
-                {
-                    $where = sprintf('(%s) and (%s)', $where, $chart_drill_cond_str);
-                }
-                else
-                {
-                    $where = $chart_drill_cond_str;
-                }
-            }
-            if ($drill_where != '')
-            {
-                if ($where != '')
-                {
-                    $where = sprintf('(%s) and (%s)', $where, $drill_where);
-                }
-                else
-                {
-                    $where = $drill_where;
-                }
-            }
- 
-            // 生成叠加的钻取条件
-            if ($row->条件叠加 == '1')
-            {
-                if ($chart_drill_cond_str != '')
-                {
-                    if ($drill_where != '')
+                    $params = explode(';', $front_where);
+                    for ($ii=0; $ii<count($params); $ii++)
                     {
-                        $chart_drill_cond_str = sprintf('(%s) and (%s)', $chart_drill_cond_str, $drill_where);
+                        $arg = explode('^', $params[$ii]);
+                        $data_sql = str_replace(sprintf('$%s',$arg[0]), $arg[1], $data_sql);
                     }
                 }
-                else
+
+                $sp_data = $model->select($data_sql)->getResult();
+
+                if ($sp_data == [])
                 {
-                    if ($drill_where != '')
+                    continue;
+                }
+
+                foreach ($sp_data as $key => $value)
+                {
+                    if (array_key_exists($value->图形模块, $arr) == false)
                     {
-                        $chart_drill_cond_str = $drill_where;
+                        $arr[$value->图形模块] = [];
+                        $arr[$value->图形模块]['图形模块'] = $value->图形模块;
+                        $arr[$value->图形模块]['图形编号'] = $value->图形编号;
+                        $arr[$value->图形模块]['取数方式'] = $row->取数方式;
+                        $arr[$value->图形模块]['SQL'] = $data_sql;
+                        $arr[$value->图形模块]['图形名称'] = $value->图形名称;
+                        $arr[$value->图形模块]['图形类型'] = $row->图形类型;
+                        $arr[$value->图形模块]['页面布局'] = $value->页面布局;
+                        $arr[$value->图形模块]['字段模块'] = $row->字段模块;
+                        $arr[$value->图形模块]['钻取模块'] = $row->钻取模块;
+                        $arr[$value->图形模块]['数据'] = [];
+                    }
+                    array_push($arr[$value->图形模块]['数据'], $value);
+                }
+
+                foreach ($arr as $key => $value)
+                {
+                    $chart = $this->get_chart_data_single($menu_id, $value);
+                    foreach ($chart as $key => $value)
+                    {
+                        if (array_key_exists($key, $chart_arr) == false)
+                        {
+                            $chart_arr[$key] = [];
+                        }
+                        $chart_arr[$key] = $value;
                     }
                 }
             }
 
-            // 生成副标题
-            if ($drill_title != '')
+            else
             {
-                if ($chart_drill_title_str != '')
+                $data_sql = sprintf('select %s, "%s^%s" as SID from %s', 
+                    $row->查询字段, $row->图形模块, $row->图形编号, $row->查询表名);
+
+                $where = '';
+                // 条件语句加上部门授权条件
+                if ($dept_authz_cond != '')
                 {
-                    $chart_drill_title_str = sprintf('%s,%s', $chart_drill_title_str,$drill_title);
+                    $where = ($where == '') ? $dept_authz_cond : $where . ' and ' . $dept_authz_cond;
                 }
-                else
+                // 条件语句加上属地条件
+                if($row->属地字段 != '' && $location_authz_cond != '')
                 {
-                    $chart_drill_title_str = $drill_title;
+                    $where = ($where == '') ? $location_authz_cond : $where . ' and ' . $location_authz_cond;
                 }
-            }
-
-            if ($where != '')
-            {
-                $data_sql = sprintf('%s where %s', $data_sql, $where);
-            }
-            if ($row->汇总条件 != '')
-            {
-                $data_sql = sprintf('%s group by %s', $data_sql, $row->汇总条件);
-            }
-            if ($row->排序条件 != '')
-            {
-                $data_sql = sprintf('%s order by %s', $data_sql, $row->排序条件);
-            }
-            if ($row->记录条数 > 0)
-            {
-                $data_sql = sprintf('%s limit %d', $data_sql, $row->记录条数);
-            }
-
-            $chart_data = $model->select($data_sql)->getResult();
-
-            if ($chart_data == [])
-            {
-                continue;
-            }
-
-            // 图形数据
-            if (array_key_exists($row->图形模块, $chart_arr) == false)
-            {
-                $chart_arr[$row->图形模块] = [];
-            }
-            if (array_key_exists($row->图形编号, $chart_arr[$row->图形模块]) == false)
-            {
-                $chart_arr[$row->图形模块][$row->图形编号] = [];
-            }
-
-            $chart_arr[$row->图形模块][$row->图形编号]['图形模块'] = $row->图形模块;
-            $chart_arr[$row->图形模块][$row->图形编号]['图形编号'] = $row->图形编号;
-            $chart_arr[$row->图形模块][$row->图形编号]['图形名称'] = ($chart_drill_title_str == '') ? $row->图形名称 : sprintf('%s(%s)', $row->图形名称, $chart_drill_title_str);
-            $chart_arr[$row->图形模块][$row->图形编号]['图形类型'] = $row->图形类型;
-            $chart_arr[$row->图形模块][$row->图形编号]['字段模块'] = $row->字段模块;
-            $chart_arr[$row->图形模块][$row->图形编号]['页面布局'] = $row->页面布局;
-            $chart_arr[$row->图形模块][$row->图形编号]['字段'] = [];
-            $chart_arr[$row->图形模块][$row->图形编号]['字段数'] = 0;
-            $chart_arr[$row->图形模块][$row->图形编号]['数据'] = $chart_data;
-            $chart_arr[$row->图形模块][$row->图形编号]['钻取模块'] = [];
-
-            $data_sql = str_replace('\'','~~',$data_sql);
-            $data_sql = str_replace('"','~~',$data_sql);
-            $chart_arr[$row->图形模块][$row->图形编号]['SQL'] = ($user_debug_authz=='1') ? $data_sql : '';
-
-            // 图形列信息
-            $col_sql = sprintf('
-                select 字段模块,列名,字段名,坐标轴,图形类型
-                from def_chart_column
-                where 字段模块="%s" and 顺序>0
-                order by 字段模块,顺序', $row->字段模块);
-
-            $col_results = $model->select($col_sql)->getResult();
-            foreach ($col_results as $col_row)
-            {
-                if (array_key_exists($col_row->字段名, $chart_arr[$row->图形模块][$row->图形编号]['字段']) == false)
+                if ($row->查询条件 != '')
                 {
-                    $chart_arr[$row->图形模块][$row->图形编号]['字段'][$col_row->字段名] = [];
+                    if ($where != '')
+                    {
+                        $where = sprintf('(%s) and (%s)', $where, $row->查询条件);
+                    }
+                    else
+                    {
+                        $where = $row->查询条件;
+                    }
                 }
-                $chart_arr[$row->图形模块][$row->图形编号]['字段数'] += 1;
-                $chart_arr[$row->图形模块][$row->图形编号]['字段'][$col_row->字段名]['列名'] = $col_row->列名;
-                $chart_arr[$row->图形模块][$row->图形编号]['字段'][$col_row->字段名]['字段名'] = $col_row->字段名;
-                $chart_arr[$row->图形模块][$row->图形编号]['字段'][$col_row->字段名]['坐标轴'] = $col_row->坐标轴;
-                $chart_arr[$row->图形模块][$row->图形编号]['字段'][$col_row->字段名]['图形类型'] = $col_row->图形类型;
-            }
-
-            // 钻取模块
-            $drill_sql = sprintf('
-                select 钻取模块,钻取选项,钻取字段,钻取条件,图形模块
-                from def_chart_drill_config
-                where 钻取模块="%s" and 顺序>0
-                order by 钻取模块,顺序', $row->钻取模块);
-
-            $drill_results = $model->select($drill_sql)->getResult();
-            foreach ($drill_results as $drill_row)
-            {
-                if (array_key_exists($drill_row->钻取选项, $chart_arr[$row->图形模块][$row->图形编号]['钻取模块']) == false)
+                if ($chart_drill_cond_str != '' && $row->条件叠加 == '1')
                 {
-                    $chart_arr[$row->图形模块][$row->图形编号]['钻取模块'][$drill_row->钻取选项] = [];
+                    if ($where != '')
+                    {
+                        $where = sprintf('(%s) and (%s)', $where, $chart_drill_cond_str);
+                    }
+                    else
+                    {
+                        $where = $chart_drill_cond_str;
+                    }
+                }
+                if ($drill_where != '')
+                {
+                    if ($where != '')
+                    {
+                        $where = sprintf('(%s) and (%s)', $where, $drill_where);
+                    }
+                    else
+                    {
+                        $where = $drill_where;
+                    }
+                }
+    
+                // 生成叠加的钻取条件
+                if ($row->条件叠加 == '1')
+                {
+                    if ($chart_drill_cond_str != '')
+                    {
+                        if ($drill_where != '')
+                        {
+                            $chart_drill_cond_str = sprintf('(%s) and (%s)', $chart_drill_cond_str, $drill_where);
+                        }
+                    }
+                    else
+                    {
+                        if ($drill_where != '')
+                        {
+                            $chart_drill_cond_str = $drill_where;
+                        }
+                    }
                 }
 
-                $chart_arr[$row->图形模块][$row->图形编号]['钻取模块'][$drill_row->钻取选项]['钻取选项'] = $drill_row->钻取选项;
-                $chart_arr[$row->图形模块][$row->图形编号]['钻取模块'][$drill_row->钻取选项]['钻取字段'] = $drill_row->钻取字段;
-                $chart_arr[$row->图形模块][$row->图形编号]['钻取模块'][$drill_row->钻取选项]['钻取条件'] = $drill_row->钻取条件;
-                $chart_arr[$row->图形模块][$row->图形编号]['钻取模块'][$drill_row->钻取选项]['图形模块'] = $drill_row->图形模块;
+                // 生成副标题
+                if ($drill_title != '')
+                {
+                    if ($chart_drill_title_str != '')
+                    {
+                        $chart_drill_title_str = sprintf('%s,%s', $chart_drill_title_str, $drill_title);
+                    }
+                    else
+                    {
+                        $chart_drill_title_str = $drill_title;
+                    }
+                }
 
-                $chart_arr[$row->图形模块][$row->图形编号]['钻取模块'][$drill_row->钻取选项]['继承条件'] = $chart_drill_cond_str;
-                $chart_arr[$row->图形模块][$row->图形编号]['钻取模块'][$drill_row->钻取选项]['继承标题'] = $chart_drill_title_str;
+                if ($where != '')
+                {
+                    $data_sql = sprintf('%s where %s', $data_sql, $where);
+                }
+                if ($row->汇总条件 != '')
+                {
+                    $data_sql = sprintf('%s group by %s', $data_sql, $row->汇总条件);
+                }
+                if ($row->排序条件 != '')
+                {
+                    $data_sql = sprintf('%s order by %s', $data_sql, $row->排序条件);
+                }
+                if ($row->记录条数 > 0)
+                {
+                    $data_sql = sprintf('%s limit %d', $data_sql, $row->记录条数);
+                }
 
-                // 存入session
-                $session_arr = [];
-                $session_arr[sprintf('%s^%s-chart_drill_cond_str',$menu_id,$drill_row->图形模块)] = $chart_drill_cond_str;
-                $session_arr[sprintf('%s^%s-chart_drill_title_str',$menu_id,$drill_row->图形模块)] = $chart_drill_title_str;
-                $session = \Config\Services::session();
-                $session->set($session_arr);
+                $chart_data = $model->select($data_sql)->getResult();
+
+                if ($chart_data == [])
+                {
+                    continue;
+                }
+
+                // 图形数据
+                $arr = [];
+                if (array_key_exists($row->图形模块, $arr) == false)
+                {
+                    $arr[$row->图形模块] = [];
+                }
+
+                $arr[$row->图形模块]['图形模块'] = $row->图形模块;
+                $arr[$row->图形模块]['图形编号'] = $row->图形编号;
+                $arr[$row->图形模块]['取数方式'] = $row->取数方式;
+                $arr[$row->图形模块]['SQL'] = $data_sql;
+                $arr[$row->图形模块]['图形名称'] = ($chart_drill_title_str == '') ? $row->图形名称 : sprintf('%s(%s)', $row->图形名称, $chart_drill_title_str);
+                $arr[$row->图形模块]['图形类型'] = $row->图形类型;
+                $arr[$row->图形模块]['页面布局'] = $row->页面布局;
+                $arr[$row->图形模块]['字段数'] = 0;
+                $arr[$row->图形模块]['字段模块'] = $row->字段模块;
+                $arr[$row->图形模块]['字段'] = [];
+                $arr[$row->图形模块]['钻取模块'] = $row->钻取模块;
+                $arr[$row->图形模块]['数据'] = $chart_data;
+
+                $chart = $this->get_chart_data_single($menu_id, $arr[$row->图形模块]);
+                foreach ($chart as $key => $value)
+                {
+                    if (array_key_exists($row->图形模块, $chart_arr) == false)
+                    {
+                        $chart_arr[$row->图形模块] = [];
+                    }
+                    if (array_key_exists($row->图形编号, $chart_arr[$row->图形模块]) == false)
+                    {
+                        $chart_arr[$row->图形模块][$row->图形编号] = [];
+                    }
+
+                    $chart_arr[$row->图形模块][$row->图形编号] = $value[$row->图形编号];
+                }
             }
+        }
+
+        return $chart_arr;
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 取出前端图形数据
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function get_chart_data_single($menu_id, $data)
+    {
+        $chart_id = $data['图形模块'];
+        $chart_code = $data['图形编号'];
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_debug_authz = $session->get('user_debug_authz');
+        $chart_drill_cond_str = $session->get(sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_id));
+        $chart_drill_title_str = $session->get(sprintf('%s^%s-chart_drill_title_str',$menu_id,$chart_id));
+
+        $chart_arr = [];
+        $chart_arr[$chart_id] = [];
+        $chart_arr[$chart_id][$chart_code] = [];
+
+        $chart_arr[$chart_id][$chart_code]['图形模块'] = $data['图形模块'];
+        $chart_arr[$chart_id][$chart_code]['图形编号'] = $data['图形编号'];
+        $chart_arr[$chart_id][$chart_code]['取数方式'] = $data['取数方式'];
+        $chart_arr[$chart_id][$chart_code]['图形名称'] = $data['图形名称'];
+        $chart_arr[$chart_id][$chart_code]['图形类型'] = $data['图形类型'];
+        $chart_arr[$chart_id][$chart_code]['字段模块'] = $data['字段模块'];
+        $chart_arr[$chart_id][$chart_code]['页面布局'] = $data['页面布局'];
+        $chart_arr[$chart_id][$chart_code]['字段'] = [];
+        $chart_arr[$chart_id][$chart_code]['字段数'] = 0;
+        $chart_arr[$chart_id][$chart_code]['数据'] = $data['数据'];
+        $chart_arr[$chart_id][$chart_code]['钻取模块'] = [];
+
+        $data_sql = str_replace('\'','~~',$data['SQL']);
+        $data_sql = str_replace('"','~~',$data_sql);
+        $chart_arr[$chart_id][$chart_code]['SQL'] = ($user_debug_authz=='1') ? $data_sql : '';
+
+        $model = new Mcommon();
+
+        // 图形列信息
+        $col_sql = sprintf('
+            select 字段模块,列名,字段名,坐标轴,图形类型
+            from def_chart_column
+            where 字段模块="%s" and 顺序>0
+            order by 字段模块,顺序', $data['字段模块']);
+
+        $col_results = $model->select($col_sql)->getResult();
+        foreach ($col_results as $col_row)
+        {
+            if (array_key_exists($col_row->字段名, $chart_arr[$chart_id][$chart_code]['字段']) == false)
+            {
+                $chart_arr[$chart_id][$chart_code]['字段'][$col_row->字段名] = [];
+            }
+            $chart_arr[$chart_id][$chart_code]['字段数'] += 1;
+            $chart_arr[$chart_id][$chart_code]['字段'][$col_row->字段名]['列名'] = $col_row->列名;
+            $chart_arr[$chart_id][$chart_code]['字段'][$col_row->字段名]['字段名'] = $col_row->字段名;
+            $chart_arr[$chart_id][$chart_code]['字段'][$col_row->字段名]['坐标轴'] = $col_row->坐标轴;
+            $chart_arr[$chart_id][$chart_code]['字段'][$col_row->字段名]['图形类型'] = $col_row->图形类型;
+        }
+
+        // 钻取模块
+        $drill_sql = sprintf('
+            select 钻取模块,钻取选项,replace(钻取字段,"；",";") as 钻取字段,钻取条件,图形模块
+            from def_chart_drill_config
+            where 钻取模块="%s" and 顺序>0
+            order by 钻取模块,顺序', $data['钻取模块']);
+
+        $drill_results = $model->select($drill_sql)->getResult();
+        foreach ($drill_results as $drill_row)
+        {
+            if (array_key_exists($drill_row->钻取选项, $chart_arr[$chart_id][$chart_code]['钻取模块']) == false)
+            {
+                $chart_arr[$chart_id][$chart_code]['钻取模块'][$drill_row->钻取选项] = [];
+            }
+
+            $chart_arr[$chart_id][$chart_code]['钻取模块'][$drill_row->钻取选项]['模块名称'] = $drill_row->钻取模块;
+            $chart_arr[$chart_id][$chart_code]['钻取模块'][$drill_row->钻取选项]['钻取选项'] = $drill_row->钻取选项;
+            $chart_arr[$chart_id][$chart_code]['钻取模块'][$drill_row->钻取选项]['钻取字段'] = $drill_row->钻取字段;
+            $chart_arr[$chart_id][$chart_code]['钻取模块'][$drill_row->钻取选项]['钻取条件'] = $drill_row->钻取条件;
+            $chart_arr[$chart_id][$chart_code]['钻取模块'][$drill_row->钻取选项]['图形模块'] = $drill_row->图形模块;
+
+            $chart_arr[$chart_id][$chart_code]['钻取模块'][$drill_row->钻取选项]['继承条件'] = $chart_drill_cond_str;
+            $chart_arr[$chart_id][$chart_code]['钻取模块'][$drill_row->钻取选项]['继承标题'] = $chart_drill_title_str;
+
+            // 存入session
+            $session_arr = [];
+            $session_arr[sprintf('%s^%s-chart_drill_cond_str',$menu_id,$drill_row->图形模块)] = $chart_drill_cond_str;
+            $session_arr[sprintf('%s^%s-chart_drill_title_str',$menu_id,$drill_row->图形模块)] = $chart_drill_title_str;
+            $session = \Config\Services::session();
+            $session->set($session_arr);
         }
 
         return $chart_arr;
