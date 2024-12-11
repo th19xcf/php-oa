@@ -1,5 +1,5 @@
 <?php
-/* v10.26.1.1.202412072045, from home */
+/* v10.27.1.1.202412112215, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -107,6 +107,7 @@ class Frame extends Controller
 
             $session_arr[$row->功能赋权.'-dept_id_authz'] = '';
             $session_arr[$row->功能赋权.'-dept_name_authz'] = '';
+            $session_arr[$row->功能赋权.'-dept_name_str'] = '';
             $session_arr[$row->功能赋权.'-dept_authz'] = '';
             $session_arr[$row->功能赋权.'-location_authz'] = '';
 
@@ -202,6 +203,15 @@ class Frame extends Controller
             else
             {
                 $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('%s or instr(%s,"%s")', $session_arr[$row->功能赋权.'-dept_name_authz'], $session_arr[$row->功能赋权.'-dept_name_fld'], $row->部门全称赋权);
+            }
+
+            if ($session_arr[$row->功能赋权.'-dept_name_str'] == '')
+            {
+                $session_arr[$row->功能赋权.'-dept_name_str'] = sprintf('"%s"', $row->部门全称赋权);
+            }
+            else
+            {
+                $session_arr[$row->功能赋权.'-dept_name_str'] = sprintf('%s,"%s"', $session_arr[$row->功能赋权.'-dept_name_str'], $row->部门全称赋权);
             }
         }
 
@@ -2492,6 +2502,7 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
         $dept_authz_cond = $session->get($menu_id.'-dept_authz_cond');
+        $dept_name_str = $session->get($menu_id.'-dept_name_str');
         $chart_drill_cond_str = $session->get(sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_id));
         $chart_drill_title_str = $session->get(sprintf('%s^%s-chart_drill_title_str',$menu_id,$chart_id));
 
@@ -2534,6 +2545,8 @@ class Frame extends Controller
 
             if ($row->取数方式 == '存储过程')
             {
+                // 替换参数
+                $row->查询表名 = str_replace('$[部门全称赋权]', sprintf('\'[%s]\'',$dept_name_str), $row->查询表名);
                 $data_sql = sprintf('call %s', $row->查询表名);
 
                 if ($front_where != '')
