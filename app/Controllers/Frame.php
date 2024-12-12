@@ -1,5 +1,5 @@
 <?php
-/* v10.27.1.1.202412112215, from home */
+/* v10.27.2.1.202412121745, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -370,7 +370,7 @@ class Frame extends Controller
                 更新前处理模块,更新后处理模块,
                 数据整理模块,
                 钻取模块,
-                t1.导入模块,t2.标签名称,
+                t1.导入模块,ifnull(t2.标签名称,"") as 标签名称,
                 图形模块
             from def_query_config as t1
             left join
