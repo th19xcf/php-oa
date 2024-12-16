@@ -1,4 +1,4 @@
-<!-- v7.19.7.1.202412072045, from home -->
+<!-- v7.19.8.1.202412151315, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1146,8 +1146,8 @@
                     });
                     break;
                 case 'SQL':
-                    console.log('ID=[ ', '<?php echo $func_id; ?>', ' ]');
-                    console.log('SQL=[ ', debug_sql, ' ]');
+                    console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]', '查询模块=[`', '<?php echo $query_module; ?>', '`]');
+                    console.log('SQL=[`', debug_sql, '`]');
                     break;
                 case '导入':
                     let import_func_id = '<?php echo $func_id; ?>' + '88';

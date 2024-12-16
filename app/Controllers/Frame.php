@@ -1,5 +1,5 @@
 <?php
-/* v10.27.2.1.202412121745, from office */
+/* v10.27.2.1.202412151315, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -343,6 +343,7 @@ class Frame extends Controller
         $sp_sql = '';  //存储过程语句
         $query_table = '';
         $query_where = '';
+        $query_module = ''; //查询模块
         $query_group = '';
         $query_order = '';
         $drill_module = '';  //钻取模块
@@ -403,6 +404,7 @@ class Frame extends Controller
                 $query_where = str_replace('$角色', $user_role, $row->查询条件);
             }
 
+            $query_module = $row->查询模块;
             $query_group = $row->汇总条件;
             $query_order = $row->排序条件;
 
@@ -917,6 +919,7 @@ class Frame extends Controller
         $send['cond_obj_json'] = json_encode($cond_obj_arr);
         $send['update_obj_json'] = json_encode($update_obj_arr);
         $send['func_id'] = $menu_id;
+        $send['query_module'] = $query_module;
         $send['data_model'] = $data_model;
         $send['primary_key'] = $primary_key;
         $send['back_where'] = strtr($where, '"', '');
