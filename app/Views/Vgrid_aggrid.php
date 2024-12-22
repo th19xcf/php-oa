@@ -1,4 +1,4 @@
-<!-- v7.19.8.1.202412151315, from home -->
+<!-- v7.20.1.1.202412221345, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -447,6 +447,10 @@
                     columns: [params.column.getId()],
                     rowNodes: [params.node]
                 });
+            },
+            onFilterChanged: (e) =>
+            {
+                //console.log("gridApi.getFilterModel() =>", e.api.getFilterModel());
             },
         };
 
@@ -1154,7 +1158,9 @@
                     parent.window.goto(import_func_id,'导入-'+'<?php echo $import_tag_name; ?>','upload/init/'+import_func_id+'/<?php echo $import_module; ?>');
                     break;
                 case '导出':
-                    var href = '<?php base_url(); ?>/frame/export/<?php echo $func_id; ?>';
+                    let send_str = JSON.stringify(data_grid_api.getFilterModel());
+
+                    let href = '<?php base_url(); ?>/frame/export/<?php echo $func_id; ?>/'+send_str;
                     $$('exp2xls').href = href;
                     $$('exp2xls').click();
                     break;

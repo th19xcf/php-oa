@@ -1,5 +1,5 @@
 <?php
-/* v10.27.2.1.202412151315, from home */
+/* v10.28.1.1.202412221335, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -868,6 +868,8 @@ class Frame extends Controller
         $session_arr[$menu_id.'-back_where'] = $where;
         $session_arr[$menu_id.'-back_group'] = $group;
         $session_arr[$menu_id.'-back_order'] = $order;
+        $session_arr[$menu_id.'-front_where'] = '';
+        $session_arr[$menu_id.'-front_group'] = '';
         $session_arr[$menu_id.'-sp_name'] = $sp_name;
         $session_arr[$menu_id.'-sp_str'] = $sp_sql;
 
@@ -1244,6 +1246,13 @@ class Frame extends Controller
         {
             $sql = $sql . ' order by ' . $order;
         }
+
+        // 存入session
+        $session_arr = [];
+        $session_arr[$menu_id.'-front_where'] = $front_where;
+        $session_arr[$menu_id.'-front_group'] = $front_group;
+        $session = \Config\Services::session();
+        $session->set($session_arr);
 
         // 写日志
         $model->sql_log('条件查询',$menu_id,sprintf('表=%s,条件=%s', $query_table, str_replace('"','',$where)));
@@ -2069,13 +2078,48 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 导出到xls
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function export($menu_id='')
+    public function export($menu_id='', $arg='')
     {
+        $filter_arr = json_decode($arg);
+
+        // 取出过滤条件
+        $filter_cond = '';
+        foreach ($filter_arr as $key => $value_arr)
+        {
+            $filter_str = '';
+            if (property_exists($value_arr, 'operator'))
+            {
+                $cond_1 = $this->get_filter($key, $value_arr->condition1);
+                $cond_2 = $this->get_filter($key, $value_arr->condition2);
+                $filter_str = sprintf('(%s %s %s)', $cond_1, $value_arr->operator, $cond_2);
+            }
+            else
+            {
+                $filter_str = $this->get_filter($key, $value_arr);
+            }
+
+            if ($filter_cond == '')
+            {
+                $filter_cond = $filter_str;
+            }
+            else
+            {
+                $filter_cond = $filter_cond . ' and ' . $filter_str;
+            }
+        }
+
         // 从session中取出数据
         $session = \Config\Services::session();
         $query_str = $session->get($menu_id.'-query_str');
         $sp_name = $session->get($menu_id.'-sp_name');
         $sp_str = $session->get($menu_id.'-sp_str');
+        $query_table = $session->get($menu_id.'-query_table');
+        $select_str = $session->get($menu_id.'-select_str');
+        $back_where = $session->get($menu_id.'-back_where');
+        $back_group = $session->get($menu_id.'-back_group');
+        $order = $session->get($menu_id.'-back_order');
+        $front_where = $session->get($menu_id.'-front_where');
+        $front_group = $session->get($menu_id.'-front_group');
 
         $table = new \CodeIgniter\View\Table();
 
@@ -2098,6 +2142,42 @@ class Frame extends Controller
         }
         else
         {
+            // 拼出查询条件
+            $where = ($back_where == '') ? '' : $back_where;
+            if ($where == '')
+            {
+                $where = ($front_where == '') ? '' : $front_where;
+            }
+            else
+            {
+                $where = ($front_where == '') ? $where : $where . ' and ' . $front_where;
+            }
+            if ($where == '')
+            {
+                $where = ($filter_cond == '') ? '' : $filter_cond;
+            }
+            else
+            {
+                $where = ($filter_cond == '') ? $where : $where . ' and ' . $filter_cond;
+            }
+
+            // 拼出group by
+            $group = ($back_group == '') ? '' : $back_group;
+            if ($group == '')
+            {
+                $group = ($front_group == '') ? '' : $front_group;
+            }
+            else
+            {
+                $group = ($front_group == '') ? $group : $group . ', ' . $front_group;
+            }
+
+            // 拼出查询语句
+            $query_str = sprintf('select %s from %s', $select_str, $query_table);
+            $query_str = ($where == '') ? $query_str : $query_str . ' where ' . $where;
+            $query_str = ($group == '') ? $query_str : $query_str . ' group by ' . $group;
+            $query_str = ($order == '') ? $query_str : $query_str . ' order by ' . $order;
+
             // 写日志
             $model->sql_log('导出', $menu_id, str_replace('"','',$query_str));
             $query = $model->select($query_str);
@@ -2838,5 +2918,80 @@ class Frame extends Controller
         }
 
         return $chart_arr;
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 取出filter条件
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function get_filter($filter_name, $filter_arg)
+    {
+        $name = $filter_name;
+        $filter_type = $filter_arg->filterType;
+        $type = $filter_arg->type;
+        $filter = $filter_arg->filter;
+
+        $filter_str = '1=1';
+        if ($filter_type == 'text')
+        {
+            switch ($type)
+            {
+                case 'equals':
+                    $filter_str = sprintf('%s="%s"', $name, $filter);
+                    break;
+                case 'notEquals':
+                    $filter_str = sprintf('%s!="%s"', $name, $filter);
+                    break;
+                case 'contains':
+                    $filter_str = sprintf('instr(%s,"%s")', $name, $filter);
+                    break;
+                case 'notContains':
+                    $filter_str = sprintf('instr(%s,"%s")=0', $name, $filter);
+                    break;
+                case 'startsWith':
+                    $filter_str = sprintf('left(%s,length("%s"))="%s"', $name, $filter, $filter);
+                    break;
+                case 'endsWith':
+                    $filter_str = sprintf('right(%s,length("%s"))="%s"', $name, $filter, $filter);
+                    break;
+                case 'blank':
+                    $filter_str = sprintf('%s=""', $name);
+                    break;
+                case 'notBlank':
+                    $filter_str = sprintf('%s!=""', $name);
+                    break;
+                default:
+                    $filter_str = '1=1';
+                    break;
+            }
+        }
+        else if ($filter_type == 'number')
+        {
+            switch ($type)
+            {
+                case 'equals':
+                    $filter_str = sprintf('%s=%d', $name, $filter);
+                    break;
+                case 'notEquals':
+                    $filter_str = sprintf('%s!=%d', $name, $filter);
+                    break;
+                case 'lessThan':
+                    $filter_str = sprintf('%s<%d', $name, $filter);
+                    break;
+                case 'greaterThan':
+                    $filter_str = sprintf('%s>%d', $name, $filter);
+                    break;
+                case 'lessThanOrEqual':
+                    $filter_str = sprintf('%s<=%d', $name, $filter);
+                    break;
+                case 'greaterThanOrEqual':
+                    $filter_str = sprintf('%s>=%d', $name, $filter);
+                    break;
+                default:
+                    $filter_str = '1=1';
+                    break;
+            }
+        }
+
+        return $filter_str;
     }
 }
