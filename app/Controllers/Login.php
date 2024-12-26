@@ -1,6 +1,6 @@
 <?php
 
-/* v3.3.2.1.202412022005, from home */
+/* v3.3.3.1.202412262010, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -35,6 +35,12 @@ class Login extends Controller
         $company_id = $request->getPost('company_id');
         $user_workid = $request->getPost('userid');
         $pswd = $request->getPost('userpwd');
+
+        if ($company_id == '')
+        {
+            $Arg['msg'] = '员工属地错误！';
+            exit('10');
+        }
 
         $sql = '';
         if ($pswd == $user_workid.$user_workid)
