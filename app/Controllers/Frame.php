@@ -1,5 +1,5 @@
 <?php
-/* v10.28.1.1.202412221335, from home */
+/* v10.28.2.1.202412271020, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -415,7 +415,7 @@ class Frame extends Controller
 
             $before_insert = $row->新增前处理模块;
             $after_insert = $row->新增后处理模块;
-            $before_update = $row->更新后处理模块;
+            $before_update = $row->更新前处理模块;
             $after_update = $row->更新后处理模块;
             $data_upkeep = $row->数据整理模块;
 
