@@ -1,5 +1,5 @@
 <?php
-/* v10.28.2.1.202412271020, from office */
+/* v11.1.1.1.202412282230, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -548,13 +548,7 @@ class Frame extends Controller
         //+=+=+=+=+=+=+=+=+=+=+=+= 
         // 处理列的相关数据
         //+=+=+=+=+=+=+=+=+=+=+=+= 
-        // 前端data_grid列信息,手工增加选取列和序号列
-        $data_col_arr['选取']['field'] = '选取';
-        $data_col_arr['选取']['width'] = 100;
-        $data_col_arr['选取']['resizable'] = true;
-        $data_col_arr['选取']['headerCheckboxSelection'] = true;
-        $data_col_arr['选取']['checkboxSelection'] = true;
-
+        // 前端data_grid列信息,手工增加序号列
         $data_col_arr['序号']['field'] = '序号';
         $data_col_arr['序号']['type'] = 'numericColumn';
         $data_col_arr['序号']['filter'] = 'agNumberColumnFilter';
@@ -766,11 +760,11 @@ class Frame extends Controller
             $send_str = sprintf('%s %s as `%s`', $send_str, $column['查询名'], $column['列名']);
         }
 
-        $query_sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
+        $query_sql = sprintf('select (@i:=@i+1) as 序号,%s 
             from %s,(select @i:=0) as xh', 
             $select_str, $query_table);
 
-        $send_sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s 
+        $send_sql = sprintf('select (@i:=@i+1) as 序号,%s 
             from %s,(select @i:=0) as xh', 
             $send_str, $query_table);
 
@@ -1215,7 +1209,7 @@ class Frame extends Controller
             }
         }
 
-        $sql = sprintf('select "" as 选取,(@i:=@i+1) as 序号,%s from %s,(select @i:=0) as xh', 
+        $sql = sprintf('select (@i:=@i+1) as 序号,%s from %s,(select @i:=0) as xh', 
             $select_str, $query_table);
 
         // 拼出查询条件

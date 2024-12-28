@@ -1,4 +1,4 @@
-<!-- v7.20.1.1.202412221345, from home -->
+<!-- v8.1.1.1.202412282230, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -9,8 +9,6 @@
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-locale-cn.js'></script>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-community.noStyle.js'></script>
     <script src='<?php base_url(); ?>/assets/js/datepicker_brower.js'></script>
-    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-grid.css'>
-    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-theme-alpine.css'>
 
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/dhtmlx/codebase/suite.css'>
@@ -64,15 +62,15 @@
 <body>
     <div id='databox' style='width:100%;'>
         <div id='data_tb'></div>
-        <div id='data_grid' class='ag-theme-alpine' style='width:100%; height:92%; background-color:lightblue;'></div>
+        <div id='data_grid' style='width:100%; height:92%; background-color:lightblue;'></div>
     </div>
     <div id='updatebox' style='width:100%;'>
         <div id='update_tb'></div>
-        <div id='update_grid' class='ag-theme-alpine' style='width:100%; height:92%; background-color:lightblue;'></div>
+        <div id='update_grid' style='width:100%; height:92%; background-color:lightblue;'></div>
     </div>
     <div id='conditionbox' style='width:100%;'>
         <div id='cond_tb'></div>
-        <div id='cond_grid' class='ag-theme-alpine' style='width:100%; height:92%; background-color:lightblue;'></div>
+        <div id='cond_grid' style='width:100%; height:92%; background-color:lightblue;'></div>
     </div>
     <div id='chartbox' style='width:100%;'>
         <div id='chart_tb'></div>
@@ -313,6 +311,10 @@
             chart_tb.data.add({id:'SQL', type:'button', value:'SQL'});
         }
 
+        // grid样式
+        //var grid_theme = agGrid.themeMaterial;
+        var grid_theme = agGrid.themeAlpine;
+
         // 生成data_grid
         var data_page = 500;
         var data_columns_obj = JSON.parse('<?php echo $data_col_json; ?>');
@@ -353,6 +355,7 @@
 
         const data_grid_options = 
         {
+            theme: grid_theme,
             columnDefs: data_columns_arr,
             defaultColDef: 
             {
@@ -373,7 +376,7 @@
             },
             readOnlyEdit: !table_modify_flag,
             rowData: data_grid_obj,
-            rowSelection: 'multiple',
+            rowSelection: {mode: 'multiRow'},
             pagination: true,
             paginationPageSize: 500,
             paginationPageSizeSelector: [500, 1000, 2000],
@@ -473,14 +476,13 @@
 
         const update_grid_options = 
         {
+            theme: grid_theme,
             columnDefs: 
             [
                 {
                     field:'修改项',
                     width:150,
                     editable:false,
-                    headerCheckboxSelection:true, 
-                    checkboxSelection:true
                 },
                 {field:'列名'},
                 {field:'字段名', hide:true},
@@ -509,7 +511,7 @@
                     return false;
                 }
             },
-            rowSelection: 'multiple',
+            rowSelection: {mode: 'multiRow'},
             rowData: update_grid_obj,
 
             components:
@@ -601,6 +603,7 @@
 
         const cond_grid_options = 
         {
+            theme: grid_theme,
             columnDefs: cond_col_arr,
             defaultColDef: 
             {
@@ -682,7 +685,7 @@
             color: 'primary',
         });
 
-        var html = '<div id="popup_set_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
+        var html = '<div id="popup_set_grid" style="width:100%;height:100%;"></div>';
         win_popup_set.attachHTML(html);
         win_popup_set.hide();
 
@@ -794,7 +797,7 @@
             color: 'primary',
         });
 
-        var html = '<div id="color_set_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
+        var html = '<div id="color_set_grid" style="width:100%;height:100%;"></div>';
         win_color_set.attachHTML(html);
         win_color_set.hide();
 
@@ -862,7 +865,7 @@
             color: 'primary',
         });
 
-        var html = '<div id="chart_set_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
+        var html = '<div id="chart_set_grid" style="width:100%;height:100%;"></div>';
         win_chart_set.attachHTML(html);
         win_chart_set.hide();
 
@@ -870,12 +873,13 @@
         var chart_grid_new = false;
         const chart_grid_options = 
         {
+            theme: grid_theme,
             columnDefs:
             [
                 {
                     field: '行选择',
                     width: 100,
-                    checkboxSelection: true,
+                    editable: false,
                 },
                 {
                     field: '字段名称',
@@ -944,6 +948,7 @@
 
                     color_grid_options = 
                     {
+                        theme: grid_theme,
                         columnDefs:
                         [
                             {
@@ -2297,6 +2302,7 @@
 
                         popup_grid_options = 
                         {
+                            theme: grid_theme,
                             columnDefs:
                             [
                                 {field:'表项', editable:false},
