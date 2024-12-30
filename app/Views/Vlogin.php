@@ -1,4 +1,4 @@
-<!-- v2.1.2.1.202407281455, from home -->
+<!-- v2.1.3.1.202412302005, from home -->
 
 <!DOCTYPE html>
 <html style="display: block;">
@@ -175,7 +175,7 @@
                                     case "-2": showTip("密码输入错误5次，工号已锁定！"); break;
                                     case "-1": showTip("你的工号没有公网登录权限！"); break;
                                     case "0": showTip("验证码错误！"); break;
-                                    case "2": showTip("用户不存在！请使用手机号登录！"); break;
+                                    case "2": showTip("用户不存在！"); break;
                                     case "3": showTip("密码不正确！r="+r); break;
                                     case "4": showTip("账号被锁定，请与管理员联系！"); break;
                                     case "10": showTip("属地错误！"); break;
