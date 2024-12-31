@@ -1,5 +1,5 @@
 <?php
-/* v3.3.2.1.202309292140, from home */
+/* v3.5.2.0.202412312015, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -14,13 +14,15 @@ class Store extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 邀约人员数据维护
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function init($menu_id='')
+    public function init($menu_id='', $arg='')
     {
         $model = new Mcommon();
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_location_str = $session->get('user_location_str');
+        $user_workid = $session->get('user_workid');
+        $user_location = $session->get('user_location');
+        $user_location_authz = $session->get('user_location_authz');
         $tree_expand = $session->get('store_tree_expand');
 
         $sql = sprintf('
@@ -34,7 +36,7 @@ class Store extends Controller
             from ee_store
             where 属地 in (%s)
             order by field(邀约结果,"通过","未邀约"),面试信息,预约面试日期,招聘渠道,convert(姓名 using gbk)',
-            $user_location_str);
+            $user_location_authz);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -135,6 +137,102 @@ class Store extends Controller
         $tree_arr = [];
         array_push($tree_arr, $csr_arr);
 
+        //////////////////////////
+        // 读出列配置信息
+        $sql = sprintf('
+            select 功能编码,字段模块,部门编码字段,部门全称字段,属地字段,
+                列名,列类型,列宽度,字段名,查询名,
+                赋值类型,对象,对象名称,对象表名,缺省值,
+                主键,可筛选,可汇总,可新增,可修改,不可为空,可颜色标注,
+                提示条件,提示样式设置,异常条件,异常样式设置,字符转换,
+                列顺序
+            from view_function
+            where 功能编码="%s" and 列顺序>0
+            group by 列名
+            order by 列顺序', $arg);
+
+        $query = $model->select($sql);
+        $results = $query->getResult();
+
+        $update_value_arr = [];
+        $add_value_arr = [];
+        foreach ($results as $row)
+        {
+            // 前端update_grid信息
+            // 主键不能更改
+            if ($row->主键 == 1) continue;
+
+            if ($row->可修改==0 && $row->可新增==0) continue;
+
+            $value_arr = [];
+            $value_arr['列名'] = $row->列名;
+            $value_arr['字段名'] = $row->字段名;
+            $value_arr['列类型'] = $row->列类型;
+            $value_arr['是否可修改'] = ($row->可修改=='1' || $row->可修改=='2') ? '是' : '否';
+            $value_arr['是否必填'] = ($row->不可为空=='1') ? '是' : '否';
+            $value_arr['取值'] = '';
+
+            if ($row->可修改 == 1 || $row->可修改 == 2)
+            {
+                $value_arr['是否可修改'] = ($row->可修改=='1' || $row->可修改=='2') ? $row->可修改 : '0';
+                array_push($update_value_arr, $value_arr);
+            }
+            if ($row->可新增 == 1)
+            {
+                $value_arr['是否可修改'] = ($row->可新增=='1') ? '1' : '0';
+                switch ($row->缺省值)
+                {
+                    case '$当日日期':
+                        $value_arr['取值'] = date('Y-m-d');
+                        break;
+                    case '$属地':
+                        $value_arr['取值'] = $user_location;
+                        break;
+                    case '$工号':
+                        $value_arr['取值'] = $user_workid;
+                        break;
+                }
+                array_push($add_value_arr, $value_arr);
+            }
+
+            if (strpos($row->赋值类型,'固定值') !== false && array_key_exists($row->对象,$object_arr) == false)
+            {
+                $object_arr[$row->对象] = [];
+
+                $cond_obj_arr[$row->列名] = '';
+                $update_obj_arr[$row->列名] = '';
+
+                $obj_sql = sprintf('
+                    select 对象名称,对象值,if(对象显示值="",对象值,对象显示值) as 对象显示值,
+                        上级对象名称,上级对象值,if(上级对象显示值="",上级对象值,上级对象显示值) as 上级对象显示值
+                    from def_object 
+                    where 对象名称="%s"
+                        and 有效标识="1"
+                        and (属地="" or 属地 in (%s))
+                    order by convert(对象值 using gbk)',
+                    $row->对象, $user_location_authz);
+
+                $qry = $model->select($obj_sql);
+                $rslt = $qry->getResult();
+
+                foreach($rslt as $vv)
+                {
+                    $object_arr[$vv->对象名称]['上级对象名称'] = $vv->上级对象名称;
+                    if (array_key_exists($vv->上级对象值, $object_arr[$row->对象]) == false)
+                    {
+                        $object_arr[$row->对象][$vv->上级对象值] = [];
+                        $object_arr[$row->对象][$vv->上级对象值]['对象值'] = [];
+                        $object_arr[$row->对象][$vv->上级对象值]['对象显示值'] = [];
+                    }
+
+                    array_push($object_arr[$row->对象][$vv->上级对象值]['对象值'], $vv->对象值);
+                    array_push($object_arr[$row->对象][$vv->上级对象值]['对象显示值'], $vv->对象显示值);
+                }
+            }
+        }
+
+        //////////////////////////
+
         //grid
         $grid_arr = [];
 
@@ -149,7 +247,7 @@ class Store extends Controller
             from def_object 
             where 对象名称="渠道名称" and 属地 in (%s)
             order by convert(对象值 using gbk)',
-            $user_location_str);
+            $user_location_authz);
 
         $query = $model->select($sql);
         $result = $query->getResult();
@@ -164,6 +262,9 @@ class Store extends Controller
         $send['grid_json'] = json_encode($grid_arr);
         $send['import_func_id'] = '2012';
         $send['import_func_name'] = '邀约人员';
+
+        $send['update_value_json'] = json_encode($update_value_arr);
+        $send['add_value_json'] = json_encode($add_value_arr);
         $send['object_json'] = json_encode($object_arr);
 
         echo view('Vstore.php', $send);

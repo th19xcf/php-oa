@@ -1,5 +1,5 @@
 <?php
-/* v2.2.2.1.202312302120, from home */
+/* v2.2.2.1.202412312015, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -21,7 +21,7 @@ class Interview extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_location_str = $session->get('user_location_str');
+        $user_location_authz = $session->get('user_location_authz');
         $tree_expand = $session->get('interview_tree_expand');
 
         $sql = sprintf('
@@ -35,7 +35,7 @@ class Interview extends Controller
             order by field(面试结果,"未面试","通过","未通过"),
                 field(参培信息,"待参培","已参培","未参培"),
                 招聘渠道,预约培训日期,convert(姓名 using gbk)',
-            $user_location_str);
+            $user_location_authz);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -149,7 +149,7 @@ class Interview extends Controller
             select 对象值 
             from def_object 
             where 对象名称="渠道名称" and 属地 in (%s)
-            order by convert(对象值 using gbk)', $user_location_str);
+            order by convert(对象值 using gbk)', $user_location_authz);
 
         $query = $model->select($sql);
         $result = $query->getResult();
@@ -166,7 +166,7 @@ class Interview extends Controller
             from def_object 
             where 对象名称="培训业务" and 属地 in (%s)
             order by convert(对象值 using gbk)', 
-            $user_location_str);
+            $user_location_authz);
 
         $query = $model->select($sql);
         $result = $query->getResult();

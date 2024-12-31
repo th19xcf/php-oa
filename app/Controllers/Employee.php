@@ -1,5 +1,5 @@
 <?php
-/* v5.2.3.1.202310181405, from office */
+/* v5.2.4.1.202412311915, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -21,7 +21,7 @@ class Employee extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_location_str = $session->get('user_location_str');
+        $user_location_authz = $session->get('user_location_authz');
         $tree_expand = $session->get('employee_tree_expand');
 
         $sql = sprintf('
@@ -35,7 +35,7 @@ class Employee extends Controller
                 convert(部门名称 using gbk),
                 convert(班组 using gbk),
                 convert(姓名 using gbk)',
-            $user_location_str);
+            $user_location_authz);
 
         $query = $model->select($sql);
         $results = $query->getResult();

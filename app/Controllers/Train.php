@@ -1,5 +1,5 @@
 <?php
-/* v2.2.2.1.202309281520, from office */
+/* v2.2.3.1.202412312015, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -21,7 +21,7 @@ class Train extends Controller
 
         // 从session中取出数据
         $session = \Config\Services::session();
-        $user_location_str = $session->get('user_location_str');
+        $user_location_authz = $session->get('user_location_authz');
         $tree_expand = $session->get('train_tree_expand');
 
         $sql = sprintf('
@@ -34,7 +34,7 @@ class Train extends Controller
             where 属地 in (%s) and 有效标识!="0"
             order by if(instr(培训状态,"在培"),"在培",培训状态),
                 培训老师,培训开始日期,convert(姓名 using gbk)',
-            $user_location_str);
+            $user_location_authz);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -134,7 +134,7 @@ class Train extends Controller
             from def_object 
             where 对象名称="培训业务" and 属地 in (%s)
             order by convert(对象值 using gbk)', 
-            $user_location_str);
+            $user_location_authz);
 
         $query = $model->select($sql);
         $result = $query->getResult();

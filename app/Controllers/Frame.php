@@ -1,5 +1,5 @@
 <?php
-/* v11.2.1.1.202412292230, from home */
+/* v11.2.2.1.202412312015, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -121,7 +121,11 @@ class Frame extends Controller
                 $user_role_authz = ($user_role_authz == '') ? sprintf('"%s"', $role) : sprintf('%s,"%s"', $user_role_authz, $role);
             }
 
-            // 属地赋权
+            // 个人属地赋权
+            if ($row->属地赋权 == '')
+            {
+                $row->属地赋权 = $company_id;
+            }
             $user_location_arr = ($row->属地赋权 == '') ? [] : explode(',', $row->属地赋权);
             $user_location_arr = array_unique($user_location_arr);
 
@@ -414,7 +418,7 @@ class Frame extends Controller
             }
             if ($user_location_authz != '')
             {
-                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('instr(%s,"%s")', $session_arr[$row->功能赋权.'-location_fld'], $user_location_authz);
+                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('instr(%s,%s)', $session_arr[$row->功能赋权.'-location_fld'], $user_location_authz);
             }
         }
 
