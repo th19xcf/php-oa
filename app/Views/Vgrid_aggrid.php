@@ -1,4 +1,4 @@
-<!-- v8.1.1.1.202412282230, from home -->
+<!-- v8.1.2.1.202412311505, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -376,7 +376,7 @@
             },
             readOnlyEdit: !table_modify_flag,
             rowData: data_grid_obj,
-            rowSelection: {mode: 'multiRow'},
+            rowSelection: {mode: 'multiRow', enableClickSelection: true},
             pagination: true,
             paginationPageSize: 500,
             paginationPageSizeSelector: [500, 1000, 2000],

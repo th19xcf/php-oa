@@ -1,4 +1,4 @@
-<!-- v2.2.2.1.202311131330, from office -->
+<!-- v3.1.1.1.202412311315, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -9,11 +9,8 @@
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/dhtmlx/codebase/suite.css'>
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
 
-    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-grid.css'>
-    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-theme-alpine.css'>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-locale-cn.js'></script>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-community.noStyle.js'></script>
-
     <script src='<?php base_url(); ?>/assets/js/datepicker_brower.js'></script>
 
     <style type='text/css'>
@@ -81,10 +78,15 @@
             tree.expand(tree_expand_obj[ii]);
         }
 
+        // grid样式
+        var grid_theme = agGrid.themeAlpine;
+
         //grid视图
         var grid_obj = JSON.parse('<?php echo $grid_json; ?>');
+
         const grid_options = 
         {
+            theme: grid_theme,
             columnDefs: 
             [
                 {field:'表项', width:130, editable:false},
@@ -114,7 +116,7 @@
             rowData: grid_obj,
         };
 
-        new agGrid.Grid($$('grid_box'), grid_options);
+        var data_grid_api = agGrid.createGrid($$('grid_box'), grid_options);
 
         // 工具栏点击
         main_tb.events.on('click', function(id, e)
@@ -148,7 +150,7 @@
                         alert('选择人员和查询人员不符, 请重新选择')
                     }
 
-                    var rowNode = grid_options.api.getRowNode(0);
+                    var rowNode = data_grid_api.getRowNode(0);
                     rowNode.setDataValue('值', '修改邀约信息');
                     submit_type = 'upkeep';
                     editable = true;
@@ -210,7 +212,7 @@
             dhx.ajax.post('<?php base_url(); ?>/Store/ajax/<?php echo $func_id; ?>', arg_obj).then(function (data)
             {
                 grid_obj = JSON.parse(data);
-                grid_options.api.setRowData(grid_obj);
+                data_grid_api.setGridOption('rowData', grid_obj);
                 editable = false;
                 button = grid_obj[0]['值'];
                 var item = id.split('^');
@@ -358,8 +360,8 @@
 
             var ajax = 0;
 
-            grid_options.api.stopEditing();
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.stopEditing();
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '修改邀约信息')
                 {
@@ -377,7 +379,7 @@
             arg_obj['操作'] = '修改邀约信息';
             arg_obj['人员'] = csr_guid;
 
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] != '属性')
                 {
@@ -418,7 +420,7 @@
                 {'表项':'预约培训日期', '值':''},
             ];
 
-            grid_options.api.setRowData(rowData);
+            data_grid_api.setGridOption('rowData', rowData);
         }
 
         // 面试标识更改提交
@@ -432,8 +434,8 @@
 
             var ajax = 0;
 
-            grid_options.api.stopEditing();
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.stopEditing();
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '更新面试信息')
                 {
@@ -451,7 +453,7 @@
             arg_obj['操作'] = '更新面试信息';
             arg_obj['人员'] = csr_guid;
 
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] != '属性')
                 {
@@ -507,7 +509,7 @@
                 {'表项':'面试结果', '值':''},
             ];
 
-            grid_options.api.setRowData(rowData);
+            data_grid_api.setGridOption('rowData', rowData);
         }
 
         // 新增记录提交
@@ -515,8 +517,8 @@
         {
             var ajax = 0;
 
-            grid_options.api.stopEditing();
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.stopEditing();
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] == '属性' && rowNode.data['值'] != '新增邀约信息')
                 {
@@ -533,7 +535,7 @@
             var arg_obj = {};
             arg_obj['操作'] = '新增邀约信息';
 
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] != '属性')
                 {

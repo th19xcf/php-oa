@@ -1,4 +1,4 @@
-<!-- v3.3.1.1.202308032115, from home -->
+<!-- v4.1.1.1.202412311240, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -9,11 +9,8 @@
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/dhtmlx/codebase/suite.css'>
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
 
-    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-grid.css'>
-    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-theme-alpine.css'>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-locale-cn.js'></script>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-community.noStyle.js'></script>
-
     <script src='<?php base_url(); ?>/assets/js/datepicker_brower.js'></script>
 
     <style type='text/css'>
@@ -38,7 +35,7 @@
     </div>
 
     <div class='float_box'>
-        <div id='grid_box' class='ag-theme-alpine' style='width:100%; height:100%; background-color:lightblue;'></div>
+        <div id='grid_box' style='width:100%; height:100%; background-color:lightblue;'></div>
     </div>
 
     <script type='text/javascript' charset='utf-8'>
@@ -79,12 +76,16 @@
             tree.expand(tree_expand_obj[ii]);
         }
 
+        // grid样式
+        var grid_theme = agGrid.themeAlpine;
+
         //grid视图
         var grid_obj = JSON.parse('<?php echo $grid_json; ?>');
         var value_obj = JSON.parse('<?php echo $grid_json; ?>');
 
         const grid_options = 
         {
+            theme: grid_theme,
             columnDefs: 
             [
                 {field:'表项', width:130, editable:false},
@@ -114,16 +115,7 @@
             rowData: grid_obj,
         };
 
-        new agGrid.Grid($$('grid_box'), grid_options);
-
-        /*
-        grid_options.onCellValueChanged = cellchanaged;
-        function cellchanaged(params)
-        {
-          // your code here
-          console.log('cell changed', params);
-        };
-        */
+        var data_grid_api = agGrid.createGrid($$('grid_box'), grid_options);
 
         // 工具栏点击
         main_tb.events.on('click', function(id, e)
@@ -157,7 +149,7 @@
                         alert('选择人员和查询人员不符, 请重新选择')
                     }
 
-                    var rowNode = grid_options.api.getRowNode(0);
+                    var rowNode = data_grid_api.getRowNode(0);
                     rowNode.setDataValue('值', '修改个人信息 (单选)');
                     submit_type = 'upkeep_single';
                     editable = true;
@@ -176,7 +168,7 @@
                             {'表项':'离职原因', '值':''},
                         ];
 
-                    grid_options.api.setRowData(rowData);
+                    data_grid_api.setGridOption('rowData', rowData);
 
                     if (csr_guid.length == 0)
                     {
@@ -184,7 +176,7 @@
                         return;
                     }
 
-                    var rowNode = grid_options.api.getRowNode(0);
+                    var rowNode = data_grid_api.getRowNode(0);
                     rowNode.setDataValue('值', '修改共性信息 (多选)');
                     submit_type = 'upkeep_multi';
                     editable = true;
@@ -227,7 +219,7 @@
             {
                 value_obj = JSON.parse(data);  //原记录
                 grid_obj = JSON.parse(data);
-                grid_options.api.setRowData(grid_obj);
+                data_grid_api.setGridOption('rowData', grid_obj);
                 editable = false;
                 button = grid_obj[0]['值'];
                 var item = id.split('^');
@@ -338,8 +330,8 @@
         {
             var ajax = 0;
 
-            grid_options.api.stopEditing();
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.stopEditing();
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 if (rowNode.data['表项'] == '属性')
                 {
@@ -366,7 +358,7 @@
             arg_obj['操作'] = '修改记录';
             arg_obj['人员'] = csr_guid;
 
-            grid_options.api.forEachNode((rowNode, index) =>
+            data_grid_api.forEachNode((rowNode, index) =>
             {
                 // 单选
                 if (submit_type == 'upkeep_single')
