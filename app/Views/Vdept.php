@@ -1,4 +1,4 @@
-<!-- v2.6.1.1.202410191320, from home -->
+<!-- v2.7.1.1.202501021905, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -9,11 +9,8 @@
     <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/dhtmlx/codebase/suite.css'>
     <script src='<?php base_url(); ?>/dhtmlx/codebase/suite.js'></script>
 
-    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-grid.css'>
-    <link rel='stylesheet' type='text/css' href='<?php base_url(); ?>/ag-grid/dist/styles/ag-theme-alpine.css'>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-locale-cn.js'></script>
     <script src='<?php base_url(); ?>/ag-grid/dist/ag-grid-community.noStyle.js'></script>
-
     <script src='<?php base_url(); ?>/assets/js/datepicker_brower.js'></script>
 
     <style type='text/css'>
@@ -39,7 +36,7 @@
                 <div id='tree_box' style='height:100%;'></div>
             </div>
             <div class='float_box'>
-                <div id='grid_box' class='ag-theme-alpine' style='width:100%; height:100%; background-color:lightblue;'></div>
+                <div id='grid_box' style='width:100%; height:100%; background-color:lightblue;'></div>
             </div>
         </div>
     </div>
@@ -128,11 +125,15 @@
             tree.expand(tree_expand_obj[ii]);
         }
 
+        // grid样式
+        var grid_theme = agGrid.themeAlpine;
+
         //grid视图
         var value_obj = [];
 
         const grid_options = 
         {
+            theme: grid_theme,
             columnDefs: 
             [
                 {field:'表项', width:150, editable:false},
@@ -149,7 +150,7 @@
                                 return {
                                     component: 'agSelectCellEditor',
                                     params: {
-                                        values: ['','北京总公司','河北分公司','四川分公司']
+                                        values: ['','北京总公司','河北分公司','四川分公司',,'河南分公司']
                                     },
                                 };
                             case '有无下级部门':
@@ -265,7 +266,7 @@
             color: 'primary',
         });
 
-        var html = '<div id="popup_set_grid" class="ag-theme-alpine" style="width:100%;height:100%;"></div>';
+        var html = '<div id="popup_set_grid" style="width:100%;height:100%;"></div>';
         win_popup_set.attachHTML(html);
         win_popup_set.hide();
 
@@ -283,6 +284,7 @@
         // 预算部门视图
         const budget_grid_options = 
         {
+            theme: grid_theme,
             columnDefs:
             [
                 {field:'部门', editable:false},
@@ -292,7 +294,7 @@
                     width: 250,
                     editable: (params) =>
                     {
-                        if (params.data.部门 == '一级部门' || params.data.部门 == '二级部门') 
+                        if (params.data.部门 == '一级部门') 
                         {
                             return false;
                         }
@@ -361,11 +363,17 @@
                 let send_obj = {};
                 send_obj['操作'] = id;
                 send_obj['部门级别'] = budget_arr.max_rank;
+                send_obj['部门全称'] = '';
 
                 popup_grid_api.stopEditing();
                 popup_grid_api.forEachNode((rowNode, index) => 
                 {
                     send_obj[rowNode.data['部门']] = rowNode.data['取值'];
+                    if (rowNode.data['取值'] != '')
+                    {
+                        if (send_obj['部门全称'] != '') send_obj['部门全称'] += '>>';
+                        send_obj['部门全称'] += rowNode.data['取值'];
+                    }
                 });
 
                 dhx.ajax.post('<?php base_url(); ?>/dept/budget_verify/<?php echo $func_id; ?>', send_obj).then(function (data)

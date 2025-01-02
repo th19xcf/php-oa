@@ -1,5 +1,5 @@
 <?php
-/* v1.8.5.1.202411051425, from office */
+/* v1.9.1.1.202501021905, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -252,7 +252,8 @@ class Dept extends Controller
 
         //增加新记录
         $fld_str = '部门编码,部门名称,部门全称,部门级别,' .
-            '上级部门编码,有无下级部门,负责人,预算表部门全称,' .
+            '上级部门编码,有无下级部门,负责人,属地,' .
+            '预算表部门全称,报表部门全称,' .
             '记录开始日期,记录结束日期,' .
             '操作记录,操作来源,操作人员,' .
             '开始操作时间,结束操作时间,' .
@@ -273,7 +274,7 @@ class Dept extends Controller
                     $col = '"" as 记录结束日期';
                     break;
                 case '操作记录':
-                    $col = '"新增[2]" as 操作记录';
+                    $col = '"更新[2]" as 操作记录';
                     break;
                 case '操作来源':
                     $col = '"页面更新" as 操作来源';
@@ -449,21 +450,12 @@ class Dept extends Controller
         $arg = $request->getJSON(true);
 
         $model = new Mcommon();
+
         $sql = sprintf('
             select "" as 部门编码,统计部门全称
-            from 中心_预算_部门
-            where 统计部门级别="%s"
-                and 一级统计部门="%s"
-                and 二级统计部门="%s"
-                and 三级统计部门="%s"
-                and 四级统计部门="%s"
-                and 五级统计部门="%s"
-                and 六级统计部门="%s"
-                and 七级统计部门="%s"',
-            $arg['部门级别'],
-            $arg['一级部门'], $arg['二级部门'], $arg['三级部门'], 
-            $arg['四级部门'], $arg['五级部门'], $arg['六级部门'],
-            $arg['七级部门']);
+            from 公司_预算_部门全称
+            where left(统计部门全称,length("%s"))="%s"', 
+            $arg['部门全称'], $arg['部门全称']);
 
         $rows = $model->select($sql)->getResultArray();
         exit($rows[0]['统计部门全称']);
@@ -505,7 +497,7 @@ class Dept extends Controller
                     when 7 then "七级部门"
                     else "未知级别"
                 end as 上级部门级别
-            from 中心_预算_部门
+            from 公司_预算_部门全称
             where 统计部门级别=1 or 有效标识!=0
             group by 部门全称
             order by 级别,部门全称');
@@ -532,7 +524,7 @@ class Dept extends Controller
         // 前端预算部门显示信息
         $budget_rows_arr = [];
         array_push($budget_rows_arr, array('部门'=>'一级部门', '级别'=>'1', '取值'=>'公司'));
-        array_push($budget_rows_arr, array('部门'=>'二级部门', '级别'=>'2', '取值'=>'呼叫中心'));
+        array_push($budget_rows_arr, array('部门'=>'二级部门', '级别'=>'2', '取值'=>''));
         array_push($budget_rows_arr, array('部门'=>'三级部门', '级别'=>'3', '取值'=>''));
         array_push($budget_rows_arr, array('部门'=>'四级部门', '级别'=>'4', '取值'=>''));
         array_push($budget_rows_arr, array('部门'=>'五级部门', '级别'=>'5', '取值'=>''));
