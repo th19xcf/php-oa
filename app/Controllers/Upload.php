@@ -1,5 +1,5 @@
 <?php
-/* v3.1.6.1.202411141325, from office */
+/* v3.1.7.1.202501081535, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -100,7 +100,7 @@ class Upload extends Controller
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
         $user_location = $session->get('user_location');
-        $user_location_str = $session->get('user_location_str');
+        $user_location_authz = $session->get('user_location_authz');
         $menu_1 = $session->get($menu_id.'-menu_1');
         $menu_2 = $session->get($menu_id.'-menu_2');
         $import_module = $session->get($menu_id.'-import_module');
@@ -270,7 +270,7 @@ class Upload extends Controller
                     ) as t2 on t1.字段值=t2.对象值
                     where t2.对象值 is null',
                     $row->字段名, $row->字段名, $tmp_table_name,
-                    $row->对象, $user_location_str, $user_location_str);
+                    $row->对象, $user_location_authz, $user_location_authz);
 
                 $errs = $model->select($sql)->getResultArray();
                 if (count($errs) != 0)
