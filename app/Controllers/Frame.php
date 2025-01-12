@@ -1,5 +1,5 @@
 <?php
-/* v11.2.2.1.202412312015, from home */
+/* v11.3.1.1.202501121515, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -331,6 +331,12 @@ class Frame extends Controller
             {
                 $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('%s or left(%s,length("%s"))="%s"', $session_arr[$row->功能赋权.'-dept_code_authz'], $session_arr[$row->功能赋权.'-dept_code_fld'], $row->部门编码赋权, $row->部门编码赋权);
             }
+
+            // 数据维护时取出空记录
+            if ($session_arr[$row->功能赋权.'-upkeep_authz'] == '1' || $session_arr[$row->功能赋权.'-dept_code_authz'] != '')
+            {
+                $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-dept_code_authz'], $session_arr[$row->功能赋权.'-dept_code_fld']);
+            }
         }
 
         // 读出角色对应的部门全称赋权
@@ -379,6 +385,12 @@ class Frame extends Controller
             else
             {
                 $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('%s or instr(%s,"%s")', $session_arr[$row->功能赋权.'-dept_name_authz'], $session_arr[$row->功能赋权.'-dept_name_fld'], $row->部门全称赋权);
+            }
+
+            // 数据维护时取出空记录
+            if ($session_arr[$row->功能赋权.'-upkeep_authz'] == '1' || $session_arr[$row->功能赋权.'-dept_name_authz'] != '')
+            {
+                $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-dept_name_authz'], $session_arr[$row->功能赋权.'-dept_name_fld']);
             }
 
             if ($session_arr[$row->功能赋权.'-dept_name_str'] == '')
@@ -436,6 +448,12 @@ class Frame extends Controller
             else
             {
                 $session_arr[$row->功能赋权.'-location_authz'] = sprintf('%s or instr(%s,"%s")', $session_arr[$row->功能赋权.'-location_authz'], $session_arr[$row->功能赋权.'-location_fld'], $row->属地赋权);
+            }
+
+            // 数据维护时取出空记录
+            if ($session_arr[$row->功能赋权.'-upkeep_authz'] == '1' || $session_arr[$row->功能赋权.'-location_authz'] != '')
+            {
+                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-location_authz'], $session_arr[$row->功能赋权.'-location_fld']);
             }
         }
 
