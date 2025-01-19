@@ -1,5 +1,5 @@
 <?php
-/* v11.3.1.1.202501121515, from home */
+/* v11.4.1.1.202501181930, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1113,6 +1113,9 @@ class Frame extends Controller
 
         //返回页面
         $send = [];
+        $send['drill_module'] = json_encode(($user_debug_authz=='1') ? $drill_module : '');
+        $send['upkeep_module'] = json_encode(($user_debug_authz=='1') ? $data_upkeep : '');
+        $send['import_module'] = json_encode(($user_debug_authz=='1') ? $import_module : '');
         $send['SQL'] = json_encode(($user_debug_authz=='1') ? $send_sql : '');
         $send['menu_json'] = json_encode($menu_arr);
         $send['toolbar_json'] = json_encode($tb_arr);

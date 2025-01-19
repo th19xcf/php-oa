@@ -1,4 +1,4 @@
-<!-- v8.1.2.1.202412311505, from office -->
+<!-- v8.2.1.1.202501181930, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1108,6 +1108,8 @@
                     }
                     break;
                 case '数据钻取':
+                    console.log('数据钻取=[`', '<?php echo $func_id; ?>', '`]', '钻取模块=[`', '<?php echo $drill_module; ?>', '`]');
+
                     var rows = data_grid_api.getSelectedRows();
                     if (rows.length == 0)
                     {
@@ -1144,6 +1146,8 @@
                     drill_select(radio_arr);
                     break;
                 case '数据整理':
+                    console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]', '整理模块=[`', '<?php echo $upkeep_module; ?>', '`]');
+
                     var url = '<?php base_url(); ?>/frame/upkeep/<?php echo $func_id; ?>';
                     dhx.ajax.post(url, null).then(function (data)
                     {
@@ -1159,6 +1163,8 @@
                     console.log('SQL=[`', debug_sql, '`]');
                     break;
                 case '导入':
+                    console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]', '导入模块=[`', '<?php echo $import_module; ?>', '`]');
+
                     let import_func_id = '<?php echo $func_id; ?>' + '88';
                     parent.window.goto(import_func_id,'导入-'+'<?php echo $import_tag_name; ?>','upload/init/'+import_func_id+'/<?php echo $import_module; ?>');
                     break;
