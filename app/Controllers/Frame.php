@@ -1,5 +1,5 @@
 <?php
-/* v11.4.1.1.202501181930, from home */
+/* v11.5.1.1.202502221155, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -195,7 +195,8 @@ class Frame extends Controller
                 ifnull(t2.一级菜单,"") as 一级菜单,
                 ifnull(t2.二级菜单,"") as 二级菜单,
                 ifnull(t2.功能模块,"") as 功能模块,
-                ifnull(t2.菜单顺序,"") as 菜单顺序,
+                ifnull(t2.一级菜单顺序,"") as 一级菜单顺序,
+                ifnull(t2.二级菜单顺序,"") as 二级菜单顺序,
                 ifnull(t2.菜单显示,"") as 菜单显示,
                 ifnull(t3.部门编码字段,"") as 部门编码字段,
                 ifnull(t3.部门全称字段,"") as 部门全称字段,
@@ -216,11 +217,29 @@ class Frame extends Controller
             ) as t1
             left join
             (
-                select 功能编码,一级菜单,二级菜单,
+                select
+                    功能编码,
+                    ta.一级菜单,ta.二级菜单,
                     功能模块,功能类型,模块名称,
-                    菜单顺序,菜单显示
-                from def_function
-                where 菜单顺序>0
+                    ifnull(tb.一级菜单顺序,999) as 一级菜单顺序,
+                    二级菜单顺序,
+                    菜单显示
+                from
+                (
+                    select 
+                        功能编码,一级菜单,二级菜单,
+                        功能模块,功能类型,模块名称,
+                        菜单顺序 as 二级菜单顺序,菜单显示
+                    from def_function
+                    where 菜单顺序>0
+                ) as ta
+                left join
+                (
+                    select 一级菜单,顺序 as 一级菜单顺序
+                    from def_menu_1 
+                    where 顺序>0
+                ) as tb on ta.一级菜单=tb.一级菜单
+                order by 一级菜单顺序,二级菜单顺序
             ) as t2 on t1.功能赋权=t2.功能编码
             left join
             (
@@ -228,7 +247,7 @@ class Frame extends Controller
                 from def_query_config
             ) as t3 on if(t2.功能类型="查询",t2.模块名称,"")=t3.查询模块
             group by t1.功能赋权
-            order by t2.菜单顺序', $user_role_authz);
+            order by t2.一级菜单顺序,t2.二级菜单顺序', $user_role_authz);
 
         $query = $model->select($sql);
         $results = $query->getResult();
