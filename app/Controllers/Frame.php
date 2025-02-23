@@ -1,5 +1,5 @@
 <?php
-/* v11.5.1.1.202502221155, from home */
+/* v11.6.1.1.202502221415, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1081,18 +1081,6 @@ class Frame extends Controller
         $send_sql = str_replace('\'','~~',$send_sql);
         $send_sql = str_replace('"','~~',$send_sql);
 
-        // chart session初始化
-        $session_arr = [];
-        $session_arr[$menu_id.'-chart_drill_arr'] = [];
-        $session_arr[sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_func_id)] = '';
-        $session_arr[sprintf('%s^%s-chart_drill_title_str',$menu_id,$chart_func_id)] = '';
-
-        $session = \Config\Services::session();
-        $session->set($session_arr);
-
-        // 生成前端图形数据
-        $chart_arr = $this->get_chart_data($menu_id, $chart_func_id, '', '');
-
         // 存入session
         $session_arr = [];
         $session_arr[$menu_id.'-select_str'] = $select_str;
@@ -1120,6 +1108,11 @@ class Frame extends Controller
         $session_arr[$menu_id.'-data_table'] = $data_table;
         $session_arr[$menu_id.'-data_model'] = $data_model;
 
+        // chart session初始化
+        $session_arr[$menu_id.'-chart_drill_arr'] = [];
+        $session_arr[sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_func_id)] = '';
+        $session_arr[sprintf('%s^%s-chart_drill_title_str',$menu_id,$chart_func_id)] = '';
+
         $session = \Config\Services::session();
         $session->set($session_arr);
 
@@ -1129,6 +1122,9 @@ class Frame extends Controller
         $tb_arr['整表授权'] = ($table_authz=='1') ? true : false ;
         $tb_arr['导入授权'] = ($import_authz=='1' && $import_module!='') ? true : false ;
         $tb_arr['导出授权'] = ($export_authz=='1') ? true : false ;
+
+        // 生成前端图形数据
+        $chart_arr = $this->get_chart_data($menu_id, $chart_func_id, '', '');
 
         //返回页面
         $send = [];
@@ -2824,6 +2820,7 @@ class Frame extends Controller
         $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
         $dept_authz_cond = $session->get($menu_id.'-dept_authz_cond');
         $dept_name_str = $session->get($menu_id.'-dept_name_str');
+        $query_table = $session->get($menu_id.'-query_table');
         $chart_drill_cond_str = $session->get(sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_id));
         $chart_drill_title_str = $session->get(sprintf('%s^%s-chart_drill_title_str',$menu_id,$chart_id));
 
@@ -2867,6 +2864,7 @@ class Frame extends Controller
             if ($row->取数方式 == '存储过程')
             {
                 // 替换参数
+                $row->查询表名 = str_replace('$查询表名', sprintf('%s',$query_table), $row->查询表名);
                 $row->查询表名 = str_replace('$[部门全称赋权]', sprintf('\'[%s]\'',$dept_name_str), $row->查询表名);
                 $data_sql = sprintf('call %s', $row->查询表名);
 
