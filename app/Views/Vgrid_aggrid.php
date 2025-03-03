@@ -1,4 +1,4 @@
-<!-- v8.2.1.1.202501181930, from home -->
+<!-- v8.2.2.1.202503031455, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -322,7 +322,15 @@
         var data_columns_arr = []; // 数据表使用
         data_columns_arr = Object.values(data_columns_obj);
 
-        var data_grid_obj = JSON.parse('<?php echo $data_value_json; ?>');
+        var data_grid_obj = [];
+        try
+        {
+            data_grid_obj = JSON.parse('<?php echo $data_value_json; ?>');
+        }
+        catch (e)
+        {
+            alert('数据错误,请检查',e);
+        }
         var data_last_selected = [];
 
         // 字符转换
