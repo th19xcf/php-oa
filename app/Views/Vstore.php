@@ -1,4 +1,4 @@
-<!-- v3.1.1.1.202412311315, from office -->
+<!-- v3.2.1.1.202503042310, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -33,7 +33,6 @@
     <div class='float_box'>
         <div id='tree_box' style='height:100%;'></div>
     </div>
-
     <div class='float_box'>
         <div id='grid_box' class='ag-theme-alpine' style='width:100%; height:100%; background-color:lightblue;'></div>
     </div>
@@ -197,7 +196,7 @@
                     delete_row();
                     break;
                 case '导入':
-                    parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','Upload/init/<?php echo $import_func_id; ?>');
+                    parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','Upload/init/<?php echo $import_func_id; ?>/<?php echo $import_func_module; ?>');
                     break;
             }
         });

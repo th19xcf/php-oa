@@ -1,5 +1,5 @@
 <?php
-/* v2.2.2.1.202412312015, from home */
+/* v2.3.1.1.202503042310, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -181,6 +181,7 @@ class Interview extends Controller
         $send['grid_json'] = json_encode($grid_arr);
         $send['import_func_id'] = '2022';
         $send['import_func_name'] = '面试人员';
+        $send['import_func_module'] = 'ee_interview';
         $send['object_json'] = json_encode($object_arr);
 
         echo view('Vinterview.php', $send);
@@ -191,7 +192,8 @@ class Interview extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function ajax($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 记录展开的节点
         if ($arg['操作'] == '展开')
@@ -261,7 +263,8 @@ class Interview extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function upkeep($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -313,7 +316,8 @@ class Interview extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function insert($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -357,7 +361,8 @@ class Interview extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function tran($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -470,7 +475,8 @@ class Interview extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function delete_row($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();

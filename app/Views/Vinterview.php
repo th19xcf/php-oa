@@ -1,4 +1,4 @@
-<!-- v3.1.1.1.202412311320, from office -->
+<!-- v3.2.1.1.202503042310, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -196,7 +196,7 @@
                     delete_row();
                     break;
                 case '导入':
-                    parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','Upload/init/<?php echo $import_func_id; ?>');
+                    parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','Upload/init/<?php echo $import_func_id; ?>/<?php echo $import_func_module; ?>');
                     break;
             }
         });
