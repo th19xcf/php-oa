@@ -1,5 +1,5 @@
 <?php
-/* v3.1.7.1.202501081535, from office */
+/* v3.1.3.1.202503171330, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -180,7 +180,7 @@ class Upload extends Controller
                 }
                 if ($row->匹配标识 == '1')
                 {
-                    $this->json_data(400, sprintf('导入失败,没有要求的字段"%s"',$row->列名), 0);
+                    $this->json_data(400, sprintf('导入失败,缺少必须的字段"%s"',$row->列名), 0);
                     return;
                 }
                 continue;
@@ -189,8 +189,6 @@ class Upload extends Controller
             $col_arr[$row->列名] = [];
             $col_arr[$row->列名]['列名'] = $row->列名;
             $col_arr[$row->列名]['字段名'] = $row->字段名;
-
-            #array_push($col_arr, $row->列名);
 
             if ($fld_ceate_str != '') $fld_ceate_str = $fld_ceate_str . ',';
             $fld_ceate_str = sprintf('%s %s varchar(%s) not null default ""', $fld_ceate_str, $row->字段名, $row->字段长度);
@@ -430,11 +428,17 @@ class Upload extends Controller
         $query = $model->select($sql);
         $results = $query->getResult();
 
+        $tmp_field_arr = $model->get_fields($tmp_table_name);
         $tmp_fld_arr = [];
         $dest_fld_arr = [];
 
         foreach ($results as $row)
         {
+            if (in_array($row->字段名, $tmp_field_arr) == false)
+            {
+                continue;
+            }
+
             array_push($dest_fld_arr, $row->字段名);
 
             if ($row->系统变量=='' &&  $row->表单变量=='')
