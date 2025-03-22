@@ -1,5 +1,5 @@
 <?php
-/* v11.6.1.1.202502221415, from home */
+/* v11.7.1.1.202503221435, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -570,6 +570,7 @@ class Frame extends Controller
         $query_table = '';
         $query_where = '';
         $query_module = ''; //查询模块
+        $field_module = ''; //字段模块
         $query_group = '';
         $query_order = '';
         $drill_module = '';  //钻取模块
@@ -631,6 +632,7 @@ class Frame extends Controller
             }
 
             $query_module = $row->查询模块;
+            $field_module = $row->字段模块;
             $query_group = $row->汇总条件;
             $query_order = $row->排序条件;
 
@@ -1156,6 +1158,7 @@ class Frame extends Controller
         $send['update_obj_json'] = json_encode($update_obj_arr);
         $send['func_id'] = $menu_id;
         $send['query_module'] = $query_module;
+        $send['field_module'] = $field_module;
         $send['data_model'] = $data_model;
         $send['primary_key'] = $primary_key;
         $send['back_where'] = strtr($where, '"', '');

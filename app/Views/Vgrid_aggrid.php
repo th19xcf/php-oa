@@ -1,4 +1,4 @@
-<!-- v8.2.2.1.202503031455, from office -->
+<!-- v8.3.1.1.202503221435, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1167,7 +1167,9 @@
                     });
                     break;
                 case 'SQL':
-                    console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]', '查询模块=[`', '<?php echo $query_module; ?>', '`]');
+                    console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]');
+                    console.log('查询模块=[`', '<?php echo $query_module; ?>', '`]');
+                    console.log('字段模块=[`', '<?php echo $field_module; ?>', '`]');
                     console.log('SQL=[`', debug_sql, '`]');
                     break;
                 case '导入':
