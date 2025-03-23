@@ -1,5 +1,5 @@
 <?php
-/* v11.7.1.1.202503221435, from home */
+/* v11.8.1.1.202503231435, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -599,7 +599,7 @@ class Frame extends Controller
                 数据整理模块,
                 钻取模块,
                 t1.导入模块,ifnull(t2.标签名称,"") as 标签名称,
-                图形模块
+                图形模块,表样式
             from def_query_config as t1
             left join
             (
@@ -646,6 +646,7 @@ class Frame extends Controller
             $before_update = $row->更新前处理模块;
             $after_update = $row->更新后处理模块;
             $data_upkeep = $row->数据整理模块;
+            $grid_style = ($row->表样式 == '') ? '表样式_A' : $row->表样式;
 
             $chart_func_id = $row->图形模块;
 
@@ -1106,6 +1107,7 @@ class Frame extends Controller
         $session_arr[$menu_id.'-after_update'] = $after_update;
         $session_arr[$menu_id.'-before_update'] = $before_update;
         $session_arr[$menu_id.'-data_upkeep'] = $data_upkeep;
+        $session_arr[$menu_id.'-grid_style'] = $grid_style;
 
         $session_arr[$menu_id.'-data_table'] = $data_table;
         $session_arr[$menu_id.'-data_model'] = $data_model;
@@ -1130,6 +1132,7 @@ class Frame extends Controller
 
         //返回页面
         $send = [];
+        $send['grid_style'] = json_encode($grid_style);
         $send['drill_module'] = json_encode(($user_debug_authz=='1') ? $drill_module : '');
         $send['upkeep_module'] = json_encode(($user_debug_authz=='1') ? $data_upkeep : '');
         $send['import_module'] = json_encode(($user_debug_authz=='1') ? $import_module : '');

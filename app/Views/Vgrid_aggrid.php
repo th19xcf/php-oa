@@ -1,4 +1,4 @@
-<!-- v8.3.1.1.202503221435, from home -->
+<!-- v8.4.1.1.202503231435, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -312,8 +312,23 @@
         }
 
         // grid样式
+        var grid_style = JSON.parse('<?php echo $grid_style; ?>');
+
         //var grid_theme = agGrid.themeMaterial;
         var grid_theme = agGrid.themeAlpine;
+
+        if (grid_style == '表样式_B')
+        {
+            grid_theme = agGrid.themeAlpine.withParams
+            ({
+                //wrapperBorder: false,
+                //headerRowBorder: false,
+                //rowBorder: { style: 'dotted', width: 3, color: '#9696C8' },
+                //columnBorder: { style: 'dashed', color: '#9696C8' },
+                rowBorder: { style: 'dotted', width: 1, color: '#c1ccc7' },
+                columnBorder: { style: 'dotted', width: 1, color: '#c1ccc7' },
+            });
+        }
 
         // 生成data_grid
         var data_page = 500;
