@@ -1,4 +1,4 @@
-<!-- v8.4.1.1.202503231435, from home -->
+<!-- v8.5.1.1.202503232310, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -316,19 +316,11 @@
 
         //var grid_theme = agGrid.themeMaterial;
         var grid_theme = agGrid.themeAlpine;
-
-        if (grid_style == '表样式_B')
-        {
-            grid_theme = agGrid.themeAlpine.withParams
-            ({
-                //wrapperBorder: false,
-                //headerRowBorder: false,
-                //rowBorder: { style: 'dotted', width: 3, color: '#9696C8' },
-                //columnBorder: { style: 'dashed', color: '#9696C8' },
-                rowBorder: { style: 'dotted', width: 1, color: '#c1ccc7' },
-                columnBorder: { style: 'dotted', width: 1, color: '#c1ccc7' },
-            });
-        }
+        grid_theme = agGrid.themeAlpine.withParams
+        ({
+            rowBorder: { style: 'dotted', width: 1, color: '#c1ccc7' },
+            columnBorder: { style: 'dotted', width: 1, color: '#c1ccc7' },
+        });
 
         // 生成data_grid
         var data_page = 500;
@@ -2123,17 +2115,18 @@
         }
 
         // 单元格格式
-        function get_cell_style(params, type, str, style_str, style_default)
+        function get_cell_style(style_str)
         {
-            var style_obj = {};
+            let style_default = {'color':'red','font-weight':'bold','background-color':'#f7acbc'};
+            let style_obj = {};
 
             if (style_str != '')
             {
-                var style_arr = style_str.split(',');
+                let style_arr = style_str.split(',');
 
-                for (var ii in style_arr)
+                for (let ii in style_arr)
                 {
-                    var item_arr = style_arr[ii].split(':');
+                    let item_arr = style_arr[ii].split(':');
                     style_obj[item_arr[0]] = item_arr[1];
                 }
             }
@@ -2142,18 +2135,12 @@
                 style_obj = style_default;
             }
 
-            var rc = get_cell_condition_1(params, type, str);
-            if (rc)
-            {
-                return style_obj;
-            }
-
-            return '';
+            return style_obj;
         }
 
         function set_cell_style(params)
         {
-            for (var jj in columns_obj)
+            for (let jj in columns_obj)
             {
                 if (params.colDef.field != columns_obj[jj].列名) continue;
 
@@ -2168,7 +2155,10 @@
                         return {'color':'black','font-weight':'normal'};
                     }
 
-                    if (color_arr['col_name_1'] != columns_obj[jj].列名 && color_arr['col_name_2'] != columns_obj[jj].列名) continue;
+                    if (color_arr['col_name_1'] != columns_obj[jj].列名 && color_arr['col_name_2'] != columns_obj[jj].列名)
+                    {
+                        break;
+                    }
 
                     let rc = false;
                     val_1 = Number(params.data[color_arr['col_name_1']]);
@@ -2211,12 +2201,11 @@
                 {
                     str = columns_obj[jj].异常条件;
                     style_str = columns_obj[jj].异常样式;
-                    style_default = {'color':'red','font-weight':'bold','background-color':'#f7acbc'};
+                    fld_name = '异常^' + columns_obj[jj].列名;
 
-                    rc = get_cell_style(params, columns_obj[jj].类型, str, style_str, style_default);
-                    if (rc != '')
+                    if (params.data[fld_name] == '1')
                     {
-                        return rc;
+                        return get_cell_style(style_str);
                     }
                 }
 
@@ -2224,12 +2213,11 @@
                 {
                     str = columns_obj[jj].提示条件;
                     style_str = columns_obj[jj].提示样式;
-                    style_default = {'color':'green','font-weight':'bold'};
+                    fld_name = '提示^' + columns_obj[jj].列名;
 
-                    rc = get_cell_style(params, columns_obj[jj].类型, str, style_str, style_default);
-                    if (rc != '')
+                    if (params.data[fld_name] == '1')
                     {
-                        return rc;
+                        return get_cell_style(style_str);
                     }
                 }
             }

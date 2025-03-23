@@ -1,5 +1,5 @@
 <?php
-/* v11.8.1.1.202503231435, from home */
+/* v11.9.1.1.202503232310, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -838,6 +838,8 @@ class Frame extends Controller
             array_push($columns_arr, $arr);
 
             $arr['查询名'] = '';
+            $arr['提示条件'] = ($row->提示条件 == '') ? '' : '1';
+            $arr['异常条件'] = ($row->异常条件 == '') ? '' : '1';
             array_push($send_columns_arr, $arr);
 
             if ($row->提示条件 == 1)
@@ -982,10 +984,43 @@ class Frame extends Controller
         }
 
         // 拼出查询语句
+        $worning_arr = [];  //警告
+        $error_arr = [];    //异常
+        $worning_str = '';  //警告
+        $error_str = '';    //异常
+
         $select_str = '';
         $send_str = '';
         foreach ($columns_arr as $column) 
         {
+            if ($column['提示条件'] != '')
+            {
+                array_push($worning_arr, array('列名'=>sprintf('提示^%s',$column['列名'])));
+
+                if ($worning_str == '')
+                {
+                    $worning_str = sprintf('if(%s,"1","0") as `提示^%s`', $column['提示条件'], $column['列名']);
+                }
+                else
+                {
+                    $worning_str = sprintf('%s,if(%s,"1","0") as `提示^%s`', $worning_str, $column['提示条件'], $column['列名']);
+                }
+            }
+
+            if ($column['异常条件'] != '')
+            {
+                array_push($error_arr, array('列名'=>sprintf('异常^%s',$column['列名'])));
+
+                if ($error_str == '')
+                {
+                    $error_str = sprintf('if(%s,"1","0") as `异常^%s`', $column['异常条件'], $column['列名']);
+                }
+                else
+                {
+                    $error_str = sprintf('%s,if(%s,"1","0") as `异常^%s`', $error_str, $column['异常条件'], $column['列名']);
+                }
+            }
+
             if ($select_str != '')
             {
                 $select_str = $select_str . ',';
@@ -1002,6 +1037,24 @@ class Frame extends Controller
             }
 
             $send_str = sprintf('%s %s as `%s`', $send_str, $column['查询名'], $column['列名']);
+        }
+
+        if ($worning_str != '')
+        {
+            $columns_arr = array_merge($columns_arr, $worning_arr);
+            $send_columns_arr = array_merge($send_columns_arr, $worning_arr);
+
+            $select_str = sprintf('%s,%s', $select_str, $worning_str);
+            $send_str = sprintf('%s,%s', $send_str, $worning_str);
+        }
+
+        if ($error_str != '')
+        {
+            $columns_arr = array_merge($columns_arr, $error_arr);
+            $send_columns_arr = array_merge($send_columns_arr, $error_arr);
+
+            $select_str = sprintf('%s,%s', $select_str, $error_str);
+            $send_str = sprintf('%s,%s', $send_str, $error_str);
         }
 
         $query_sql = sprintf('select (@i:=@i+1) as 序号,%s 
