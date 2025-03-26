@@ -1,5 +1,5 @@
 <?php
-/* v11.9.2.1.202503261645, from office */
+/* v11.9.3.1.202503262230, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -834,6 +834,7 @@ class Frame extends Controller
             $arr['异常条件'] = $row->异常条件;
             $arr['异常样式'] = $row->异常样式设置;
             $arr['字符转换'] = $row->字符转换;
+            $arr['表外字段'] = '0';
 
             array_push($columns_arr, $arr);
 
@@ -1009,7 +1010,7 @@ class Frame extends Controller
 
             if ($column['异常条件'] != '')
             {
-                array_push($error_arr, array('列名'=>sprintf('异常^%s',$column['列名'])));
+                array_push($error_arr, array('列名'=>sprintf('异常^%s',$column['列名']), '表外字段'=>'1'));
 
                 if ($error_str == '')
                 {
@@ -1851,6 +1852,8 @@ class Frame extends Controller
                     // 业务字段
                     foreach ($row_arr as $row)
                     {
+                        if (array_key_exists('fld_name', $row) == false) continue;
+
                         if ($row['fld_name'] != $field) continue;
                         // 未修改的字段不处理
                         if ($row['modified'] == false) break;
@@ -2021,7 +2024,10 @@ class Frame extends Controller
                     // 业务字段
                     foreach ($row_arr as $row)
                     {
+                        if (array_key_exists('fld_name', $row) == false) continue;
+
                         if ($row['fld_name'] != $field) continue;
+
                         // 未修改的字段不处理
                         if ($row['modified'] == false) break;
         

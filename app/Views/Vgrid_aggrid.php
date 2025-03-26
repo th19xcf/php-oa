@@ -1,4 +1,4 @@
-<!-- v8.5.1.1.202503232310, from home -->
+<!-- v8.5.2.1.202503262230, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1038,6 +1038,8 @@
                         rowData = [];
                         for (let ii in columns_obj)
                         {
+                            if (columns_obj[ii].表外字段 == '1') continue;
+
                             let obj = {};
                             obj['列名'] = columns_obj[ii].列名;
                             obj['字段名'] = columns_obj[ii].字段名;
@@ -1048,7 +1050,7 @@
 
                             if (id == '单条修改')
                             {
-                                for (var idx in data_last_selected)
+                                for (let idx in data_last_selected)
                                 {
                                     if (columns_obj[ii].列名 != idx) continue;
                                     obj['取值'] = data_last_selected[idx];
