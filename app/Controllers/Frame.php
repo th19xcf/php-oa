@@ -1,5 +1,5 @@
 <?php
-/* v11.9.2.1.202503261430, from office */
+/* v11.9.2.1.202503261645, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -2540,6 +2540,7 @@ class Frame extends Controller
         $value_str = '';
         foreach ($row_arr as $row)
         {
+            if (array_key_exists('fld_name', $row) == false) continue;
             //主键
             if ($row['fld_name'] == $primary_key)
             {
