@@ -1,5 +1,5 @@
 <?php
-/* v11.9.1.1.202503232310, from home */
+/* v11.9.2.1.202503261430, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -2634,6 +2634,7 @@ class Frame extends Controller
 
         foreach ($columns_arr as $column)
         {
+            if (array_key_exists('赋值类型', $column) == false) continue;
             if ($column['赋值类型'] == '弹窗')
             {
                 $popup_value = '';
