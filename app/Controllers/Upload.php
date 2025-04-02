@@ -1,5 +1,5 @@
 <?php
-/* v3.1.3.1.202503171330, from office */
+/* v3.1.4.1.202504022245, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -144,8 +144,17 @@ class Upload extends Controller
         $highestRow = $sheet->getHighestRow(); // 总行数
         $highestColumn = $sheet->getHighestColumn(); // 总列数
 
-        #$sheet_data = $sheet->toArray(true, true, true, true, true);
-        $sheet_data = $sheet->toArray($nullValue='');
+        try
+        {
+            #$sheet_data = $sheet->toArray(true, true, true, true, true);
+            $sheet_data = $sheet->toArray($nullValue='');
+        }
+        catch (\Exception $e)
+        {
+            $this->json_data(400, $e->getMessage(), 0);
+            return;
+        }
+
 
         if(count($sheet_data) <= 1)
         {
