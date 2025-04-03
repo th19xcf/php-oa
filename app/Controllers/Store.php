@@ -1,5 +1,5 @@
 <?php
-/* v3.6.1.1.202503042310, from home */
+/* v3.7.1.1.202504031750, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -35,7 +35,7 @@ class Store extends Controller
                 操作来源,操作人员,操作时间
             from ee_store
             where 属地 in (%s)
-            order by field(邀约结果,"通过","未邀约"),面试信息,预约面试日期,招聘渠道,convert(姓名 using gbk)',
+            order by field(邀约结果,"通过","未邀约"),面试信息,招聘渠道,convert(姓名 using gbk)',
             $user_location_authz);
 
         $query = $model->select($sql);
@@ -53,7 +53,7 @@ class Store extends Controller
             $ee_arr['id'] = sprintf('人员^%s^%s', $row->GUID, $row->姓名);
             $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->邀约日期);
 
-            $up1_id = sprintf('招聘渠道^%s^%s^%s^%s', $row->邀约结果, $row->面试信息, $row->预约面试日期, $row->招聘渠道);
+            $up1_id = sprintf('招聘渠道^%s^%s^%s^%s', $row->邀约结果, $row->面试信息, "", $row->招聘渠道);
             if (array_key_exists($up1_id, $up1_arr) == false)
             {
                 $up1_arr[$up1_id] = [];
