@@ -1,4 +1,4 @@
-<!-- v8.5.2.1.202503262230, from home -->
+<!-- v8.5.3.1.202504051655, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -2146,6 +2146,35 @@
             {
                 if (params.colDef.field != columns_obj[jj].列名) continue;
 
+                if (columns_obj[jj].提示样式 == '' && columns_obj[jj].异常样式 == '' && columns_obj[jj].可颜色标注 != '1')
+                {
+                    return null;
+                }
+
+                if (columns_obj[jj].异常条件 != '')
+                {
+                    str = columns_obj[jj].异常条件;
+                    style_str = columns_obj[jj].异常样式;
+                    fld_name = '异常^' + columns_obj[jj].列名;
+
+                    if (params.data[fld_name] == '1')
+                    {
+                        return get_cell_style(style_str);
+                    }
+                }
+
+                if (columns_obj[jj].提示条件 != '')
+                {
+                    str = columns_obj[jj].提示条件;
+                    style_str = columns_obj[jj].提示样式;
+                    fld_name = '提示^' + columns_obj[jj].列名;
+
+                    if (params.data[fld_name] == '1')
+                    {
+                        return get_cell_style(style_str);
+                    }
+                }
+
                 if (columns_obj[jj].可颜色标注 == '1')
                 {
                     if (color_arr['color_col_1'] == columns_obj[jj].列名 && color_arr['col_name_1'] != columns_obj[jj].列名)
@@ -2191,35 +2220,6 @@
                     if (rc == true)
                     {
                         return color_arr['style'];
-                    }
-                }
-
-                if (columns_obj[jj].提示样式 == '' && columns_obj[jj].异常样式 == '' && columns_obj[jj].可颜色标注 != '1')
-                {
-                    return null;
-                }
-
-                if (columns_obj[jj].异常条件 != '')
-                {
-                    str = columns_obj[jj].异常条件;
-                    style_str = columns_obj[jj].异常样式;
-                    fld_name = '异常^' + columns_obj[jj].列名;
-
-                    if (params.data[fld_name] == '1')
-                    {
-                        return get_cell_style(style_str);
-                    }
-                }
-
-                if (columns_obj[jj].提示条件 != '')
-                {
-                    str = columns_obj[jj].提示条件;
-                    style_str = columns_obj[jj].提示样式;
-                    fld_name = '提示^' + columns_obj[jj].列名;
-
-                    if (params.data[fld_name] == '1')
-                    {
-                        return get_cell_style(style_str);
                     }
                 }
             }
