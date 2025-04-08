@@ -1,4 +1,4 @@
-<!-- v8.5.3.1.202504051655, from home -->
+<!-- v8.5.4.1.202504082225, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -387,6 +387,10 @@
                     }
 
                     return false;
+                },
+                filterParams:
+                {
+                    maxNumConditions: 5,
                 },
             },
             readOnlyEdit: !table_modify_flag,
