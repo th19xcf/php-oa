@@ -1,5 +1,5 @@
 <?php
-/* v11.9.3.1.202503262230, from home */
+/* v11.11.1.1.202504141745, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -189,7 +189,7 @@ class Frame extends Controller
             'select 
                 t1.角色编号,t1.角色名称,
                 t1.功能赋权,
-                t1.新增授权,t1.修改授权,t1.删除授权,t1.维护授权,t1.整表授权,
+                t1.备注授权,t1.新增授权,t1.修改授权,t1.删除授权,t1.维护授权,t1.整表授权,
                 t1.导入授权,t1.导出授权,
                 ifnull(t2.功能编码,"") as 功能编码,
                 ifnull(t2.一级菜单,"") as 一级菜单,
@@ -204,6 +204,7 @@ class Frame extends Controller
             from 
             (
                 select 角色编号,角色名称,功能赋权,
+                    max(备注授权) as 备注授权,
                     max(新增授权) as 新增授权,
                     max(修改授权) as 修改授权,
                     max(删除授权) as 删除授权,
@@ -262,6 +263,7 @@ class Frame extends Controller
 
             $session_arr[$row->功能赋权.'-menu_1'] = $row->一级菜单;
             $session_arr[$row->功能赋权.'-menu_2'] = $row->二级菜单;
+            $session_arr[$row->功能赋权.'-comment_authz'] = $row->备注授权;
             $session_arr[$row->功能赋权.'-add_authz'] = $row->新增授权;
             $session_arr[$row->功能赋权.'-modify_authz'] = $row->修改授权;
             $session_arr[$row->功能赋权.'-delete_authz'] = $row->删除授权;
@@ -528,6 +530,7 @@ class Frame extends Controller
         $user_upkeep_authz = $session->get('user_upkeep_authz');
         $user_location = $session->get('user_location');
         $user_location_authz = $session->get('user_location_authz');
+        $comment_authz = $session->get($menu_id.'-comment_authz');
         $add_authz = $session->get($menu_id.'-add_authz');
         $modify_authz = $session->get($menu_id.'-modify_authz');
         $delete_authz = $session->get($menu_id.'-delete_authz');
@@ -553,6 +556,7 @@ class Frame extends Controller
         $data_col_arr = [];  // 前端data_grid列信息,用于显示
         $send_columns_arr = []; // 传递到前端的列信息,查询名为公式时,前端报错
 
+        $comment_value_arr = [];  // 前端commet_grid值信息,用于显示
         $update_value_arr = [];  // 前端update_grid值信息,用于显示
         $add_value_arr = [];  // 前端add_grid值信息,用于显示
         $cond_value_arr = [];  // 前端cond_grid值信息,用于查询类的显示
@@ -598,6 +602,7 @@ class Frame extends Controller
                 更新前处理模块,更新后处理模块,
                 数据整理模块,
                 钻取模块,
+                备注表名,备注模块,
                 t1.导入模块,ifnull(t2.标签名称,"") as 标签名称,
                 图形模块,表样式
             from def_query_config as t1
@@ -652,19 +657,23 @@ class Frame extends Controller
 
             $data_table = $row->数据表名;
             $data_model = $row->数据模式;
+
+            $comment_table = $row->备注表名;
+            $comment_module = $row->备注模块;
+
             break;
         }
 
         $tb_arr = [];  // 控制菜单栏
-        $tb_arr['钻取授权'] = false;
-        $tb_arr['导入授权'] = false;
-        $tb_arr['数据整理'] = false;
-        $tb_arr['SQL'] = false;
-
-        $tb_arr['钻取授权'] = ($tb_arr['钻取授权']==true or $drill_module!='') ? true : false;
-        $tb_arr['导入授权'] = ($tb_arr['导入授权']==true or $import_module!='') ? true : false;
-        $tb_arr['数据整理'] = ($tb_arr['数据整理']==true or ($user_upkeep_authz=='1' && $data_upkeep!='')) ? true : false;
-        $tb_arr['SQL'] = ($tb_arr['SQL']==true or $user_debug_authz=='1') ? true : false;
+        $tb_arr['备注授权'] = ($comment_authz=='1' or $comment_table!='') ? true : false;
+        $tb_arr['钻取授权'] = ($drill_module!='') ? true : false;
+        $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
+        $tb_arr['删除授权'] = ($delete_authz=='1') ? true : false ;
+        $tb_arr['整表授权'] = ($table_authz=='1') ? true : false ;
+        $tb_arr['导入授权'] = ($import_authz=='1' && $import_module!='') ? true : false ;
+        $tb_arr['导出授权'] = ($export_authz=='1') ? true : false ;
+        $tb_arr['数据整理'] = ($user_upkeep_authz=='1' && $data_upkeep!='') ? true : false;
+        $tb_arr['SQL'] = ($user_debug_authz=='1') ? true : false;
 
         // 读出存储过程参数
         $sp_param_str = '';
@@ -796,7 +805,7 @@ class Frame extends Controller
                 赋值类型,对象,对象名称,对象表名,缺省值,
                 主键,可筛选,可汇总,可新增,可修改,不可为空,可颜色标注,
                 提示条件,提示样式设置,异常条件,异常样式设置,字符转换,
-                列顺序
+                加密显示,备注关联,列顺序
             from view_function
             where 功能编码="%s" and 列顺序>0
             group by 列名
@@ -816,7 +825,7 @@ class Frame extends Controller
             $arr = [];
 
             $arr['列名'] = $row->列名;
-            $arr['类型'] = $row->列类型;
+            $arr['列类型'] = $row->列类型;
             $arr['字段名'] = $row->字段名;
             $arr['查询名'] = $row->查询名;
             $arr['主键'] = $row->主键;
@@ -834,6 +843,8 @@ class Frame extends Controller
             $arr['异常条件'] = $row->异常条件;
             $arr['异常样式'] = $row->异常样式设置;
             $arr['字符转换'] = $row->字符转换;
+            $arr['加密显示'] = $row->加密显示;
+            $arr['备注关联'] = $row->备注关联;
             $arr['表外字段'] = '0';
 
             array_push($columns_arr, $arr);
@@ -895,6 +906,12 @@ class Frame extends Controller
             $cond['计算方式'] = '';
 
             array_push($cond_value_arr, $cond);
+
+            // 前端comment_grid信息
+            if ($row->备注关联 == '1')
+            {
+                array_push($comment_value_arr, array('列名'=>$row->列名,'字段名'=>$row->字段名,'列类型'=>$row->列类型,'取值'=>''));
+            }
 
             // 前端update_grid信息
             // 主键不能更改
@@ -982,6 +999,12 @@ class Frame extends Controller
                     array_push($object_arr[$row->对象][$vv->上级对象值]['对象显示值'], $vv->对象显示值);
                 }
             }
+        }
+
+        if (count($comment_value_arr) > 0)
+        {
+            array_push($comment_value_arr, array('列名'=>'备注模块','字段名'=>'备注模块','列类型'=>'字符','取值'=>$comment_module));
+            array_push($comment_value_arr, array('列名'=>'备注说明','字段名'=>'备注说明','列类型'=>'字符','取值'=>''));
         }
 
         // 拼出查询语句
@@ -1166,6 +1189,9 @@ class Frame extends Controller
         $session_arr[$menu_id.'-data_table'] = $data_table;
         $session_arr[$menu_id.'-data_model'] = $data_model;
 
+        $session_arr[$menu_id.'-comment_table'] = $comment_table;
+        $session_arr[$menu_id.'-comment_module'] = $comment_module;
+
         // chart session初始化
         $session_arr[$menu_id.'-chart_drill_arr'] = [];
         $session_arr[sprintf('%s^%s-chart_drill_cond_str',$menu_id,$chart_func_id)] = '';
@@ -1173,13 +1199,6 @@ class Frame extends Controller
 
         $session = \Config\Services::session();
         $session->set($session_arr);
-
-        $tb_arr['新增授权'] = ($add_authz=='1') ? true : false ;
-        $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
-        $tb_arr['删除授权'] = ($delete_authz=='1') ? true : false ;
-        $tb_arr['整表授权'] = ($table_authz=='1') ? true : false ;
-        $tb_arr['导入授权'] = ($import_authz=='1' && $import_module!='') ? true : false ;
-        $tb_arr['导出授权'] = ($export_authz=='1') ? true : false ;
 
         // 生成前端图形数据
         $chart_arr = $this->get_chart_data($menu_id, $chart_func_id, '', '');
@@ -1196,6 +1215,7 @@ class Frame extends Controller
         $send['columns_json'] = json_encode($send_columns_arr);
         $send['data_col_json'] = json_encode($data_col_arr);
         $send['data_value_json'] = json_encode($send_results);
+        $send['comment_value_json'] = json_encode($comment_value_arr);
         $send['update_value_json'] = json_encode($update_value_arr);
         $send['add_value_json'] = json_encode($add_value_arr);
 
@@ -1627,6 +1647,48 @@ class Frame extends Controller
         $send['SQL'] = ($user_debug_authz=='1') ? $sp_sql : '';
 
         exit(json_encode($send));
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 更新记录
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function comment($menu_id='')
+    {
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
+
+        // 从session中取出数据
+        $session = \Config\Services::session();
+        $user_workid = $session->get('user_workid');
+        $comment_table = $session->get($menu_id.'-comment_table');
+        $comment_module = $session->get($menu_id.'-comment_module');
+
+        $model = new Mcommon();
+
+        $fld_str = '';
+        $value_str = '';
+        foreach ($arg as $item)
+        {
+            switch ($item['fld_type'])
+            {
+                case '数值':
+                    $fld_str = ($fld_str == '') ? $item['fld_name'] : $fld_str . ',' . $item['fld_name'];
+                    $value_str = ($value_str == '') ? $item['value'] : $value_str . ',' . $item['value'];
+                    break;
+                case '字符':
+                case '日期':
+                    $fld_str = ($fld_str == '') ? $item['fld_name'] : $fld_str . ',' . $item['fld_name'];
+                    $value_str = ($value_str == '') ? sprintf('"%s"', $item['value']) : $value_str . ',' . sprintf('"%s"', $item['value']);
+                    break;
+            }
+        }
+
+        $sql = sprintf('
+            insert into %s (%s,操作人员) values (%s,"%s")',
+            $comment_table, $fld_str, $value_str, $user_workid);
+
+        $num = $model->exec($sql);
+        exit(sprintf('`添加说明`成功,添加 %d 条记录',$num));
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

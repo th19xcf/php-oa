@@ -1,4 +1,4 @@
-<!-- v8.5.4.1.202504082225, from home -->
+<!-- v8.6.1.1.202504141745, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -61,20 +61,28 @@
 
 <body>
     <div id='databox' style='width:100%;'>
-        <div id='data_tb'></div>
-        <div id='data_grid' style='width:100%; height:92%; background-color:lightblue;'></div>
+        <div id='data_div' style='display:flex;width:100%;height:100%;'>
+        <div id='data_div_1' style='width:100%; height:91%; background-color:lightblue;'>
+            <div id='data_tb'></div>
+            <div id='data_grid' style='width:100%; height:100%; background-color:lightblue;'></div>
+        </div>
+        <div id='data_div_2' style='display:none;margin-left:10px;width:50%;height:91%;background-color:lightyellow;'>
+        <div id='comment_tb'></div>
+        <div id='comment_grid' style='width:100%;height:100%;background-color:lightyellow;'></div>
+        </div>
     </div>
+
     <div id='updatebox' style='width:100%;'>
         <div id='update_tb'></div>
-        <div id='update_grid' style='width:100%; height:92%; background-color:lightblue;'></div>
+        <div id='update_grid' style='width:100%; height:91%; background-color:lightblue;'></div>
     </div>
     <div id='conditionbox' style='width:100%;'>
         <div id='cond_tb'></div>
-        <div id='cond_grid' style='width:100%; height:92%; background-color:lightblue;'></div>
+        <div id='cond_grid' style='width:100%; height:91%; background-color:lightblue;'></div>
     </div>
     <div id='chartbox' style='width:100%;'>
         <div id='chart_tb'></div>
-        <div id='chart_draw' style='width:100%; height:92%;'></div>
+        <div id='chart_draw' style='width:100%; height:91%;'></div>
     </div>
     <div id='footbox' style='width:100%; height:10px; margin-top:5px; background-color: lightblue;'></div>
     <a id='exp2xls'></a>
@@ -237,6 +245,10 @@
         data_tb.data.add({id:'刷新', type:'button', value:'刷新'});
         data_tb.data.add({id:'字段选择', type:'button', value:'字段选择'});
         data_tb.data.add({id:'设置条件', type:'button', value:'设置条件'});
+        if (tb_obj['备注授权'] == true)
+        {
+            data_tb.data.add({id:'添加说明', type:'button', value:'添加说明'});
+        }
         if (tb_obj['钻取授权'] == true)
         {
             data_tb.data.add({id:'数据钻取', type:'button', value:'数据钻取'});
@@ -282,6 +294,13 @@
         {
             data_tb.data.add({id:'导出', type:'button', value:'导出'});
         }
+
+        // 生成修改新增用工具栏
+        var comment_tb = new dhx.Toolbar('comment_tb', {css:'toobar-class'});
+        comment_tb.data.add({type:'separator'});
+        comment_tb.data.add({id:'返回', type:'button', value:'返回'});
+        comment_tb.data.add({id:'清空', type:'button', value:'清空'});
+        comment_tb.data.add({id:'提交', type:'button', value:'提交'});
 
         // 生成修改新增用工具栏
         var update_tb = new dhx.Toolbar('update_tb', {css:'toobar-class'});
@@ -357,7 +376,7 @@
             {
                 if (columns_obj[jj].列名 != data_columns_arr[ii].field && data_columns_arr[ii].field != '序号') continue;
 
-                if (columns_obj[jj].类型 == '数值' || data_columns_arr[ii].type == 'numericColumn')
+                if (columns_obj[jj].列类型 == '数值' || data_columns_arr[ii].type == 'numericColumn')
                 {
                     data_columns_arr[ii].comparator = value_sort;
                 }
@@ -474,6 +493,54 @@
             {
                 //console.log("gridApi.getFilterModel() =>", e.api.getFilterModel());
             },
+            onSelectionChanged : (event) => 
+            {
+                //console.log("onSelectionChanged", event);
+            },
+            onRowSelected: (e) =>
+            {
+                //console.log("onRowSelected",e);
+
+                // 清空
+                let rowData = [];
+                let obj = {};
+                for (let ii in columns_obj)
+                {
+                    if (columns_obj[ii].备注关联 != '1') continue;
+
+                    obj = {};
+                    obj['列名'] = columns_obj[ii].列名;
+                    obj['字段名'] = columns_obj[ii].字段名;
+                    obj['列类型'] = columns_obj[ii].列类型;
+                    obj['取值'] = e.data[columns_obj[ii].列名];
+
+                    rowData.push(obj);
+                }
+
+                let comment_module = '';
+                for (let ii in comment_grid_obj)
+                {
+                    if (comment_grid_obj[ii].列名 != '备注模块') continue;
+                    comment_module = comment_grid_obj[ii].取值;
+                    break;
+                }
+
+                obj = {};
+                obj['列名'] = '备注模块';
+                obj['字段名'] = '备注模块';
+                obj['列类型'] = '字符';
+                obj['取值'] = comment_module;
+                rowData.push(obj);
+
+                obj = {};
+                obj['列名'] = '备注说明';
+                obj['字段名'] = '备注说明';
+                obj['列类型'] = '字符';
+                obj['取值'] = '';
+                rowData.push(obj);
+
+                comment_grid_api.setGridOption('rowData', rowData);
+            },
         };
 
         var data_grid_api = agGrid.createGrid($$('data_grid'), data_grid_options);
@@ -488,6 +555,49 @@
         {
             cond_object_value[params.data.列名] = params.newValue;
         }
+
+        // 生成comment_grid
+        var comment_grid_obj = JSON.parse('<?php echo $comment_value_json; ?>');
+
+        const comment_grid_options = 
+        {
+            theme: grid_theme,
+            columnDefs: 
+            [
+                {field:'列名'},
+                {field:'字段名', hide:true},
+                {field:'列类型'},
+                {
+                    field: '取值', 
+                    width: 300, 
+                    cellEditor: 'agLargeTextCellEditor',
+                    cellEditorPopup: true,
+                }
+            ],
+            defaultColDef: 
+            {
+                width: 120,
+                resizable: true,
+                editable: (params) =>
+                {
+                    // 根据配置判断是否可以修改
+                    if (params.colDef.field != '取值') return false;
+
+                    if (params.data.列名 == '备注说明')
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }
+            },
+            pagination: true,
+            paginationPageSize: 500,
+            paginationPageSizeSelector: [500, 1000, 2000],
+            rowData: comment_grid_obj,
+        };
+
+        var comment_grid_api = agGrid.createGrid($$('comment_grid'), comment_grid_options);
 
         // 生成update_grid
         var update_grid_obj = JSON.parse('<?php echo $update_value_json; ?>');
@@ -521,7 +631,7 @@
 
                     var col_name = params.data.列名;
 
-                    for (var ii in columns_obj)
+                    for (let ii in columns_obj)
                     {
                         if (columns_obj[ii].列名 != col_name) continue;
                         return (columns_obj[ii].可新增 == '1' || columns_obj[ii].可修改 == '1' || columns_obj[ii].可修改 == '2') ? true : false;
@@ -949,6 +1059,73 @@
         {
             switch (id)
             {
+                case '添加说明':
+                {
+                    let rows = data_grid_api.getSelectedRows();
+
+                    if (rows.length == 0)
+                    {
+                        alert('请先选择要`添加说明`的记录');
+                        break;
+                    }
+                    if (rows.length > 1)
+                    {
+                        alert('`添加说明`, 只能选择1条记录');
+                        break;
+                    }
+
+                    data_last_selected = rows[0];
+
+                    // 清空
+                    let rowData = [];
+                    let obj = {};
+                    for (let ii in columns_obj)
+                    {
+                        if (columns_obj[ii].备注关联 != '1') continue;
+
+                        obj = {};
+                        obj['列名'] = columns_obj[ii].列名;
+                        obj['字段名'] = columns_obj[ii].字段名;
+                        obj['列类型'] = columns_obj[ii].列类型;
+                        obj['取值'] = '';
+
+                        for (let idx in data_last_selected)
+                        {
+                            if (columns_obj[ii].列名 != idx) continue;
+                            obj['取值'] = data_last_selected[idx];
+                            break;
+                        }
+
+                        rowData.push(obj);
+                    }
+
+                    let comment_module = '';
+                    for (let ii in comment_grid_obj)
+                    {
+                        if (comment_grid_obj[ii].列名 != '备注模块') continue;
+                        comment_module = comment_grid_obj[ii].取值;
+                        break;
+                    }
+
+                    obj = {};
+                    obj['列名'] = '备注模块';
+                    obj['字段名'] = '备注模块';
+                    obj['列类型'] = '字符';
+                    obj['取值'] = comment_module;
+                    rowData.push(obj);
+
+                    obj = {};
+                    obj['列名'] = '备注说明';
+                    obj['字段名'] = '备注说明';
+                    obj['列类型'] = '字符';
+                    obj['取值'] = '';
+                    rowData.push(obj);
+
+                    comment_grid_api.setGridOption('rowData', rowData);
+
+                    $$('data_div_2').style.display = 'block';
+                    break;
+                }
                 case '刷新':
                     window.location.reload();
                     break;
@@ -1047,7 +1224,7 @@
                             let obj = {};
                             obj['列名'] = columns_obj[ii].列名;
                             obj['字段名'] = columns_obj[ii].字段名;
-                            obj['列类型'] = columns_obj[ii].类型;
+                            obj['列类型'] = columns_obj[ii].列类型;
                             obj['是否可修改'] = columns_obj[ii].可修改 == '0' ? '否' : '是';
                             obj['是否必填'] = columns_obj[ii].不可为空 == '0' ? '否' : '是';
                             obj['取值'] = '';
@@ -1207,6 +1384,84 @@
             {
                 data_page =  updatedItem['value'];
                 data_grid_api.setGridOption('paginationPageSize', Number(data_page));
+            }
+        });
+
+        // 注释说明窗口,工具栏点击
+        comment_tb.events.on('click', function(id, e) 
+        {
+            switch (id)
+            {
+                case '返回':
+                    $$('data_div_2').style.display = 'none';
+                    break;
+                case '清空':
+                    comment_grid_obj = JSON.parse('<?php echo $comment_value_json; ?>');
+                    comment_grid_api.setGridOption('rowData', comment_grid_obj);
+                    break;
+                case '提交':
+                {
+                    let rows = data_grid_api.getSelectedRows();
+
+                    if (rows.length == 0)
+                    {
+                        alert('请先选择要`添加说明`的记录');
+                        return;
+                    }
+                    if (rows.length > 1)
+                    {
+                        alert('`添加说明`, 只能选择1条记录');
+                        return;
+                    }
+
+                    let data_last_selected = rows[0];
+
+                    let ajax = false;
+                    let send_arr = [];
+
+                    comment_grid_api.stopEditing();
+
+                    // 获得要提交的数据
+                    comment_grid_api.forEachNode((rowNode, index) => 
+                    {
+                        let col = {};
+                        col.col_name = rowNode.data['列名'];
+                        col.fld_name = rowNode.data['字段名'];
+                        col.fld_type = rowNode.data['列类型'];
+                        col.value = rowNode.data['取值'];
+
+                        if (col.col_name != '备注模块' && col.col_name != '备注说明' && col.value != data_last_selected[col.col_name])
+                        {
+                            alert('`'+col.col_name+'`'+'与选中记录数据不相符,请重新选择');
+                            ajax = false;
+                            return;
+                        }
+
+                        if (col.col_name == '备注说明' && col.value == '')
+                        {
+                            alert('备注说明不能为空');
+                            ajax = false;
+                            return;
+                        }
+
+                        send_arr.push(col);
+                        ajax = true;
+                    });
+
+                    if (ajax == false) return;
+
+                    dhx.ajax.post('<?php base_url(); ?>/frame/comment/<?php echo $func_id; ?>', send_arr).then(function (data)
+                    {
+                        alert(data);
+                        if (data.indexOf('成功') != -1)
+                        {
+                            window.location.reload();
+                        }
+                    }).catch(function (err)
+                    {
+                        alert('`添加说明`错误, ' + ' ' + err.statusText);
+                    });
+                }
             }
         });
 
@@ -1986,7 +2241,7 @@
             for (var ii in columns_obj)
             {
                 if (f_name != columns_obj[ii].列名) continue;
-                f_type = columns_obj[ii].类型;
+                f_type = columns_obj[ii].列类型;
                 break;
             }
 
@@ -1998,7 +2253,7 @@
                 for (var ii in columns_obj)
                 {
                     if (v_name != columns_obj[ii].列名) continue;
-                    v_type = columns_obj[ii].类型;
+                    v_type = columns_obj[ii].列类型;
                     break;
                 }
             }
