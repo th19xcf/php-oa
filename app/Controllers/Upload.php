@@ -1,5 +1,5 @@
 <?php
-/* v3.3.1.1.202504182335, from home */
+/* v3.3.2.1.202504192130, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -50,13 +50,13 @@ class Upload extends Controller
 
         // 存入session
         $session_arr = [];
-        $session_arr[$menu_id.'-import'] = $import_module;
+        $session_arr[$menu_id.'-import_module'] = $import_module;
 
         $session = \Config\Services::session();
         $session->set($session_arr);
 
         $send['func_id'] = $menu_id;
-        $send['import_page'] = base_url('upload/import/'.$menu_id);
+        $send['import_page'] = base_url('upload/import/'.$menu_id.'88');
         $send['export_page'] = base_url('upload/import/');
 
         echo view('Vupload.php', $send);
