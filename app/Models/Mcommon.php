@@ -1,6 +1,6 @@
 <?php
 
-/* v2.2.1.1.202210122010, from surface */
+/* v2.3.1.1.202504182335, from home */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -96,6 +96,24 @@ class Mcommon extends Model
         $db->close();
 
         return $num;
+    }
+
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    // 通用存储过程调用
+    //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+    public function call_sp($sp, &$param = null)
+    {
+        $db = db_connect('btdc');
+        $query = $db->query($sp);
+        $out = $db->query('select @out')->getResultArray();
+        if (count($out)>0)
+        {
+            $param = current($out[0]);
+        }
+
+        $db->close();
+
+        return $query;
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

@@ -1,5 +1,5 @@
 <?php
-/* v3.1.4.1.202504022245, from home */
+/* v3.3.1.1.202504182335, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -370,16 +370,43 @@ class Upload extends Controller
 
         $model = new Mcommon();
 
-        //是否有重复记录
         $sql = sprintf('
-            select 表名,导入条件,表单变量,滤重字段,后处理模块
+            select 表名,导入条件,表单变量,滤重字段,前处理模块,后处理模块
             from def_import_config
             where 导入模块="%s"', $import_module);
 
         $query = $model->select($sql);
         $results = $query->getResult();
-        $sp_name = $results[0]->后处理模块;
+        $sp_work_before = $results[0]->前处理模块;
+        $sp_work_after = $results[0]->后处理模块;
 
+        // 执行前处理
+        if ($sp_work_before != '')
+        {
+            $sp_sql = sprintf('call %s', $sp_work_before);
+            $sp_query = $model->call_sp($sp_sql, $out_param);
+            $errs = $sp_query->getResultArray();
+
+            if (count($errs) != 0)
+            {
+                $err_arr = [];
+                foreach ($errs as $err)
+                {
+                    $str = '';
+                    foreach ($err as $item)
+                    {
+                        if ($str!='') $str = $str . '^';
+                        $str = $str . $item;
+                    }
+                    array_push($err_arr, $str);
+                }
+
+                $this->json_data(400, sprintf('导入失败,原因 {"%s"},记录 {"%s"}', $out_param, implode(',', $err_arr)), 0);
+                return;
+            }
+        }
+
+        //是否有重复记录
         if ($results[0]->滤重字段 != '')
         {
             $sql = sprintf('
@@ -509,9 +536,9 @@ class Upload extends Controller
         $model->sql_log('导入成功', $menu_id, sprintf('表名=%s,导入%d条',$dest_table_name,$rc));
 
         // 执行后处理
-        if ($sp_name != '')
+        if ($sp_work_after != '')
         {
-            $sp_sql = sprintf('call %s', $sp_name);
+            $sp_sql = sprintf('call %s', $sp_work_after);
             $model->select($sp_sql);
         }
 
@@ -533,13 +560,40 @@ class Upload extends Controller
 
         $model = new Mcommon();
         $sql = sprintf('
-            select 表名,导入条件,表单变量,后处理模块
+            select 表名,导入条件,表单变量,前处理模块,后处理模块
             from def_import_config
             where 导入模块="%s"', $import_module);
 
         $query = $model->select($sql);
         $results = $query->getResult();
-        $sp_name = $results[0]->后处理模块;
+        $sp_work_before = $results[0]->前处理模块;
+        $sp_work_after = $results[0]->后处理模块;
+
+        // 执行前处理
+        if ($sp_work_before != '')
+        {
+            $sp_sql = sprintf('call %s', $sp_work_before);
+            $sp_query = $model->call_sp($sp_sql, $out_param);
+            $errs = $sp_query->getResultArray();
+
+            if (count($errs) != 0)
+            {
+                $err_arr = [];
+                foreach ($errs as $err)
+                {
+                    $str = '';
+                    foreach ($err as $item)
+                    {
+                        if ($str!='') $str = $str . '^';
+                        $str = $str . $item;
+                    }
+                    array_push($err_arr, $str);
+                }
+
+                $this->json_data(400, sprintf('导入失败,原因 {"%s"},记录 {"%s"}', $out_param, implode(',', $err_arr)), 0);
+                return;
+            }
+        }
 
         $dest_table_name = '';
         $import_condition = '';
@@ -596,7 +650,6 @@ class Upload extends Controller
             date('Y-m-d H:i:s'),
             date('Y-m-d H:i:s'),
             $primary_key, $primary_key, $src_table_name);
-
 
         $insert_col_str = '';
         $select_col_str = '';
@@ -685,9 +738,9 @@ class Upload extends Controller
         $num = $model->exec($sql_insert);
 
         // 执行后处理
-        if ($sp_name != '')
+        if ($sp_work_after != '')
         {
-            $sp_sql = sprintf('call %s', $sp_name);
+            $sp_sql = sprintf('call %s', $sp_work_after);
             $model->select($sp_sql);
         }
 
