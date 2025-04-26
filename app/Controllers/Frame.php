@@ -1,5 +1,5 @@
 <?php
-/* v11.11.1.1.202504141745, from office */
+/* v11.11.3.1.202504251340, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -67,7 +67,8 @@ class Frame extends Controller
                     select 角色组,replace(replace(角色编码,"，",",")," ","") as 角色编码
                     from def_role_group
                     where 有效标识="1"
-                ) as t2 on t1.角色组=t2.角色组', $company_id, $user_workid);
+                ) as t2 on t1.角色组=t2.角色组', 
+                $company_id, $user_workid);
         }
         else
         {
@@ -87,7 +88,7 @@ class Frame extends Controller
                     select 
                         员工编号,姓名,
                         工号,角色组,replace(replace(角色,"，",",")," ","") as 角色,
-                        replace(replace(属地赋权,"，",",")," ","") as  属地赋权,
+                        replace(replace(属地赋权,"，",",")," ","") as 属地赋权,
                         replace(replace(部门编码赋权,"，",",")," ","") as 部门编码赋权,
                         replace(replace(部门全称赋权,"，",",")," ","") as 部门全称赋权,
                         工号限权,调试赋权,维护赋权,
@@ -100,7 +101,8 @@ class Frame extends Controller
                     select 角色组,replace(replace(角色编码,"，",",")," ","") as 角色编码
                     from def_role_group
                     where 有效标识="1"
-                ) as t2 on t1.角色组=t2.角色组', $company_id, $user_workid, $user_pswd);
+                ) as t2 on t1.角色组=t2.角色组', 
+                $company_id, $user_workid, $user_pswd);
         }
 
         $model = new Mcommon();
@@ -126,14 +128,7 @@ class Frame extends Controller
             {
                 $row->属地赋权 = $company_id;
             }
-            $user_location_arr = ($row->属地赋权 == '') ? [] : explode(',', $row->属地赋权);
-            $user_location_arr = array_unique($user_location_arr);
-
-            $user_location_authz = '';
-            foreach ($user_location_arr as $location)
-            {
-                $user_location_authz = ($user_location_authz == '') ? sprintf('"%s"', $location) : sprintf('%s,"%s"', $user_location_authz, $location);
-            }
+            $user_location_authz = $row->属地赋权;
 
             // 部门编码赋权
             $user_dept_code_arr = ($row->部门编码赋权 == '') ? [] : explode(',', $row->部门编码赋权);
@@ -274,13 +269,13 @@ class Frame extends Controller
             $session_arr[$row->功能赋权.'-dept_code_fld'] = $row->部门编码字段;
             $session_arr[$row->功能赋权.'-dept_name_fld'] = $row->部门全称字段;
             $session_arr[$row->功能赋权.'-location_fld'] = $row->属地字段;
+            $session_arr[$row->功能赋权.'-location_authz'] = '';
 
             $session_arr[$row->功能赋权.'-dept_code_authz'] = '';
             $session_arr[$row->功能赋权.'-dept_name_authz'] = '';
             $session_arr[$row->功能赋权.'-dept_name_str'] = '';
             $session_arr[$row->功能赋权.'-dept_authz'] = '';
-            $session_arr[$row->功能赋权.'-location_authz'] = '';
-
+            
             // 显示标志不等于1,不生成菜单
             if ($row->菜单显示 != 1)
             {
@@ -451,7 +446,7 @@ class Frame extends Controller
             }
             if ($user_location_authz != '')
             {
-                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('instr(%s,%s)', $session_arr[$row->功能赋权.'-location_fld'], $user_location_authz);
+                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('locate(%s,"%s")>0', $session_arr[$row->功能赋权.'-location_fld'], $user_location_authz);
             }
         }
 
@@ -977,7 +972,7 @@ class Frame extends Controller
                         from def_object 
                         where 有效标识="1"
                             and 对象名称="%s"
-                            and (属地="" or 属地 in (%s))
+                            and (属地="" or locate(属地,"%s")>0)
                         order by convert(对象值 using gbk)',
                         $row->对象, $user_location_authz);
                 }
