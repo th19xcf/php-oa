@@ -1,5 +1,5 @@
 <?php
-/* v2.2.3.1.202412312015, from home */
+/* v2.2.4.1.202504261425, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -31,7 +31,7 @@ class Train extends Controller
                 培训开始日期,预计完成日期,培训完成日期,
                 培训离开日期,培训离开原因
             from ee_train
-            where 属地 in (%s) and 有效标识!="0"
+            where locate(属地,"%s") and 有效标识!="0"
             order by if(instr(培训状态,"在培"),"在培",培训状态),
                 培训老师,培训开始日期,convert(姓名 using gbk)',
             $user_location_authz);
@@ -132,7 +132,7 @@ class Train extends Controller
         $sql = sprintf('
             select 对象值 
             from def_object 
-            where 对象名称="培训业务" and 属地 in (%s)
+            where 对象名称="培训业务" and locate(属地,"%s")
             order by convert(对象值 using gbk)', 
             $user_location_authz);
 

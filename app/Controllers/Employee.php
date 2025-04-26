@@ -1,5 +1,5 @@
 <?php
-/* v5.2.4.1.202412311915, from home */
+/* v5.2.5.1.202504261425, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -30,7 +30,7 @@ class Employee extends Controller
                 岗位名称,岗位类型,结算类型,培训完成日期,
                 floor(datediff(if(离职日期="",curdate(),离职日期),一阶段日期)/30) as 在岗月数
             from ee_onjob
-            where 属地 in (%s) and 有效标识="1" and 删除标识="0"
+            where locate(属地,"%s") and 有效标识="1" and 删除标识="0"
             order by 员工状态,
                 convert(部门名称 using gbk),
                 convert(班组 using gbk),

@@ -1,5 +1,5 @@
 <?php
-/* v2.3.1.1.202503042310, from home */
+/* v2.3.2.1.202504261425, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -31,7 +31,7 @@ class Interview extends Controller
                 if(参培信息="","待参培",参培信息) as 参培信息,
                 一次面试日期 as 面试日期,预约培训日期
             from ee_interview
-            where 属地 in (%s)
+            where locate(属地,"%s")
             order by field(面试结果,"未面试","通过","未通过"),
                 field(参培信息,"待参培","已参培","未参培"),
                 招聘渠道,预约培训日期,convert(姓名 using gbk)',
@@ -148,7 +148,7 @@ class Interview extends Controller
         $sql = sprintf('
             select 对象值 
             from def_object 
-            where 对象名称="渠道名称" and 属地 in (%s)
+            where 对象名称="渠道名称" and locate(属地,"%s")
             order by convert(对象值 using gbk)', $user_location_authz);
 
         $query = $model->select($sql);
@@ -164,7 +164,7 @@ class Interview extends Controller
         $sql = sprintf('
             select 对象值 
             from def_object 
-            where 对象名称="培训业务" and 属地 in (%s)
+            where 对象名称="培训业务" and locate(属地,"%s")
             order by convert(对象值 using gbk)', 
             $user_location_authz);
 
