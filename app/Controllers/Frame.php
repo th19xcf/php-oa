@@ -1,5 +1,5 @@
 <?php
-/* v11.11.3.1.202504251340, from office */
+/* v11.11.4.1.202504262115, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -664,6 +664,7 @@ class Frame extends Controller
         $tb_arr['钻取授权'] = ($drill_module!='') ? true : false;
         $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
         $tb_arr['删除授权'] = ($delete_authz=='1') ? true : false ;
+        $tb_arr['新增授权'] = ($add_authz=='1') ? true : false ;
         $tb_arr['整表授权'] = ($table_authz=='1') ? true : false ;
         $tb_arr['导入授权'] = ($import_authz=='1' && $import_module!='') ? true : false ;
         $tb_arr['导出授权'] = ($export_authz=='1') ? true : false ;
