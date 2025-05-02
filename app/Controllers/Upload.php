@@ -1,5 +1,5 @@
 <?php
-/* v3.3.3.1.202505021310, from home */
+/* v3.3.4.1.202505022205, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -344,14 +344,66 @@ class Upload extends Controller
             }
         }
 
+        // 前处理后处理
+        $sql = sprintf('
+            select 表名,导入条件,表单变量,滤重字段,前处理模块,后处理模块
+            from def_import_config
+            where 导入模块="%s"', $import_module);
+
+        $query = $model->select($sql);
+        $results = $query->getResult();
+        $sp_work_before = $results[0]->前处理模块;
+        $sp_work_after = $results[0]->后处理模块;
+
+        // 执行前处理
+        if ($sp_work_before != '')
+        {
+            // 替换参数
+            $sp_work_before = str_replace('$源表', $tmp_table_name, $sp_work_before);
+
+            $sp_sql = sprintf('call %s', $sp_work_before);
+            $sp_query = $model->import_before_sp($sp_sql, $out_param);
+            $errs = $sp_query->getResultArray();
+
+            if (count($errs) != 0)
+            {
+                $err_arr = [];
+                foreach ($errs as $err)
+                {
+                    $str = '';
+                    foreach ($err as $item)
+                    {
+                        if ($str!='') $str = $str . '^';
+                        $str = $str . $item;
+                    }
+                    array_push($err_arr, $str);
+                }
+
+                $this->json_data(400, sprintf('导入失败,原因 {%s}, 记录 {%s}', $out_param, implode(',', $err_arr)), 0);
+                return;
+            }
+        }
+
+        // 执行导入
+        $rc = '';
         if ($upload_model == '更新')
         {
-            $this->model_update($menu_id, $tmp_table_name);
+            $rc = $this->model_update($menu_id, $tmp_table_name);
         }
         else
         {
-            $this->model_insert($menu_id, $tmp_table_name);
+            $rc = $this->model_insert($menu_id, $tmp_table_name);
         }
+
+        // 执行后处理
+        if ($sp_work_after != '')
+        {
+            $sp_sql = sprintf('call %s', $sp_work_after);
+            $model->select($sp_sql);
+        }
+
+        // 返回
+        $this->json_data(200, $rc, 0);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -377,34 +429,7 @@ class Upload extends Controller
 
         $query = $model->select($sql);
         $results = $query->getResult();
-        $sp_work_before = $results[0]->前处理模块;
         $sp_work_after = $results[0]->后处理模块;
-
-        // 执行前处理
-        if ($sp_work_before != '')
-        {
-            $sp_sql = sprintf('call %s', $sp_work_before);
-            $sp_query = $model->call_sp($sp_sql, $out_param);
-            $errs = $sp_query->getResultArray();
-
-            if (count($errs) != 0)
-            {
-                $err_arr = [];
-                foreach ($errs as $err)
-                {
-                    $str = '';
-                    foreach ($err as $item)
-                    {
-                        if ($str!='') $str = $str . '^';
-                        $str = $str . $item;
-                    }
-                    array_push($err_arr, $str);
-                }
-
-                $this->json_data(400, sprintf('导入失败,原因 {"%s"},记录 {"%s"}', $out_param, implode(',', $err_arr)), 0);
-                return;
-            }
-        }
 
         //是否有重复记录
         if ($results[0]->滤重字段 != '')
@@ -530,19 +555,12 @@ class Upload extends Controller
             $sql_insert = sprintf('%s where %s', $sql_insert ,$import_condition);
         }
 
-        $rc = $model->exec($sql_insert);
+        $num = $model->exec($sql_insert);
 
         // 写日志
-        $model->sql_log('导入成功', $menu_id, sprintf('表名=%s,导入%d条',$dest_table_name,$rc));
+        $model->sql_log('导入成功', $menu_id, sprintf('表名=%s,导入%d条',$dest_table_name,$num));
 
-        // 执行后处理
-        if ($sp_work_after != '')
-        {
-            $sp_sql = sprintf('call %s', $sp_work_after);
-            $model->select($sp_sql);
-        }
-
-        $this->json_data(200, sprintf('导入成功,导入%d条',$rc), 0);
+        return sprintf('导入成功,导入%d条',$num);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
@@ -555,7 +573,6 @@ class Upload extends Controller
 
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
-        $user_location = $session->get('user_location');
         $import_module = $session->get($menu_id.'-import_module');
 
         $model = new Mcommon();
@@ -566,41 +583,11 @@ class Upload extends Controller
 
         $query = $model->select($sql);
         $results = $query->getResult();
-        $sp_work_before = $results[0]->前处理模块;
-        $sp_work_after = $results[0]->后处理模块;
-
-        // 执行前处理
-        if ($sp_work_before != '')
-        {
-            $sp_sql = sprintf('call %s', $sp_work_before);
-            $sp_query = $model->call_sp($sp_sql, $out_param);
-            $errs = $sp_query->getResultArray();
-
-            if (count($errs) != 0)
-            {
-                $err_arr = [];
-                foreach ($errs as $err)
-                {
-                    $str = '';
-                    foreach ($err as $item)
-                    {
-                        if ($str!='') $str = $str . '^';
-                        $str = $str . $item;
-                    }
-                    array_push($err_arr, $str);
-                }
-
-                $this->json_data(400, sprintf('导入失败,原因 {"%s"},记录 {"%s"}', $out_param, implode(',', $err_arr)), 0);
-                return;
-            }
-        }
 
         $dest_table_name = '';
-        $import_condition = '';
         foreach ($results as $row)
         {
             $dest_table_name = $row->表名;
-            $import_condition = $row->导入条件;
             break;
         }
 
@@ -734,17 +721,10 @@ class Upload extends Controller
         // 写日志
         $model->sql_log('上传更新[2]', $menu_id, sprintf('表名=`%s`,主键=`%s`,更新=`%s`', $dest_table_name, $primary_key, implode(',', $src_fields)));
 
-        $num = $model->exec($sql_update);
-        $num = $model->exec($sql_insert);
+        $num1 = $model->exec($sql_update);
+        $num2 = $model->exec($sql_insert);
 
-        // 执行后处理
-        if ($sp_work_after != '')
-        {
-            $sp_sql = sprintf('call %s', $sp_work_after);
-            $model->select($sp_sql);
-        }
-
-        $this->json_data(200, sprintf('导入更新成功,更新%d条记录',$num), 0);
+        return sprintf('导入更新成功,备份%d条记录,更新%d条记录',$num1,$num2);
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=

@@ -1,6 +1,6 @@
 <?php
 
-/* v2.3.1.1.202504182335, from home */
+/* v2.3.2.1.202505022205, from home */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -99,9 +99,9 @@ class Mcommon extends Model
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 通用存储过程调用
+    // 导入前处理模块,存储过程调用
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function call_sp($sp, &$param = null)
+    public function import_before_sp($sp, &$param = null)
     {
         $db = db_connect('btdc');
         $query = $db->query($sp);
