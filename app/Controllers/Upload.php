@@ -1,5 +1,5 @@
 <?php
-/* v3.3.4.1.202505022205, from home */
+/* v3.3.5.1.202505030015, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -495,7 +495,7 @@ class Upload extends Controller
 
         foreach ($results as $row)
         {
-            if (in_array($row->字段名, $tmp_field_arr) == false)
+            if (in_array($row->字段名, $tmp_field_arr) == false && $row->系统变量 == '' && $row->表单变量 == '')
             {
                 continue;
             }
