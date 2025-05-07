@@ -1,4 +1,4 @@
-<!-- v8.6.2.1.202504142120, from home -->
+<!-- v8.6.3.1.2025071540, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -356,7 +356,7 @@
         }
         catch (e)
         {
-            alert('数据错误,请检查',e);
+            alert('数据中有无效字符,请运行`数据整理`',e);
         }
         var data_last_selected = [];
 
