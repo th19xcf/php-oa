@@ -1,5 +1,5 @@
 <?php
-/* v11.11.4.1.202504262115, from home */
+/* v11.11.5.1.202505101115, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -660,7 +660,7 @@ class Frame extends Controller
         }
 
         $tb_arr = [];  // 控制菜单栏
-        $tb_arr['备注授权'] = ($comment_authz=='1' or $comment_table!='') ? true : false;
+        $tb_arr['备注授权'] = ($comment_authz=='1' and $comment_table!='') ? true : false;
         $tb_arr['钻取授权'] = ($drill_module!='') ? true : false;
         $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
         $tb_arr['删除授权'] = ($delete_authz=='1') ? true : false ;
