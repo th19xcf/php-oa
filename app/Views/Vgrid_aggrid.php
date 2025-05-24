@@ -1,4 +1,4 @@
-<!-- v8.6.3.1.2025071540, from office -->
+<!-- v8.7.1.1.202505241735, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -1362,6 +1362,8 @@
                     console.log('查询模块=[`', '<?php echo $query_module; ?>', '`]');
                     console.log('字段模块=[`', '<?php echo $field_module; ?>', '`]');
                     console.log('SQL=[`', debug_sql, '`]');
+                    let str = JSON.stringify(data_grid_api.getFilterModel());
+                    console.log('查询条件=[`', str, '`]');
                     break;
                 case '导入':
                     console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]', '导入模块=[`', '<?php echo $import_module; ?>', '`]');
