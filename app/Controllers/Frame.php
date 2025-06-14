@@ -1,5 +1,5 @@
 <?php
-/* v11.11.5.1.202505101115, from home */
+/* v11.11.6.1.202506142350, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1050,6 +1050,10 @@ class Frame extends Controller
             if ($column['字符转换'] == '1')
             {
                 $select_str = sprintf('%s replace(replace(%s,"\"","~~"),"\'","~~") as `%s`', $select_str, $column['查询名'], $column['列名']);
+            }
+            else if ($column['加密显示'] == '1')
+            {
+                $select_str = sprintf('%s "*" as `%s`', $select_str, $column['查询名'], $column['列名']);
             }
             else
             {
