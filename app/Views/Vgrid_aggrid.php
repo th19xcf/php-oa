@@ -1,4 +1,4 @@
-<!-- v8.7.1.1.202505241735, from home -->
+<!-- v8.8.1.1.202506132130, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -911,7 +911,7 @@
             title: '颜色标注输入窗口',
             footer: true,
             modal: true,
-            width: 600,
+            width: 640,
             height: 500,
             closable: true,
             movable: true
@@ -945,6 +945,19 @@
                 color_arr['col_name_1'] = rowNode.data['字段一'];
                 color_arr['option'] = rowNode.data['比较符'];
                 color_arr['col_name_2'] = rowNode.data['字段二'];
+                color_arr['style'] = {'color':'red','font-weight':'bold'};
+                if (rowNode.data['颜色'] == '白底蓝字')
+                {
+                    color_arr['style'] = {'color':'blue','font-weight':'bold'};
+                }
+                else if (rowNode.data['颜色'] == '黄底红色')
+                {
+                    color_arr['style'] = {'background-color':'yellow','color':'red','font-weight':'bold'};
+                }
+                else
+                {
+                    color_arr['style'] = {'color':'red','font-weight':'bold'};
+                }
             });
 
             win_color_set.hide();
@@ -1159,7 +1172,7 @@
                             },
                             {
                                 field: '比较符',
-                                width: 120,
+                                width: 110,
                                 cellEditor: 'agSelectCellEditor',
                                 cellEditorParams: 
                                 {
@@ -1173,6 +1186,15 @@
                                 cellEditorParams: 
                                 {
                                     values: color_column_arr,
+                                },
+                            },
+                            {
+                                field: '颜色',
+                                width: 110,
+                                cellEditor: 'agSelectCellEditor',
+                                cellEditorParams: 
+                                {
+                                    values: ['白底红字','白底蓝字','黄底红色'],
                                 },
                             },
                         ],
