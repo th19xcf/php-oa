@@ -1,5 +1,5 @@
 <?php
-/* v11.11.6.1.202506142350, from home */
+/* v11.12.1.1.202506161735, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -771,12 +771,28 @@ class Frame extends Controller
                 if ($key == '颜色标注')
                 {
                     $color_arr = $value;
+
+                    if ($value->col_name_1 != '' && $value->col_name_2 != '')
+                    {
+                        // 存入session
+                        $session_arr['color_mark'] = $color_arr;
+                        $session = \Config\Services::session();
+                        $session->set($session_arr);
+                    }
+
                     continue;
                 }
 
                 if ($key == '钻取字段' || $key == '钻取条件') continue;
                 $front_where = str_replace(sprintf('$%s',$key), $value, $front_where);
             }
+        }
+
+        // 处理颜色标注
+        $session = \Config\Services::session();
+        if ($session->get('color_mark') != null)
+        {
+            $color_arr = $session->get('color_mark');
         }
 
         //+=+=+=+=+=+=+=+=+=+=+=+= 
