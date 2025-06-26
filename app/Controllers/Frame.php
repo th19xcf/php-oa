@@ -1,5 +1,5 @@
 <?php
-/* v11.12.1.1.202506161735, from office */
+/* v11.12.2.1.202506261320, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -2556,7 +2556,7 @@ class Frame extends Controller
             $query_str = ($order == '') ? $query_str : $query_str . ' order by ' . $order;
 
             // 写日志
-            $model->sql_log('导出', $menu_id, str_replace('"','',$query_str));
+            $model->sql_log('导出', $menu_id, str_replace("'",'',str_replace('"','',$query_str)));
             $query = $model->select($query_str);
         }
 
