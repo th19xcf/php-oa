@@ -1,4 +1,4 @@
-<!-- v8.8.1.1.202506132130, from home -->
+<!-- v8.9.1.1.202506301630, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -249,6 +249,7 @@
         if (tb_obj['备注授权'] == true)
         {
             data_tb.data.add({id:'添加说明', type:'button', value:'添加说明'});
+            data_tb.data.add({id:'查看说明', type:'button', value:'查看说明'});
         }
         if (tb_obj['钻取授权'] == true)
         {
@@ -300,6 +301,7 @@
         var comment_tb = new dhx.Toolbar('comment_tb', {css:'toobar-class'});
         comment_tb.data.add({type:'separator'});
         comment_tb.data.add({id:'返回', type:'button', value:'返回'});
+        comment_tb.data.add({type:'separator'});
         comment_tb.data.add({id:'清空', type:'button', value:'清空'});
         comment_tb.data.add({id:'提交', type:'button', value:'提交'});
 
@@ -755,6 +757,9 @@
 
         cond_grid_api = agGrid.createGrid($$('cond_grid'), cond_grid_options);
 
+        // 备注模块参数
+        var comment_arr = JSON.parse('<?php echo $comment_json; ?>');
+
         // 钻取模块参数
         var drill_arr = JSON.parse('<?php echo $drill_json; ?>');
         var drill_selected = '';
@@ -1137,7 +1142,55 @@
 
                     comment_grid_api.setGridOption('rowData', rowData);
 
+                    $$('data_div_1').style.width = '60%';
+                    $$('data_div_2').style.width = '40%';
                     $$('data_div_2').style.display = 'block';
+                    break;
+                }
+                case '查看说明':
+                {
+                    let rows = data_grid_api.getSelectedRows();
+
+                    if (rows.length == 0)
+                    {
+                        alert('请先选择要`查看说明`的记录');
+                        break;
+                    }
+                    if (rows.length > 1)
+                    {
+                        alert('`查看说明`, 只能选择1条记录');
+                        break;
+                    }
+
+                    data_last_selected = rows[0];
+
+                    // 清空
+                    let send_arr = [];
+                    send_arr['功能'] = '查看说明';
+
+                    let obj = {};
+                    for (let ii in columns_obj)
+                    {
+                        if (columns_obj[ii].备注关联 != '1') continue;
+
+                        obj = {};
+                        obj['列名'] = columns_obj[ii].列名;
+                        obj['字段名'] = columns_obj[ii].字段名;
+                        obj['列类型'] = columns_obj[ii].列类型;
+                        obj['取值'] = '';
+
+                        for (let idx in data_last_selected)
+                        {
+                            if (columns_obj[ii].列名 != idx) continue;
+                            obj['取值'] = data_last_selected[idx];
+                            break;
+                        }
+
+                        send_arr.push(obj);
+                    }
+
+                    let comment_func_id = comment_arr['功能编码'];
+                    parent.window.goto(comment_func_id,'查看-'+menu_value['menu_2'],'frame/init/'+comment_func_id+'/查看说明/'+JSON.stringify(send_arr));
                     break;
                 }
                 case '刷新':
@@ -1418,6 +1471,8 @@
             switch (id)
             {
                 case '返回':
+                    $$('data_div_1').style.width = '100%';
+                    $$('data_div_1').style.display = 'block';
                     $$('data_div_2').style.display = 'none';
                     break;
                 case '清空':
@@ -1475,7 +1530,7 @@
 
                     if (ajax == false) return;
 
-                    dhx.ajax.post('<?php base_url(); ?>/frame/comment/<?php echo $func_id; ?>', send_arr).then(function (data)
+                    dhx.ajax.post('<?php base_url(); ?>/frame/comment_add/<?php echo $func_id; ?>', send_arr).then(function (data)
                     {
                         alert(data);
                         if (data.indexOf('成功') != -1)
@@ -3070,7 +3125,7 @@
                 }
 
                 send_str = JSON.stringify(send_obj);
-                parent.window.goto(drill_item['功能编码'],'钻取-'+drill_item['标签名称'],'frame/init/'+drill_item['功能编码']+'/'+'<?php echo $func_id; ?>'+'/'+send_str);
+                parent.window.goto(drill_item['功能编码'],'钻取-'+drill_item['标签名称'],'frame/init/'+drill_item['功能编码']+'/'+'数据钻取'+'/'+send_str);
             }
             else if (drill_from == 'chart')
             {

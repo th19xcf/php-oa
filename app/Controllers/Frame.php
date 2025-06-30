@@ -1,5 +1,5 @@
 <?php
-/* v11.12.2.1.202506261320, from office */
+/* v11.13.1.1.202506301630, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -510,7 +510,7 @@ class Frame extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     // 通用初始查询模块
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function init($menu_id='', $front_id='', $front_where='')
+    public function init($menu_id='', $front_id='', $front_param='')
     {
         $model = new Mcommon();
 
@@ -573,11 +573,13 @@ class Frame extends Controller
         $query_group = '';
         $query_order = '';
         $drill_module = '';  //钻取模块
-        $drill_func_id = '';  //钻取功能编码
+        $comment_arr = [];  //备注信息
+        $comment_module = '';  //备注模块
+        $comment_table = '';  //备注表名
         $import_module = '';  //导入模块
         $before_insert = '';  //新增前处理模块
         $after_insert = '';  //新增后处理模块
-        $before_update = '';  //更新后处理模块
+        $before_update = '';  //更新前处理模块
         $after_update = '';  //更新后处理模块
         $data_upkeep = '';  //数据整理模块
         $chart_func_id = '';  //图形模块
@@ -597,7 +599,7 @@ class Frame extends Controller
                 更新前处理模块,更新后处理模块,
                 数据整理模块,
                 钻取模块,
-                备注表名,备注模块,
+                备注模块,备注表名,
                 t1.导入模块,ifnull(t2.标签名称,"") as 标签名称,
                 图形模块,表样式
             from def_query_config as t1
@@ -637,6 +639,7 @@ class Frame extends Controller
             $query_order = $row->排序条件;
 
             $drill_module = $row->钻取模块;
+            $comment_module = $row->备注模块;
 
             $import_module = $row->导入模块;
             $import_tag_name = $row->标签名称;
@@ -653,14 +656,11 @@ class Frame extends Controller
             $data_table = $row->数据表名;
             $data_model = $row->数据模式;
 
-            $comment_table = $row->备注表名;
-            $comment_module = $row->备注模块;
-
             break;
         }
 
         $tb_arr = [];  // 控制菜单栏
-        $tb_arr['备注授权'] = ($comment_authz=='1' and $comment_table!='') ? true : false;
+        $tb_arr['备注授权'] = ($comment_authz=='1' and $comment_module!='') ? true : false;
         $tb_arr['钻取授权'] = ($drill_module!='') ? true : false;
         $tb_arr['修改授权'] = ($modify_authz=='1') ? true : false ;
         $tb_arr['删除授权'] = ($delete_authz=='1') ? true : false ;
@@ -714,7 +714,67 @@ class Frame extends Controller
             $sp_sql = sprintf('call %s(%s)', $query_table, $sp_param_str);
         }
 
-        // 读出钻取模块参数
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        // 取出备注模块对应的表配置
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        $sql = sprintf('
+            select 
+                t1.备注模块,t1.功能编码,t1.原表字段,
+                ifnull(t2.模块名称,"") as 模块名称,
+                ifnull(t3.数据表名,"") as 数据表名
+            from def_comment_config as t1
+            left join def_function as t2 on t1.功能编码=t2.功能编码
+            left join def_query_config as t3 on t2.模块名称=t3.查询模块
+            where t1.备注模块="%s"', $comment_module);
+
+        $results = $model->select($sql)->getResult();
+        foreach ($results as $row)
+        {
+            $comment_table = $row->数据表名;
+
+            str_replace(' ', '', $row->原表字段);
+            str_replace('；', ';', $row->原表字段);
+
+            $comment_arr['模块名称'] = $comment_module;
+            $comment_arr['功能编码'] = $row->功能编码;
+            $comment_arr['备注表名'] = $row->数据表名;
+            $comment_arr['原表字段'] = $row->原表字段;
+
+            break;  // 只取第一个
+        }
+
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+= 
+        // 处理前端备注数据
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+= 
+        $front_arr = [];
+        $front_where = '';
+        $disp_col_arr = [];  // 显示列
+        $color_arr = [];  // 颜色标注
+        $color_col_num = 0;
+
+        if ($front_id == '查看说明')
+        {
+            $front_arr = json_decode($front_param);
+            $front_where = '';
+
+            foreach ($front_arr as $item)
+            {
+                switch ($item->列类型)
+                {
+                    case '数值':
+                        $front_where = ($front_where == '') ? sprintf('%s=%s', $item->字段名, $item->取值) : $front_where . sprintf(' and %s=%s', $item->字段名, $item->取值);
+                        break;
+                    case '字符':
+                    case '日期':
+                        $front_where = ($front_where == '') ? sprintf('%s="%s"', $item->字段名, $item->取值) : $front_where . sprintf(' and %s="%s"', $item->字段名, $item->取值);
+                        break;
+                }
+            }
+        }
+
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
+        // 取出钻取模块对应的表配置
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
         $sql = sprintf('
             select 
                 钻取模块,页面选项,t1.功能编码,钻取字段,钻取条件,
@@ -750,19 +810,13 @@ class Frame extends Controller
         // 处理钻取功能相关数据
         // 钻取条件格式:源表字段^目标表字段 [^类型^操作符]
         //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+= 
-        $cond_arr = json_decode($front_where);
-        $front_where = '';
-        $disp_col_arr = [];  // 显示列
-        $color_arr = [];  // 颜色标注
-        $color_col_num = 0;
-
-        if ($front_id != '')
+        if ($front_id == '数据钻取')
         {
-            $col_arr = explode(';', $cond_arr->钻取字段);
-            $front_where = str_replace('`', '"', $cond_arr->钻取条件);
-            $disp_col_arr = $cond_arr->字段选择;
+            $front_arr = json_decode($front_param);
+            $front_where = str_replace('`', '"', $front_arr->钻取条件);
+            $disp_col_arr = $front_arr->字段选择;
 
-            foreach ($cond_arr as $key => $value)
+            foreach ($front_arr as $key => $value)
             {
                 if ($key == '字段选择')
                 {
@@ -788,7 +842,9 @@ class Frame extends Controller
             }
         }
 
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+= 
         // 处理颜色标注
+        //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+= 
         $session = \Config\Services::session();
         if ($session->get('color_mark') != null)
         {
@@ -919,11 +975,12 @@ class Frame extends Controller
 
             array_push($cond_value_arr, $cond);
 
-            // 前端comment_grid信息
+            /*
             if ($row->备注关联 == '1')
             {
                 array_push($comment_value_arr, array('列名'=>$row->列名,'字段名'=>$row->字段名,'列类型'=>$row->列类型,'取值'=>''));
             }
+            */
 
             // 前端update_grid信息
             // 主键不能更改
@@ -1205,6 +1262,7 @@ class Frame extends Controller
         $session_arr[$menu_id.'-data_table'] = $data_table;
         $session_arr[$menu_id.'-data_model'] = $data_model;
 
+        $session_arr[$menu_id.'-comment_arr'] = $comment_arr;
         $session_arr[$menu_id.'-comment_table'] = $comment_table;
         $session_arr[$menu_id.'-comment_module'] = $comment_module;
 
@@ -1256,6 +1314,8 @@ class Frame extends Controller
         $send['primary_key'] = $primary_key;
         $send['back_where'] = strtr($where, '"', '');
         $send['back_group'] = $group;
+
+        $send['comment_json'] = json_encode($comment_arr);
 
         $send['drill_json'] = json_encode($drill_arr);
         $send['disp_col_json'] = json_encode($disp_col_arr);
@@ -1666,9 +1726,9 @@ class Frame extends Controller
     }
 
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    // 更新记录
+    // 新增说明记录
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
-    public function comment($menu_id='')
+    public function comment_add($menu_id='')
     {
         $request = \Config\Services::request();
         $arg = $request->getJSON(true);
