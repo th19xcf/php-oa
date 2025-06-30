@@ -1,5 +1,5 @@
 <?php
-/* v11.13.1.1.202506301630, from office */
+/* v11.13.2.1.202506301650, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -873,7 +873,7 @@ class Frame extends Controller
                 赋值类型,对象,对象名称,对象表名,缺省值,
                 主键,可筛选,可汇总,可新增,可修改,不可为空,可颜色标注,
                 提示条件,提示样式设置,异常条件,异常样式设置,字符转换,
-                加密显示,备注关联,列顺序
+                加密显示,列顺序
             from view_function
             where 功能编码="%s" and 列顺序>0
             group by 列名
@@ -912,7 +912,6 @@ class Frame extends Controller
             $arr['异常样式'] = $row->异常样式设置;
             $arr['字符转换'] = $row->字符转换;
             $arr['加密显示'] = $row->加密显示;
-            $arr['备注关联'] = $row->备注关联;
             $arr['表外字段'] = '0';
 
             array_push($columns_arr, $arr);
@@ -974,13 +973,6 @@ class Frame extends Controller
             $cond['计算方式'] = '';
 
             array_push($cond_value_arr, $cond);
-
-            /*
-            if ($row->备注关联 == '1')
-            {
-                array_push($comment_value_arr, array('列名'=>$row->列名,'字段名'=>$row->字段名,'列类型'=>$row->列类型,'取值'=>''));
-            }
-            */
 
             // 前端update_grid信息
             // 主键不能更改
