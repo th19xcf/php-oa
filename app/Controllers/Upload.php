@@ -1,5 +1,5 @@
 <?php
-/* v3.3.5.1.202505030015, from home */
+/* v3.3.6.1.202507111555, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -556,6 +556,10 @@ class Upload extends Controller
         }
 
         $num = $model->exec($sql_insert);
+        if ($num < 0)
+        {
+            return '导入失败,导入 0 条';
+        }
 
         // 写日志
         $model->sql_log('导入成功', $menu_id, sprintf('表名=%s,导入%d条',$dest_table_name,$num));
@@ -723,6 +727,10 @@ class Upload extends Controller
 
         $num1 = $model->exec($sql_update);
         $num2 = $model->exec($sql_insert);
+        if ($num1 < 0 || $num2 < 0)
+        {
+            return '导入失败,导入 0 条';
+        }
 
         return sprintf('导入更新成功,备份%d条记录,更新%d条记录',$num1,$num2);
     }
