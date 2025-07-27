@@ -1,5 +1,5 @@
 <?php
-/* v11.13.2.1.202506301650, from office */
+/* v11.13.3.1.202507271035, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1225,6 +1225,24 @@ class Frame extends Controller
 
         $send_sql = str_replace('\'','~~',$send_sql);
         $send_sql = str_replace('"','~~',$send_sql);
+
+        // CI取出的都是字符型,数值型做强制转换
+        for ($i=0; $i<count($send_results); $i++)
+        {
+            $send_results[$i]->序号 = (int) $send_results[$i]->序号;
+            foreach ($columns_arr as $column)
+            {
+                if (array_key_exists('列类型', $column) == false) continue;
+                if ($column['列类型'] == '数值' && (strpos($send_results[$i]->{$column['列名']},'.') === false))
+                {
+                    $send_results[$i]->{$column['列名']} = (int)$send_results[$i]->{$column['列名']};
+                }
+                else if ($column['列类型'] == '数值' && (strpos($send_results[$i]->{$column['列名']},'.') !== false))
+                {
+                    $send_results[$i]->{$column['列名']} = (float)$send_results[$i]->{$column['列名']};
+                }
+            }
+        }
 
         // 存入session
         $session_arr = [];
@@ -2626,7 +2644,8 @@ class Frame extends Controller
     {
         if ($from == 'front')
         {
-            $new_pswd = $this->request->getPost()['pswd_1'];
+            $request = \Config\Services::request();
+            $new_pswd = $request->getPost('pswd_1');
 
             // 从session中取出数据
             $session = \Config\Services::session();
