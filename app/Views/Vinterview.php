@@ -90,7 +90,6 @@
             return resultPaths;
         }
 
-
         // tree视图
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});

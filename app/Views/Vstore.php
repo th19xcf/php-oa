@@ -1,4 +1,4 @@
-<!-- v3.2.1.1.202503042310, from home -->
+<!-- v3.3.1.1.20250910, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -43,6 +43,52 @@
             return document.getElementById(id);
         }
 
+        /**
+         * 在多层 JSON 数据中搜索字符串，返回匹配项的每级 id 路径
+         * @param {Array|Object} data - 多层嵌套的 JSON 数据
+         * @param {string} target - 要搜索的字符串
+         * @param {string} textKey - 存放文本的键名 (默认 "name")
+         * @param {string} idKey - 存放 id 的键名 (默认 "id")
+         * @param {string} childrenKey - 存放子节点的键名 (默认 "children")
+         * @returns {Array<Array>} - 返回所有匹配到的 id 路径列表
+         */
+        function search_json_string(data,target, textKey="name",idKey="id",childrenKey="children")
+        {
+            const resultPaths = [];
+
+            /**
+            * 递归搜索
+            * @param {Object|Array} nodes 当前层数据
+            * @param {Array} pathId 当前路径的 id 数组
+            */
+            function dfs(nodes, pathId)
+            {
+                if (!nodes) return;
+
+                const list = Array.isArray(nodes) ? nodes : [nodes];
+
+                for (const node of list) 
+                {
+                    const newPath = [...pathId, node[idKey]];
+
+                    // 判断当前节点是否匹配
+                    if ( typeof node[textKey] === "string" && node[textKey].includes(target) )
+                    {
+                        resultPaths.push(newPath);
+                    }
+
+                    // 递归遍历子节点
+                    if (Array.isArray(node[childrenKey]) && node[childrenKey].length > 0)
+                    {
+                        dfs(node[childrenKey], newPath);
+                    }
+                }
+            }
+
+            dfs(data, []);
+            return resultPaths;
+        }
+
         // tree视图
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
@@ -55,6 +101,7 @@
         main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'删除', type:'button', value:'删除'});
         main_tb.data.add({type:'spacer'});
+        main_tb.data.add({id:'搜索', type:'button', value:'搜索'});
         main_tb.data.add({id:'导入', type:'button', value:'导入'});
 
         $$('info_box').style.height = document.documentElement.clientHeight * 0.035 + 'px';
@@ -194,6 +241,35 @@
                     submit_type = 'delete';
                     editable = false;
                     delete_row();
+                    break;
+                case '搜索':
+                    let keyword = prompt('请输入要搜索的关键词:');
+                    if (!keyword) return;
+                    let foundPaths = search_json_string(tree_obj, keyword, 'value', 'id', 'items');
+                    if (foundPaths.length === 0)
+                    {
+                        alert('未找到包含该关键词的节点');
+                    }
+                    else
+                    {
+                        // 先折叠所有节点
+                        tree.collapseAll();
+
+                        // 展开并选中所有匹配路径
+                        foundPaths.forEach(path => 
+                        {
+                            path.forEach((id, index) => 
+                            {
+                                tree.expand(id);
+                                if (index === path.length - 1) 
+                                {
+                                    tree.checkItem(id, true);
+                                }
+                            });
+                        });
+
+                        alert('已找到 ' + foundPaths.length + ' 个匹配项，并展开相关节点');
+                    }
                     break;
                 case '导入':
                     parent.window.goto('<?php echo $import_func_id; ?>','导入-'+'<?php echo $import_func_name; ?>','Upload/init/<?php echo $import_func_id; ?>/<?php echo $import_func_module; ?>');
