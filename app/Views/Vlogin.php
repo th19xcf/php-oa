@@ -1,4 +1,4 @@
-<!-- v2.1.3.1.202412302005, from home -->
+<!-- v2.1.4.1.202509111110, from office -->
 
 <!DOCTYPE html>
 <html style="display: block;">
@@ -32,6 +32,10 @@
                             <option value="北京总公司" >北京总公司</option>
                             <option value="河北分公司" >河北分公司</option>
                             <option value="四川分公司" >四川分公司</option>
+                            <option value="河南分公司" >河南分公司</option>
+                            <option value="内蒙古分公司" >内蒙古分公司</option>
+                            <option value="新疆分公司" >新疆分公司</option>
+                            <option value="海南分公司" >海南分公司</option>
                         </select>
 
                         <!--<input class="formIpt2" tabindex="1" title="请输入帐号" id="idInput2" type="text" value="" autocomplete="off" style="width:120px;">-->
