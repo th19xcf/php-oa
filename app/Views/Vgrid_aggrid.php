@@ -1,4 +1,4 @@
-<!-- v8.9.1.1.202506301630, from office -->
+<!-- v8.9.2.1.202509160955, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -503,46 +503,6 @@
             onRowSelected: (e) =>
             {
                 //console.log("onRowSelected",e);
-
-                // 清空
-                let rowData = [];
-                let obj = {};
-                for (let ii in columns_obj)
-                {
-                    if (columns_obj[ii].备注关联 != '1') continue;
-
-                    obj = {};
-                    obj['列名'] = columns_obj[ii].列名;
-                    obj['字段名'] = columns_obj[ii].字段名;
-                    obj['列类型'] = columns_obj[ii].列类型;
-                    obj['取值'] = e.data[columns_obj[ii].列名];
-
-                    rowData.push(obj);
-                }
-
-                let comment_module = '';
-                for (let ii in comment_grid_obj)
-                {
-                    if (comment_grid_obj[ii].列名 != '备注模块') continue;
-                    comment_module = comment_grid_obj[ii].取值;
-                    break;
-                }
-
-                obj = {};
-                obj['列名'] = '备注模块';
-                obj['字段名'] = '备注模块';
-                obj['列类型'] = '字符';
-                obj['取值'] = comment_module;
-                rowData.push(obj);
-
-                obj = {};
-                obj['列名'] = '备注说明';
-                obj['字段名'] = '备注说明';
-                obj['列类型'] = '字符';
-                obj['取值'] = '';
-                rowData.push(obj);
-
-                comment_grid_api.setGridOption('rowData', rowData);
             },
         };
 
@@ -1095,12 +1055,24 @@
 
                     data_last_selected = rows[0];
 
-                    // 清空
+                    let comment_fld = comment_arr['原表字段'].split(';');
+
+                    console.log('comment_arr=', comment_arr, 'comment_fld=', comment_fld);
+
+                    // 带入原表数据
                     let rowData = [];
                     let obj = {};
                     for (let ii in columns_obj)
                     {
-                        if (columns_obj[ii].备注关联 != '1') continue;
+                        let found = false;
+                        for (let jj in comment_fld)
+                        {
+                            if (columns_obj[ii].字段名 != comment_fld[jj]) continue;
+                            found = true;
+                            break;
+                        }
+
+                        if (!found) continue;
 
                         obj = {};
                         obj['列名'] = columns_obj[ii].列名;
@@ -1118,19 +1090,11 @@
                         rowData.push(obj);
                     }
 
-                    let comment_module = '';
-                    for (let ii in comment_grid_obj)
-                    {
-                        if (comment_grid_obj[ii].列名 != '备注模块') continue;
-                        comment_module = comment_grid_obj[ii].取值;
-                        break;
-                    }
-
                     obj = {};
                     obj['列名'] = '备注模块';
                     obj['字段名'] = '备注模块';
                     obj['列类型'] = '字符';
-                    obj['取值'] = comment_module;
+                    obj['取值'] = comment_arr['模块名称'];
                     rowData.push(obj);
 
                     obj = {};

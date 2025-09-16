@@ -1,5 +1,5 @@
 <?php
-/* v11.13.3.1.202507271035, from home */
+/* v11.14.1.1.202509161005, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -599,7 +599,7 @@ class Frame extends Controller
                 更新前处理模块,更新后处理模块,
                 数据整理模块,
                 钻取模块,
-                备注模块,备注表名,
+                备注模块,
                 t1.导入模块,ifnull(t2.标签名称,"") as 标签名称,
                 图形模块,表样式
             from def_query_config as t1
@@ -719,7 +719,7 @@ class Frame extends Controller
         //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
         $sql = sprintf('
             select 
-                t1.备注模块,t1.功能编码,t1.原表字段,
+                t1.备注模块,t1.备注表名,t1.功能编码,t1.原表字段,
                 ifnull(t2.模块名称,"") as 模块名称,
                 ifnull(t3.数据表名,"") as 数据表名
             from def_comment_config as t1
