@@ -1,5 +1,5 @@
 <?php
-/* v5.2.5.1.202504261425, from home */
+/* v5.3.1.1.202510071955, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -25,13 +25,13 @@ class Employee extends Controller
         $tree_expand = $session->get('employee_tree_expand');
 
         $sql = sprintf('
-            select GUID,姓名,工号1 as 工号,员工状态,
-                属地,部门名称,if(班组="","未分班组",班组) as 班组,
+            select GUID,姓名,工号1 as 工号,属地,员工状态,
+                部门名称,if(班组="","未分班组",班组) as 班组,
                 岗位名称,岗位类型,结算类型,培训完成日期,
                 floor(datediff(if(离职日期="",curdate(),离职日期),一阶段日期)/30) as 在岗月数
             from ee_onjob
             where locate(属地,"%s") and 有效标识="1" and 删除标识="0"
-            order by 员工状态,
+            order by 属地,员工状态,
                 convert(部门名称 using gbk),
                 convert(班组 using gbk),
                 convert(姓名 using gbk)',
@@ -40,6 +40,7 @@ class Employee extends Controller
         $query = $model->select($sql);
         $results = $query->getResult();
 
+        $up4_arr = []; // 属地
         $up3_arr = []; // 班组
         $up2_arr = []; // 部门名称
         $up1_arr = []; // 员工状态
@@ -51,7 +52,8 @@ class Employee extends Controller
             $ee_arr['id'] = sprintf('人员^%s^%s', $row->GUID, $row->姓名);
             $ee_arr['value'] = sprintf('%s (%s,%d月)', $row->姓名, $row->岗位名称, $row->在岗月数);
 
-            $up1_id = sprintf('班组^%s^%s^%s', $row->员工状态, $row->部门名称, $row->班组);
+            #id格式: 班组^属地^员工状态^部门名称^班组
+            $up1_id = sprintf('班组^%s^%s^%s^%s', $row->属地, $row->员工状态, $row->部门名称, $row->班组);
             if (array_key_exists($up1_id, $up1_arr) == false)
             {
                 $up1_arr[$up1_id] = [];
@@ -68,37 +70,58 @@ class Employee extends Controller
         // 部门
         foreach ($up1_arr as $up1)
         {
+            #id格式: 部门^属地^员工状态^部门名称
             $arr = explode('^', $up1['id']);
-            $up2_id = sprintf('部门^%s^%s', $arr[1], $arr[2]);
+            $up2_id = sprintf('部门^%s^%s^%s', $arr[1], $arr[2], $arr[3]);
             if (array_key_exists($up2_id, $up2_arr) == false)
             {
                 $up2_arr[$up2_id]['id'] = $up2_id;
                 $up2_arr[$up2_id]['num'] = 0;
-                $up2_arr[$up2_id]['value'] = $arr[2];
+                $up2_arr[$up2_id]['value'] = $arr[3];
                 $up2_arr[$up2_id]['items'] = [];
             }
 
             $up2_arr[$up2_id]['num'] += $up1['num'];
-            $up2_arr[$up2_id]['value'] = sprintf('%s (%d人)', $arr[2], $up2_arr[$up2_id]['num']);
+            $up2_arr[$up2_id]['value'] = sprintf('%s (%d人)', $arr[3], $up2_arr[$up2_id]['num']);
             array_push($up2_arr[$up2_id]['items'], $up1);
         }
 
         // 员工状态
         foreach ($up2_arr as $up2)
         {
+            #id格式: 员工状态^属地^员工状态
             $arr = explode('^', $up2['id']);
-            $up3_id = sprintf('员工状态^%s', $arr[1]);
+            $up3_id = sprintf('员工状态^%s^%s', $arr[1], $arr[2]);
             if (array_key_exists($up3_id, $up3_arr) == false)
             {
                 $up3_arr[$up3_id]['id'] = $up3_id;
                 $up3_arr[$up3_id]['num'] = 0;
-                $up3_arr[$up3_id]['value'] = $arr[1];
+                $up3_arr[$up3_id]['value'] = $arr[2];
                 $up3_arr[$up3_id]['items'] = [];
             }
 
             $up3_arr[$up3_id]['num'] += $up2['num'];
-            $up3_arr[$up3_id]['value'] = sprintf('%s (%d人)', $arr[1], $up3_arr[$up3_id]['num']);
+            $up3_arr[$up3_id]['value'] = sprintf('%s (%d人)', $arr[2], $up3_arr[$up3_id]['num']);
             array_push($up3_arr[$up3_id]['items'], $up2);
+        }
+
+        // 属地
+        foreach ($up3_arr as $up3)
+        {
+            #id格式: 属地^属地
+            $arr = explode('^', $up3['id']);
+            $up4_id = sprintf('属地^%s', $arr[1]);
+            if (array_key_exists($up4_id, $up4_arr) == false)
+            {
+                $up4_arr[$up4_id]['id'] = $up4_id;
+                $up4_arr[$up4_id]['num'] = 0;
+                $up4_arr[$up4_id]['value'] = $arr[1];
+                $up4_arr[$up4_id]['items'] = [];
+            }
+
+            $up4_arr[$up4_id]['num'] += $up3['num'];
+            $up4_arr[$up4_id]['value'] = sprintf('%s (%d人)', $arr[1], $up4_arr[$up4_id]['num']);
+            array_push($up4_arr[$up4_id]['items'], $up3);
         }
 
         $csr_arr = [];
@@ -107,11 +130,11 @@ class Employee extends Controller
         $csr_arr['items'] = [];
         $csr_num = 0;
 
-        foreach ($up3_arr as $up3)
+        foreach ($up4_arr as $up4)
         {
-            $csr_num += $up3['num'];
+            $csr_num += $up4['num'];
             $csr_arr['value'] = sprintf('入职人员 (%d人)', $csr_num);
-            array_push($csr_arr['items'], $up3);
+            array_push($csr_arr['items'], $up4);
         }
 
         $tree_arr = [];
@@ -215,7 +238,7 @@ class Employee extends Controller
         else if ($arr[0] == '人员')
         {
             $sql = sprintf('
-                select 姓名,身份证号,员工状态,
+                select 姓名,身份证号,属地,员工状态,
                     培训开始日期,培训完成日期,
                     一阶段日期,二阶段日期,
                     岗位名称,岗位类型,结算类型,
@@ -228,6 +251,7 @@ class Employee extends Controller
 
             array_push($rows_arr, array('表项'=>'属性', '值'=>'查询人员信息'));
             array_push($rows_arr, array('表项'=>'生效日期', '值'=>''));
+            array_push($rows_arr, array('表项'=>'属地', '值'=>$results[0]->属地));
             array_push($rows_arr, array('表项'=>'姓名', '值'=>$results[0]->姓名));
             array_push($rows_arr, array('表项'=>'岗位名称', '值'=>$results[0]->岗位名称));
             array_push($rows_arr, array('表项'=>'岗位类型', '值'=>$results[0]->岗位类型));
