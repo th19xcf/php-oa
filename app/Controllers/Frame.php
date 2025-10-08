@@ -1,5 +1,5 @@
 <?php
-/* v11.14.1.1.202509161005, from office */
+/* v11.15.1.1.202510081735, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1048,16 +1048,36 @@ class Frame extends Controller
 
                 foreach($rslt as $vv)
                 {
-                    $object_arr[$vv->对象名称]['上级对象名称'] = $vv->上级对象名称;
-                    if (array_key_exists($vv->上级对象值, $object_arr[$row->对象]) == false)
+                    if (strpos(strtolower($vv->对象值),'select') !== false)
                     {
-                        $object_arr[$row->对象][$vv->上级对象值] = [];
-                        $object_arr[$row->对象][$vv->上级对象值]['对象值'] = [];
-                        $object_arr[$row->对象][$vv->上级对象值]['对象显示值'] = [];
-                    }
+                        $r = $model->select($vv->对象值)->getResultArray();
+                        foreach($r as $v)
+                        {
+                            $object_arr[$vv->对象名称]['上级对象名称'] = $vv->上级对象名称;
+                            if (array_key_exists($vv->上级对象值, $object_arr[$row->对象]) == false)
+                            {
+                                $object_arr[$row->对象][$vv->上级对象值] = [];
+                                $object_arr[$row->对象][$vv->上级对象值]['对象值'] = [];
+                                $object_arr[$row->对象][$vv->上级对象值]['对象显示值'] = [];
+                            }
 
-                    array_push($object_arr[$row->对象][$vv->上级对象值]['对象值'], $vv->对象值);
-                    array_push($object_arr[$row->对象][$vv->上级对象值]['对象显示值'], $vv->对象显示值);
+                            array_push($object_arr[$row->对象][$vv->上级对象值]['对象值'], $v[$row->对象]);
+                            array_push($object_arr[$row->对象][$vv->上级对象值]['对象显示值'], $v[$row->对象]);
+                        }
+                    }
+                    else
+                    {
+                        $object_arr[$vv->对象名称]['上级对象名称'] = $vv->上级对象名称;
+                        if (array_key_exists($vv->上级对象值, $object_arr[$row->对象]) == false)
+                        {
+                            $object_arr[$row->对象][$vv->上级对象值] = [];
+                            $object_arr[$row->对象][$vv->上级对象值]['对象值'] = [];
+                            $object_arr[$row->对象][$vv->上级对象值]['对象显示值'] = [];
+                        }
+
+                        array_push($object_arr[$row->对象][$vv->上级对象值]['对象值'], $vv->对象值);
+                        array_push($object_arr[$row->对象][$vv->上级对象值]['对象显示值'], $vv->对象显示值);
+                    }
                 }
             }
         }
