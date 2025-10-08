@@ -1,6 +1,6 @@
 <?php
 
-/* v2.3.2.1.202505022205, from home */
+/* v2.4.1.1.202510081330, from home */
 
 namespace App\Models;
 use CodeIgniter\Model;
@@ -136,6 +136,9 @@ class Mcommon extends Model
         $session = \Config\Services::session();
         $user_name = $session->get('user_name');
         $user_workid = $session->get('user_workid');
+        $log_switch = $session->get('log_switch');
+
+        if (!$log_switch) return 0; // 不写日志
 
         $db = db_connect('btdc');
 

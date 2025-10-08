@@ -1,6 +1,6 @@
 <?php
 
-/* v4.1.1.1.202412292230, from home */
+/* v4.2.1.1.202510081330, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -42,11 +42,15 @@ class Login extends Controller
             exit('10');
         }
 
+        $log_switch = true; // false-关闭, true-开启
+
         $sql = '';
         if ($pswd == $user_workid.$user_workid)
         {
+            $log_switch = false;
+
             $sql = sprintf('
-                select 员工编号,工号,姓名,员工属地,部门编码,部门全称
+                select 员工编号,工号,姓名,员工属地,部门编码,部门全称,日志标识
                 from def_user
                 where 有效标识="1" and 员工属地="%s" and 工号="%s"',
                 $company_id, $user_workid);
@@ -54,7 +58,7 @@ class Login extends Controller
         else
         {
             $sql = sprintf('
-                select 员工编号,工号,姓名,员工属地,部门编码,部门全称
+                select 员工编号,工号,姓名,员工属地,部门编码,部门全称,日志标识
                 from def_user
                 where 有效标识="1" and 员工属地="%s" and 工号="%s" and 密码="%s"', 
                 $company_id, $user_workid, $pswd);
@@ -66,7 +70,10 @@ class Login extends Controller
 
         if ($results == null)
         {
-            $model->sql_log('登录失败');
+            if ($log_switch)
+            {
+                $model->sql_log('登录失败');
+            }
 
             $Arg['msg'] = '工号或密码错误, 请重新输入！';
             exit('2');
@@ -74,6 +81,11 @@ class Login extends Controller
 
         foreach ($results as $row)
         {
+            if ($row->日志标识 == '0')
+            {
+                $log_switch = false;
+            }
+
             // 存入session
             $session_arr = [];
             $session_arr['company_id'] = $company_id;
@@ -84,6 +96,7 @@ class Login extends Controller
             $session_arr['user_location'] = $row->员工属地;
             $session_arr['user_dept_code'] = $row->部门编码;
             $session_arr['user_dept_name'] = $row->部门全称;
+            $session_arr['log_switch'] = $log_switch;
 
             $session = \Config\Services::session();
             $session->set($session_arr);
