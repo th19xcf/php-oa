@@ -1,5 +1,5 @@
 <?php
-/* v11.15.1.1.202510081735, from home */
+/* v11.15.2.1.202510121655, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -984,6 +984,8 @@ class Frame extends Controller
             $value_arr['列名'] = $row->列名;
             $value_arr['字段名'] = $row->字段名;
             $value_arr['列类型'] = $row->列类型;
+            $value_arr['赋值类型'] = $row->赋值类型;
+            $value_arr['对象名称'] = $row->对象;
             $value_arr['是否可修改'] = ($row->可修改=='1' || $row->可修改=='2') ? '是' : '否';
             $value_arr['是否必填'] = ($row->不可为空=='1') ? '是' : '否';
             $value_arr['取值'] = '';

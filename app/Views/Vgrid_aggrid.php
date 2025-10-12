@@ -1,4 +1,4 @@
-<!-- v8.9.2.1.202509160955, from office -->
+<!-- v8.9.3.1.202510121655, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -571,14 +571,11 @@
             theme: grid_theme,
             columnDefs: 
             [
-                {
-                    field:'修改项',
-                    width:150,
-                    editable:false,
-                },
                 {field:'列名'},
                 {field:'字段名', hide:true},
                 {field:'列类型'},
+                {field:'赋值类型', hide:true},
+                {field:'对象名称', hide:true},
                 {field:'是否可修改'},
                 {field:'是否必填'},
                 {field:'取值', width:400, cellEditorSelector:cellEditorSelector}
@@ -1057,8 +1054,6 @@
 
                     let comment_fld = comment_arr['原表字段'].split(';');
 
-                    console.log('comment_arr=', comment_arr, 'comment_fld=', comment_fld);
-
                     // 带入原表数据
                     let rowData = [];
                     let obj = {};
@@ -1265,6 +1260,8 @@
                             obj['列名'] = columns_obj[ii].列名;
                             obj['字段名'] = columns_obj[ii].字段名;
                             obj['列类型'] = columns_obj[ii].列类型;
+                            obj['赋值类型'] = columns_obj[ii].赋值类型;
+                            obj['对象名称'] = columns_obj[ii].对象;
                             obj['是否可修改'] = columns_obj[ii].可修改 == '0' ? '否' : '是';
                             obj['是否必填'] = columns_obj[ii].不可为空 == '0' ? '否' : '是';
                             obj['取值'] = '';
@@ -2002,7 +1999,7 @@
                 {
                     if (rowNode.data['取值'] != '')
                     {
-                        var col = new ColumnInfo();
+                        let col = new ColumnInfo();
                         col.col_name = rowNode.data['列名'];
                         col.fld_name = rowNode.data['字段名'];
                         col.type = rowNode.data['列类型'];
@@ -2025,7 +2022,7 @@
             {
                 update_grid_api.forEachNode((rowNode, index) => 
                 {
-                    var col = new ColumnInfo();
+                    let col = new ColumnInfo();
                     col.col_name = rowNode.data['列名'];
                     col.fld_name = rowNode.data['字段名'];
                     col.type = rowNode.data['列类型'];
@@ -2034,6 +2031,19 @@
                     {
                         col.modified = true;
                         ajax = 1;
+                    }
+
+                    if (rowNode.data['赋值类型'] == '固定值')
+                    {
+                        let obj = object_obj[rowNode.data['对象名称']][''];
+                        let pos = 0;
+                        for (let vv in obj['对象显示值'])
+                        {
+                            if (obj['对象显示值'][vv] == col.value)
+                            {
+                                col.value = obj['对象值'][vv];
+                            }
+                        }
                     }
 
                     send_arr.push(col);
@@ -2079,7 +2089,7 @@
                 }
 
                 foot_upkeep = '';
-                for (var ii in send_arr)
+                for (let ii in send_arr)
                 {
                     if (foot_upkeep != '') foot_upkeep = foot_upkeep + ',';
                     foot_upkeep = foot_upkeep + send_arr[ii]['col_name'];
@@ -2121,7 +2131,7 @@
                 var active_date = ''; //生效日期
 
                 //数据检查
-                for (var ii in send_arr)
+                for (let ii in send_arr)
                 {
                     if (send_arr[ii]['fld_name'] == '记录开始日期')
                     {
@@ -2141,7 +2151,7 @@
                     return;
                 }
 
-                var url = '<?php base_url(); ?>/frame/update_row/<?php echo $func_id; ?>';
+                let url = '<?php base_url(); ?>/frame/update_row/<?php echo $func_id; ?>';
                 dhx.ajax.post(url, send_arr).then(function (data)
                 {
                     alert(data);
@@ -2546,7 +2556,7 @@
                             component: 'agSelectCellEditor',
                             params: {
                                 values: ['','√'],
-                                },
+                            },
                         };
                     }
                     return null;
@@ -2593,7 +2603,6 @@
                         return {
                             component: 'agSelectCellEditor',
                             params: {
-                                //values: object_obj[params.data.列名]
                                 values: data_arr
                             },
                         };
