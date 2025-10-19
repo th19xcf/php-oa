@@ -1,5 +1,5 @@
 <?php
-/* v3.9.1.1.202510191120, from home */
+/* v3.9.2.1.202510192300, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -35,7 +35,7 @@ class Store extends Controller
                 操作来源,操作人员,操作时间
             from ee_store
             where locate(属地,"%s")
-            order by 属地,field(邀约结果,"通过","未邀约"),面试信息,招聘渠道,convert(姓名 using gbk)',
+            order by 属地,field(邀约结果,"通过","未通过","考虑","拒绝","未邀约"),面试信息,招聘渠道,convert(姓名 using gbk)',
             $user_location_authz);
 
         $query = $model->select($sql);
@@ -54,7 +54,7 @@ class Store extends Controller
             $ee_arr['id'] = sprintf('人员^%s^%s', $row->GUID, $row->姓名);
             $ee_arr['value'] = sprintf('%s (%s)', $row->姓名, $row->邀约日期);
 
-            #id格式: 招聘渠道^属地^邀约结果^面试信息^预约面试日期^招聘渠道
+            #id格式: 属地^邀约结果^面试信息^预约面试日期^招聘渠道
             $up1_id = sprintf('招聘渠道^%s^%s^%s^%s^%s', $row->属地,$row->邀约结果, $row->面试信息, "", $row->招聘渠道);
             if (array_key_exists($up1_id, $up1_arr) == false)
             {
@@ -186,7 +186,7 @@ class Store extends Controller
             // 主键不能更改
             if ($row->主键 == 1) continue;
 
-            if ($row->可修改==0 && $row->可新增==0) continue;
+            //if ($row->可修改==0 && $row->可新增==0) continue;
 
             $value_arr = [];
             $value_arr['列名'] = $row->列名;
@@ -241,6 +241,19 @@ class Store extends Controller
 
                 $qry = $model->select($obj_sql);
                 $rslt = $qry->getResult();
+
+                if (count($rslt) == 0)
+                {
+                    $object_arr[$row->对象]['上级对象名称'] = '';
+                    $object_arr[$row->对象][''] = [];
+                    $object_arr[$row->对象]['']['对象值'] = [];
+                    $object_arr[$row->对象]['']['对象显示值'] = [];
+
+                    array_push($object_arr[$row->对象]['']['对象值'], '');
+                    array_push($object_arr[$row->对象]['']['对象显示值'], '');
+
+                    continue;
+                }
 
                 foreach($rslt as $vv)
                 {
