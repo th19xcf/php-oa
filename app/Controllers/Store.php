@@ -1,5 +1,5 @@
 <?php
-/* v3.8.1.1.202510071640, from home */
+/* v3.9.1.1.202510191120, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -161,7 +161,9 @@ class Store extends Controller
         $tree_arr = [];
         array_push($tree_arr, $csr_arr);
 
-        //////////////////////////
+        $columns_arr = [];
+        $object_arr = [];
+
         // 读出列配置信息
         $sql = sprintf('
             select 功能编码,字段模块,部门编码字段,部门全称字段,属地字段,
@@ -178,8 +180,6 @@ class Store extends Controller
         $query = $model->select($sql);
         $results = $query->getResult();
 
-        $update_value_arr = [];
-        $add_value_arr = [];
         foreach ($results as $row)
         {
             // 前端update_grid信息
@@ -192,6 +192,8 @@ class Store extends Controller
             $value_arr['列名'] = $row->列名;
             $value_arr['字段名'] = $row->字段名;
             $value_arr['列类型'] = $row->列类型;
+            $value_arr['赋值类型'] = $row->赋值类型;
+            $value_arr['对象'] = $row->对象; 
             $value_arr['是否可修改'] = ($row->可修改=='1' || $row->可修改=='2') ? '是' : '否';
             $value_arr['是否必填'] = ($row->不可为空=='1') ? '是' : '否';
             $value_arr['取值'] = '';
@@ -199,7 +201,6 @@ class Store extends Controller
             if ($row->可修改 == 1 || $row->可修改 == 2)
             {
                 $value_arr['是否可修改'] = ($row->可修改=='1' || $row->可修改=='2') ? $row->可修改 : '0';
-                array_push($update_value_arr, $value_arr);
             }
             if ($row->可新增 == 1)
             {
@@ -216,12 +217,14 @@ class Store extends Controller
                         $value_arr['取值'] = $user_workid;
                         break;
                 }
-                array_push($add_value_arr, $value_arr);
             }
+
+            $columns_arr[$row->列名] = $value_arr;
 
             if (strpos($row->赋值类型,'固定值') !== false && array_key_exists($row->对象,$object_arr) == false)
             {
                 $object_arr[$row->对象] = [];
+                $object_arr[$row->对象]['对象名称'] = $row->对象;
 
                 $cond_obj_arr[$row->列名] = '';
                 $update_obj_arr[$row->列名] = '';
@@ -247,6 +250,9 @@ class Store extends Controller
                         $object_arr[$row->对象][$vv->上级对象值] = [];
                         $object_arr[$row->对象][$vv->上级对象值]['对象值'] = [];
                         $object_arr[$row->对象][$vv->上级对象值]['对象显示值'] = [];
+
+                        array_push($object_arr[$row->对象][$vv->上级对象值]['对象值'], '');
+                        array_push($object_arr[$row->对象][$vv->上级对象值]['对象显示值'], '');
                     }
 
                     array_push($object_arr[$row->对象][$vv->上级对象值]['对象值'], $vv->对象值);
@@ -255,30 +261,8 @@ class Store extends Controller
             }
         }
 
-        //////////////////////////
-
         //grid
         $grid_arr = [];
-
-        // 直接给一些固定变量赋值
-        $object_arr = []; 
-
-        $object_arr['渠道名称'] = [];
-        $object_arr['渠道名称'][0] = '';
-
-        $sql = sprintf('
-            select 对象值 
-            from def_object 
-            where 对象名称="渠道名称" and locate(属地,"%s")
-            order by convert(对象值 using gbk)',
-            $user_location_authz);
-
-        $query = $model->select($sql);
-        $result = $query->getResult();
-        foreach($result as $val)
-        {
-            array_push($object_arr['渠道名称'], $val->对象值);
-        }
 
         $send['func_id'] = $menu_id;
         $send['tree_expand_json'] = json_encode($tree_expand);
@@ -288,8 +272,7 @@ class Store extends Controller
         $send['import_func_name'] = '邀约人员';
         $send['import_func_module'] = 'ee_store';
 
-        $send['update_value_json'] = json_encode($update_value_arr);
-        $send['add_value_json'] = json_encode($add_value_arr);
+        $send['columns_json'] = json_encode($columns_arr);
         $send['object_json'] = json_encode($object_arr);
 
         echo view('Vstore.php', $send);
@@ -328,11 +311,13 @@ class Store extends Controller
         if ($arr[0] == '人员')
         {
             $sql = sprintf('
-                select 姓名,身份证号,性别,年龄,手机号码,
-                    学校,专业,现住址,属地,
-                    招聘渠道,渠道类型,渠道名称,信息来源,
-                    邀约业务,邀约岗位,邀约日期,邀约人,
-                    预约面试日期,邀约结果,面试信息
+                select 姓名,身份证号,手机号码,邀约次数,性别,年龄,
+                    学校,专业,现住址,工作履历,信息来源,
+                    渠道类型,招聘渠道,渠道名称,招聘账号,投递类型,
+                    属地,部门名称,邀约业务,邀约岗位,发布岗位,工作地点,
+                    邀约日期,邀约人,邀约结果,
+                    预约面试日期,前端GUID,面试信息,
+                    操作记录,操作来源,操作人员,开始操作时间,结束操作时间,操作时间
                 from ee_store
                 where GUID=%s', $arr[1]);
             $query = $model->select($sql);
@@ -342,24 +327,38 @@ class Store extends Controller
             array_push($rows_arr, array('表项'=>'属地', '值'=>$results[0]->属地));
             array_push($rows_arr, array('表项'=>'姓名', '值'=>$results[0]->姓名));
             array_push($rows_arr, array('表项'=>'身份证号', '值'=>$results[0]->身份证号));
+            array_push($rows_arr, array('表项'=>'手机号码', '值'=>$results[0]->手机号码));
+            array_push($rows_arr, array('表项'=>'邀约次数', '值'=>$results[0]->邀约次数));
             array_push($rows_arr, array('表项'=>'性别', '值'=>$results[0]->性别));
             array_push($rows_arr, array('表项'=>'年龄', '值'=>$results[0]->年龄));
-            array_push($rows_arr, array('表项'=>'手机号码', '值'=>$results[0]->手机号码));
             array_push($rows_arr, array('表项'=>'学校', '值'=>$results[0]->学校));
             array_push($rows_arr, array('表项'=>'专业', '值'=>$results[0]->专业));
             array_push($rows_arr, array('表项'=>'现住址', '值'=>$results[0]->现住址));
-            array_push($rows_arr, array('表项'=>'属地', '值'=>$results[0]->属地));
+            array_push($rows_arr, array('表项'=>'工作履历', '值'=>$results[0]->工作履历));
+            array_push($rows_arr, array('表项'=>'信息来源', '值'=>$results[0]->信息来源));
             array_push($rows_arr, array('表项'=>'招聘渠道', '值'=>$results[0]->招聘渠道));
             array_push($rows_arr, array('表项'=>'渠道类型', '值'=>$results[0]->渠道类型));
             array_push($rows_arr, array('表项'=>'渠道名称', '值'=>$results[0]->渠道名称));
-            array_push($rows_arr, array('表项'=>'信息来源', '值'=>$results[0]->信息来源));
+            array_push($rows_arr, array('表项'=>'招聘账号', '值'=>$results[0]->招聘账号));
+            array_push($rows_arr, array('表项'=>'投递类型', '值'=>$results[0]->投递类型));
+            array_push($rows_arr, array('表项'=>'属地', '值'=>$results[0]->属地));
+            array_push($rows_arr, array('表项'=>'部门名称', '值'=>$results[0]->部门名称));
             array_push($rows_arr, array('表项'=>'邀约业务', '值'=>$results[0]->邀约业务));
             array_push($rows_arr, array('表项'=>'邀约岗位', '值'=>$results[0]->邀约岗位));
+            array_push($rows_arr, array('表项'=>'发布岗位', '值'=>$results[0]->发布岗位));
+            array_push($rows_arr, array('表项'=>'工作地点', '值'=>$results[0]->工作地点));
             array_push($rows_arr, array('表项'=>'邀约日期', '值'=>$results[0]->邀约日期));
             array_push($rows_arr, array('表项'=>'邀约人', '值'=>$results[0]->邀约人));
-            array_push($rows_arr, array('表项'=>'预约面试日期', '值'=>$results[0]->预约面试日期));
             array_push($rows_arr, array('表项'=>'邀约结果', '值'=>$results[0]->邀约结果));
+            array_push($rows_arr, array('表项'=>'预约面试日期', '值'=>$results[0]->预约面试日期));
+            array_push($rows_arr, array('表项'=>'前端GUID', '值'=>$results[0]->前端GUID));
             array_push($rows_arr, array('表项'=>'面试信息', '值'=>$results[0]->面试信息));
+            array_push($rows_arr, array('表项'=>'操作记录', '值'=>$results[0]->操作记录));
+            array_push($rows_arr, array('表项'=>'操作来源', '值'=>$results[0]->操作来源));
+            array_push($rows_arr, array('表项'=>'操作人员', '值'=>$results[0]->操作人员));
+            array_push($rows_arr, array('表项'=>'开始操作时间', '值'=>$results[0]->开始操作时间));
+            array_push($rows_arr, array('表项'=>'结束操作时间', '值'=>$results[0]->结束操作时间));
+            array_push($rows_arr, array('表项'=>'操作时间', '值'=>$results[0]->操作时间));
         }
         else
         {
@@ -539,6 +538,9 @@ class Store extends Controller
             case '未通过':
                 $interview = '已面试';
                 break;
+            case '拒绝':
+                $interview = '拒绝';
+                break;
             case '未面试':
                 $interview = '未面试';
                 break;
@@ -572,6 +574,7 @@ class Store extends Controller
                 select 姓名,身份证号,手机号码,属地,
                     招聘渠道,渠道类型,渠道名称,信息来源,"" as 实习结束日期,
                     邀约业务 as 面试业务,邀约岗位 as 面试岗位,
+                    "%s" as 住宿,"%s" as 通勤方式,"%s" as 通勤时间,
                     "%s" as 一次面试日期,"%s" as 一次面试人,"%s" as 一次面试结果,
                     "%s" as 预约培训日期,"通过" as 邀约信息,
                     "邀约表转入" as 操作记录,
@@ -579,11 +582,13 @@ class Store extends Controller
                     "%s" as 开始操作时间
                 from ee_store
                 where GUID in (%s)', 
+                $arg['住宿'], $arg['通勤方式'], $arg['通勤时间'],
                 $arg['面试日期'], $arg['面试人'], $arg['面试结果'], 
                 $arg['预约培训日期'], $user_workid, 
                 date('Y-m-d H:i:s'),
                 $guid_str);
-            $num = $model->exec($sql);
+
+                $num = $model->exec($sql);
         }
 
         exit(sprintf('更新面试信息成功,更新 %d 条记录',$num));

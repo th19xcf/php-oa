@@ -1,5 +1,5 @@
 <?php
-/* v11.15.2.1.202510121655, from home */
+/* v11.15.3.1.202510191740, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -190,6 +190,7 @@ class Frame extends Controller
                 ifnull(t2.一级菜单,"") as 一级菜单,
                 ifnull(t2.二级菜单,"") as 二级菜单,
                 ifnull(t2.功能模块,"") as 功能模块,
+                ifnull(t2.参数,"") as 参数,
                 ifnull(t2.一级菜单顺序,"") as 一级菜单顺序,
                 ifnull(t2.二级菜单顺序,"") as 二级菜单顺序,
                 ifnull(t2.菜单显示,"") as 菜单显示,
@@ -216,7 +217,7 @@ class Frame extends Controller
                 select
                     功能编码,
                     ta.一级菜单,ta.二级菜单,
-                    功能模块,功能类型,模块名称,
+                    功能模块,参数,功能类型,模块名称,
                     ifnull(tb.一级菜单顺序,999) as 一级菜单顺序,
                     二级菜单顺序,
                     菜单显示
@@ -224,7 +225,7 @@ class Frame extends Controller
                 (
                     select 
                         功能编码,一级菜单,二级菜单,
-                        功能模块,功能类型,模块名称,
+                        功能模块,参数,功能类型,模块名称,
                         菜单顺序 as 二级菜单顺序,菜单显示
                     from def_function
                     where 菜单顺序>0
@@ -283,9 +284,18 @@ class Frame extends Controller
             }
 
             // 生成前端页面菜单数据
-            $row->功能模块 = $row->功能模块 . '/' . $row->功能编码 . '?func=' . $row->一级菜单;
+            $link = '';
+            if ($row->参数 != '')
+            {
+                $link = sprintf("%s/%s/%s?func=%s", $row->功能模块, $row->功能编码, $row->参数, $row->一级菜单);
+            }
+            else
+            {
+                $link = sprintf("%s/%s?func=%s", $row->功能模块, $row->功能编码, $row->一级菜单);
+            }
+            //$row->功能模块 = $row->功能模块 . '/' . $row->功能编码 . '?func=' . $row->一级菜单;
             $children = array(
-                'text' => sprintf('<a href="javascript:void(0);" tag="%s" onclick="goto(%s)">%s</a>', $row->功能模块, $row->功能编码, $row->二级菜单),
+                'text' => sprintf('<a href="javascript:void(0);" tag="%s" onclick="goto(%s)">%s</a>', $link, $row->功能编码, $row->二级菜单),
                 'expanded' => true
             );
 

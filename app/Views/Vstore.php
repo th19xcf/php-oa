@@ -1,4 +1,4 @@
-<!-- v3.3.1.1.20250910, from office -->
+<!-- v3.4.1.1.202510191130, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -114,6 +114,9 @@
         var editable = false;
         var button = '';
 
+        var columns_obj = JSON.parse('<?php echo $columns_json; ?>');
+        var object_obj = JSON.parse('<?php echo $object_json; ?>');
+
         var tree_obj = JSON.parse('<?php echo $tree_json; ?>');
         var tree = new dhx.Tree('tree_box', {checkbox: true});
         tree.data.parse(tree_obj);
@@ -136,6 +139,8 @@
             columnDefs: 
             [
                 {field:'表项', width:130, editable:false},
+                //{field:'列类型', width:100, editable:false},
+                //{field:'是否必填', width:100, editable:false},
                 {field:'值', width:280, cellEditorSelector:cellEditorSelector}
             ],
             defaultColDef: 
@@ -355,67 +360,52 @@
         //grid event
         function cellEditorSelector(params)
         {
-            var col_name = params.data.列名;
-
-            switch (params.data.表项)
+            if (columns_obj[params.data.表项] == undefined)
             {
-                case '面试结果':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','通过','未通过','未面试']
-                        },
-                    };
-                case '属地':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','北京总公司','河北分公司','四川分公司']
-                        },
-                    };
-                case '招聘渠道':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','校招','社招']
-                        },
-                    };
-                case '渠道类型':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','自招','内荐','渠道']
-                        },
-                    };
-                case '渠道名称':
-                    var object_obj = JSON.parse('<?php echo $object_json; ?>');
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: object_obj['渠道名称']
-                        },
-                    };
-                case '邀约业务':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','北一热线项目','南一热线项目','南一职能']
-                        },
-                    };
-                case '邀约日期':
-                case '预约面试日期':
-                case '面试日期':
-                case '预约培训日期':
-                    return {
-                        component: 'datePicker',
-                    };
-                case '邀约结果':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','通过','未通过','考虑','拒绝']
-                        },
-                    };
+                // 面试信息需手工设置
+                switch (params.data.表项)
+                {
+                    case '住宿':
+                        return {
+                            component: 'agSelectCellEditor',
+                            params: {
+                                values: ['','是','否']
+                            },
+                        };
+                    case '面试结果':
+                        return {
+                            component: 'agSelectCellEditor',
+                            params: {
+                                values: ['','通过','未通过','考虑','拒绝','未面试']
+                            },
+                        };
+                    case '面试日期':
+                    case '预约培训日期':
+                        return {
+                            component: 'datePicker',
+                        };
+                }
+                return null;
+            }
+
+            if (columns_obj[params.data.表项]['列类型'] == '日期')
+            {
+                return {
+                    component: 'datePicker',
+                };
+            }
+
+            if (columns_obj[params.data.表项]['赋值类型'] == '固定值')
+            {
+                let object_id = columns_obj[params.data.表项]['对象'];
+                let object_upid = object_obj[object_id]['上级对象名称'];
+
+                return {
+                    component: 'agSelectCellEditor',
+                    params: {
+                        values: object_obj[object_id][object_upid]['对象显示值']
+                    },
+                };
             }
         }
 
@@ -488,6 +478,9 @@
             rowData = 
             [
                 {'表项':'属性', '值':'更新面试信息'},
+                {'表项':'住宿', '值':''},
+                {'表项':'通勤方式', '值':''},
+                {'表项':'通勤时间', '值':''},
                 {'表项':'面试日期', '值':''},
                 {'表项':'面试人', '值':''},
                 {'表项':'面试结果', '值':''},
@@ -562,26 +555,33 @@
             rowData = 
             [
                 {'表项':'属性', '值':'新增邀约信息'},
+                {'表项':'属地', '值':''},
                 {'表项':'姓名', '值':''},
                 {'表项':'身份证号', '值':''},
+                {'表项':'手机号码', '值':''},
+                {'表项':'邀约次数', '值':''},
                 {'表项':'性别', '值':''},
                 {'表项':'年龄', '值':''},
-                {'表项':'手机号码', '值':''},
                 {'表项':'学校', '值':''},
                 {'表项':'专业', '值':''},
                 {'表项':'现住址', '值':''},
-                {'表项':'属地', '值':''},
+                {'表项':'工作履历', '值':''},
+                {'表项':'信息来源', '值':''},
                 {'表项':'招聘渠道', '值':''},
                 {'表项':'渠道类型', '值':''},
                 {'表项':'渠道名称', '值':''},
-                {'表项':'信息来源', '值':''},
+                {'表项':'招聘账号', '值':''},
+                {'表项':'投递类型', '值':''},
+                {'表项':'部门名称', '值':''},
                 {'表项':'邀约业务', '值':''},
                 {'表项':'邀约岗位', '值':''},
+                {'表项':'发布岗位', '值':''},
+                {'表项':'工作地点', '值':''},
                 {'表项':'邀约日期', '值':''},
                 {'表项':'邀约人', '值':''},
-                {'表项':'预约面试日期', '值':''},
                 {'表项':'邀约结果', '值':''},
-                {'表项':'面试结果', '值':''},
+                {'表项':'预约面试日期', '值':''},
+                {'表项':'面试信息', '值':''},
             ];
 
             data_grid_api.setGridOption('rowData', rowData);

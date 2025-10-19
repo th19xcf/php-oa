@@ -1,4 +1,4 @@
-<!-- v2.1.4.1.202509111110, from office -->
+<!-- v2.1.5.1.202510182005, from home -->
 
 <!DOCTYPE html>
 <html style="display: block;">
@@ -34,7 +34,8 @@
                             <option value="四川分公司" >四川分公司</option>
                             <option value="河南分公司" >河南分公司</option>
                             <option value="内蒙古分公司" >内蒙古分公司</option>
-                            <option value="新疆分公司" >新疆分公司</option>
+                            <option value="新疆分公司-乌鲁木齐" >新疆分公司-乌鲁木齐</option>
+                            <option value="新疆分公司-和田" >新疆分公司-和田</option>
                             <option value="海南分公司" >海南分公司</option>
                         </select>
 
