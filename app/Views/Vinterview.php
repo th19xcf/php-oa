@@ -1,4 +1,4 @@
-<!-- v3.3.1.1.202509091435, from office -->
+<!-- v3.4.1.1.202510192315, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -114,6 +114,9 @@
         var submit_type = '';
         var editable = false;
         var button = '';
+
+        var columns_obj = JSON.parse('<?php echo $columns_json; ?>');
+        var object_obj = JSON.parse('<?php echo $object_json; ?>');
 
         var tree_obj = JSON.parse('<?php echo $tree_json; ?>');
         var tree = new dhx.Tree('tree_box', {checkbox: true});
@@ -355,69 +358,48 @@
         //grid event
         function cellEditorSelector(params)
         {
-            var col_name = params.data.列名;
-
-            switch (params.data.表项)
+            if (columns_obj[params.data.表项] == undefined)
             {
-                case '参培信息':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','已参培','未参培']
-                        },
-                    };
-                case '属地':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','北京总公司','河北分公司','四川分公司']
-                        },
-                    };
-                case '招聘渠道':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','校招','社招']
-                        },
-                    };
-                case '渠道类型':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','自招','内荐','渠道']
-                        },
-                    };
-                case '渠道名称':
-                    var object_obj = JSON.parse('<?php echo $object_json; ?>');
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: object_obj['渠道名称']
-                        },
-                    };
-                case '培训业务':
-                    var object_obj = JSON.parse('<?php echo $object_json; ?>');
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: object_obj['培训业务']
-                        },
-                    };
-                case '住宿':
-                    return {
-                        component: 'agSelectCellEditor',
-                        params: {
-                            values: ['','是','否']
-                        },
-                    };
-                case '实习结束日期':
-                case '面试日期':
-                case '预约培训日期':
-                case '培训开始日期':
-                case '预计完成日期':
-                    return {
-                        component: 'datePicker',
-                    };
+                // 参培信息需手工设置
+                switch (params.data.表项)
+                {
+                    case '住宿':
+                        return {
+                            component: 'agSelectCellEditor',
+                            params: {
+                                values: ['','是','否']
+                            },
+                        };
+                    case '实习结束日期':
+                    case '面试日期':
+                    case '预约培训日期':
+                    case '培训开始日期':
+                    case '预计完成日期':
+                        return {
+                            component: 'datePicker',
+                        };
+                }
+                return null;
+            }
+
+            if (columns_obj[params.data.表项]['列类型'] == '日期')
+            {
+                return {
+                    component: 'datePicker',
+                };
+            }
+
+            if (columns_obj[params.data.表项]['赋值类型'] == '固定值')
+            {
+                let object_id = columns_obj[params.data.表项]['对象'];
+                let object_upid = object_obj[object_id]['上级对象名称'];
+
+                return {
+                    component: 'agSelectCellEditor',
+                    params: {
+                        values: object_obj[object_id][object_upid]['对象显示值']
+                    },
+                };
             }
         }
 
