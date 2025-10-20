@@ -1,5 +1,5 @@
 <?php
-/* v11.15.3.1.202510191740, from home */
+/* v11.15.4.1.202510201950, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -48,7 +48,7 @@ class Frame extends Controller
                     end as 角色,
                     属地赋权,部门编码赋权,部门全称赋权,
                     工号限权,"1" as 调试赋权,"1" as 维护赋权,
-                    员工属地,部门编码,部门全称
+                    员工属地,员工部门编码,员工部门全称
                 from
                 (
                     select 
@@ -58,7 +58,7 @@ class Frame extends Controller
                         replace(replace(部门编码赋权,"，",",")," ","") as 部门编码赋权,
                         replace(replace(部门全称赋权,"，",",")," ","") as 部门全称赋权,
                         工号限权,调试赋权,维护赋权,
-                        员工属地,部门编码,部门全称
+                        员工属地,员工部门编码,员工部门全称
                     from def_user
                     where 有效标识="1" and 员工属地="%s" and 工号="%s"
                 ) as t1
@@ -82,7 +82,7 @@ class Frame extends Controller
                     end as 角色,
                     属地赋权,部门编码赋权,部门全称赋权,
                     工号限权,调试赋权,维护赋权,
-                    员工属地,部门编码,部门全称
+                    员工属地,员工部门编码,员工部门全称
                 from
                 (
                     select 
@@ -92,7 +92,7 @@ class Frame extends Controller
                         replace(replace(部门编码赋权,"，",",")," ","") as 部门编码赋权,
                         replace(replace(部门全称赋权,"，",",")," ","") as 部门全称赋权,
                         工号限权,调试赋权,维护赋权,
-                        员工属地,部门编码,部门全称
+                        员工属地,员工部门编码,员工部门全称
                     from def_user
                     where 有效标识="1" and 员工属地="%s" and 工号="%s" and 密码="%s"
                 ) as t1
@@ -160,8 +160,8 @@ class Frame extends Controller
             $session_arr['user_debug_authz'] = $row->调试赋权;
             $session_arr['user_upkeep_authz'] = $row->维护赋权;
             $session_arr['user_location'] = $row->员工属地;
-            $session_arr['user_dept_code'] = $row->部门编码;
-            $session_arr['user_dept_name'] = $row->部门全称;
+            $session_arr['user_dept_code'] = $row->员工部门编码;
+            $session_arr['user_dept_name'] = $row->员工部门全称;
 
             $session = \Config\Services::session();
             $session->set($session_arr);

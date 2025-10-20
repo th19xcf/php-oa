@@ -1,6 +1,6 @@
 <?php
 
-/* v4.2.1.1.202510081330, from home */
+/* v4.2.2.1.202510201950, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -50,7 +50,7 @@ class Login extends Controller
             $log_switch = false;
 
             $sql = sprintf('
-                select 员工编号,工号,姓名,员工属地,部门编码,部门全称,日志标识
+                select 员工编号,工号,姓名,员工属地,员工部门编码,员工部门全称,日志标识
                 from def_user
                 where 有效标识="1" and 员工属地="%s" and 工号="%s"',
                 $company_id, $user_workid);
@@ -58,7 +58,7 @@ class Login extends Controller
         else
         {
             $sql = sprintf('
-                select 员工编号,工号,姓名,员工属地,部门编码,部门全称,日志标识
+                select 员工编号,工号,姓名,员工属地,员工部门编码,员工部门全称,日志标识
                 from def_user
                 where 有效标识="1" and 员工属地="%s" and 工号="%s" and 密码="%s"', 
                 $company_id, $user_workid, $pswd);
@@ -94,8 +94,8 @@ class Login extends Controller
             $session_arr['user_name'] = $row->姓名;
             $session_arr['user_pswd'] = $pswd;
             $session_arr['user_location'] = $row->员工属地;
-            $session_arr['user_dept_code'] = $row->部门编码;
-            $session_arr['user_dept_name'] = $row->部门全称;
+            $session_arr['user_dept_code'] = $row->员工部门编码;
+            $session_arr['user_dept_name'] = $row->员工部门全称;
             $session_arr['log_switch'] = $log_switch;
 
             $session = \Config\Services::session();
