@@ -1,5 +1,5 @@
 <?php
-/* v11.15.5.1.202510212155, from home */
+/* v11.15.6.1.202510212225, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -39,8 +39,8 @@ class Frame extends Controller
             select 
                 员工编号,姓名,工号,
                 case
-                    when t1.角色组!="" and t1.角色="" and t2.角色组 is not null then t2.角色编号
-                    when t1.角色组!="" and t1.角色!="" and t2.角色组 is not null then concat(t2.角色编号,",",t1.角色)
+                    when t1.角色组!="" and t1.角色="" and t2.角色组 is not null then t2.角色编码
+                    when t1.角色组!="" and t1.角色!="" and t2.角色组 is not null then concat(t2.角色编码,",",t1.角色)
                     else t1.角色
                 end as 角色,
                 属地赋权,部门编码赋权,部门全称赋权,
@@ -62,7 +62,7 @@ class Frame extends Controller
             ) as t1
             left join
             (
-                select 角色组,replace(replace(角色编号,"，",",")," ","") as 角色编号
+                select 角色组,replace(replace(角色编码,"，",",")," ","") as 角色编码
                 from def_role_group
                 where 有效标识="1"
             ) as t2 on t1.角色组=t2.角色组', 
@@ -143,7 +143,7 @@ class Frame extends Controller
         // 读出角色对应的功能赋权
         $sql = sprintf(
             'select 
-                t1.角色编号,t1.角色名称,
+                t1.角色编码,t1.角色名称,
                 t1.功能赋权,
                 t1.备注授权,t1.新增授权,t1.修改授权,t1.删除授权,t1.维护授权,t1.整表授权,
                 t1.导入授权,t1.导出授权,
@@ -160,7 +160,7 @@ class Frame extends Controller
                 ifnull(t3.属地字段,"") as 属地字段
             from 
             (
-                select 角色编号,角色名称,功能赋权,
+                select 角色编码,角色名称,功能赋权,
                     max(备注授权) as 备注授权,
                     max(新增授权) as 新增授权,
                     max(修改授权) as 修改授权,
@@ -170,8 +170,8 @@ class Frame extends Controller
                     max(导入授权) as 导入授权,
                     max(导出授权) as 导出授权
                 from view_role
-                where 有效标识="1" and 角色编号 in (%s)
-                group by 角色编号,功能赋权
+                where 有效标识="1" and 角色编码 in (%s)
+                group by 角色编码,功能赋权
             ) as t1
             left join
             (
@@ -268,17 +268,17 @@ class Frame extends Controller
         // 读出角色对应的部门编码赋权
         $sql = sprintf(
             'select 
-                t1.GUID,角色编号,功能赋权,编码赋权,
+                t1.GUID,角色编码,功能赋权,编码赋权,
                 substring_index(substring_index(编码赋权,",",t2.GUID+1),",",-1) as 部门编码赋权
             from
             (
-                select GUID,角色编号,功能赋权,replace(replace(部门编码赋权,"，",",")," ","") as 编码赋权
+                select GUID,角色编码,功能赋权,replace(replace(部门编码赋权,"，",",")," ","") as 编码赋权
                 from view_role
-                where 有效标识="1" and 角色编号 in (%s)
+                where 有效标识="1" and 角色编码 in (%s)
             ) as t1
             inner join def_GUID as t2 on t2.GUID<(length(编码赋权)-length(replace(编码赋权,",",""))+1)
-            group by 角色编号,功能赋权,部门编码赋权
-            order by 角色编号,功能赋权,部门编码赋权', $user_role_authz);
+            group by 角色编码,功能赋权,部门编码赋权
+            order by 角色编码,功能赋权,部门编码赋权', $user_role_authz);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -329,17 +329,17 @@ class Frame extends Controller
         // 读出角色对应的部门全称赋权
         $sql = sprintf(
             'select 
-                t1.GUID,角色编号,功能赋权,全称赋权,
+                t1.GUID,角色编码,功能赋权,全称赋权,
                 substring_index(substring_index(全称赋权,",",t2.GUID+1),",",-1) as 部门全称赋权
             from
             (
-                select GUID,角色编号,功能赋权,replace(replace(部门全称赋权,"，",",")," ","") as 全称赋权
+                select GUID,角色编码,功能赋权,replace(replace(部门全称赋权,"，",",")," ","") as 全称赋权
                 FROM view_role
-                where 有效标识="1" and 角色编号 in (%s)
+                where 有效标识="1" and 角色编码 in (%s)
             ) as t1
             inner join def_GUID as t2 on t2.GUID<(length(全称赋权)-length(replace(全称赋权,",",""))+1)
-            group by 角色编号,功能赋权,部门全称赋权
-            order by 角色编号,功能赋权,部门全称赋权', $user_role_authz);
+            group by 角色编码,功能赋权,部门全称赋权
+            order by 角色编码,功能赋权,部门全称赋权', $user_role_authz);
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -393,17 +393,17 @@ class Frame extends Controller
         // 读出角色对应的属地赋权
         $sql = sprintf(
             'select 
-                t1.GUID,角色编号,功能赋权,属地,
+                t1.GUID,角色编码,功能赋权,属地,
                 substring_index(substring_index(属地,",",t2.GUID+1),",",-1) as 属地赋权
             from
             (
-                select GUID,角色编号,功能赋权,replace(replace(属地赋权,"，",",")," ","") as 属地
+                select GUID,角色编码,功能赋权,replace(replace(属地赋权,"，",",")," ","") as 属地
                 from view_role
-                where 有效标识="1" and 角色编号 in (%s)
+                where 有效标识="1" and 角色编码 in (%s)
             ) as t1
             inner join def_GUID as t2 on t2.GUID<(length(属地)-length(replace(属地,",",""))+1)
-            group by 角色编号,功能赋权,属地赋权
-            order by 角色编号,功能赋权,属地赋权', $user_role_authz);
+            group by 角色编码,功能赋权,属地赋权
+            order by 角色编码,功能赋权,属地赋权', $user_role_authz);
 
         $query = $model->select($sql);
         $results = $query->getResult();
