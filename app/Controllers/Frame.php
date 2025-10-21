@@ -1,5 +1,5 @@
 <?php
-/* v11.15.4.1.202510201950, from home */
+/* v11.15.4.1.202510211405, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -33,77 +33,40 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $company_id = $session->get('company_id');
         $user_workid = $session->get('user_workid');
-        $user_pswd = $session->get('user_pswd');
 
         $sql = '';
-        if ($user_pswd == $user_workid.$user_workid)
-        {
-            $sql = sprintf('
+        $sql = sprintf('
+            select 
+                员工编号,姓名,工号,
+                case
+                    when t1.角色组!="" and t1.角色="" and t2.角色组 is not null then t2.角色编码
+                    when t1.角色组!="" and t1.角色!="" and t2.角色组 is not null then concat(t2.角色编码,",",t1.角色)
+                    else t1.角色
+                end as 角色,
+                属地赋权,部门编码赋权,部门全称赋权,
+                工号限权,"1" as 调试赋权,"1" as 维护赋权,
+                员工属地,员工部门编码,员工部门全称
+            from
+            (
                 select 
-                    员工编号,姓名,工号,
-                    case
-                        when t1.角色组!="" and t1.角色="" and t2.角色组 is not null then t2.角色编码
-                        when t1.角色组!="" and t1.角色!="" and t2.角色组 is not null then concat(t2.角色编码,",",t1.角色)
-                        else t1.角色
-                    end as 角色,
-                    属地赋权,部门编码赋权,部门全称赋权,
-                    工号限权,"1" as 调试赋权,"1" as 维护赋权,
-                    员工属地,员工部门编码,员工部门全称
-                from
-                (
-                    select 
-                        员工编号,姓名,
-                        工号,角色组,replace(replace(角色,"，",",")," ","") as 角色,
-                        replace(replace(属地赋权,"，",",")," ","") as  属地赋权,
-                        replace(replace(部门编码赋权,"，",",")," ","") as 部门编码赋权,
-                        replace(replace(部门全称赋权,"，",",")," ","") as 部门全称赋权,
-                        工号限权,调试赋权,维护赋权,
-                        员工属地,员工部门编码,员工部门全称
-                    from def_user
-                    where 有效标识="1" and 员工属地="%s" and 工号="%s"
-                ) as t1
-                left join
-                (
-                    select 角色组,replace(replace(角色编码,"，",",")," ","") as 角色编码
-                    from def_role_group
-                    where 有效标识="1"
-                ) as t2 on t1.角色组=t2.角色组', 
-                $company_id, $user_workid);
-        }
-        else
-        {
-            $sql = sprintf('
-                select 
-                    员工编号,姓名,工号,
-                    case
-                        when t1.角色组!="" and t1.角色="" and t2.角色组 is not null then t2.角色编码
-                        when t1.角色组!="" and t1.角色!="" and t2.角色组 is not null then concat(t2.角色编码,",",t1.角色)
-                        else t1.角色
-                    end as 角色,
-                    属地赋权,部门编码赋权,部门全称赋权,
+                    员工编号,姓名,
+                    工号,角色组,replace(replace(角色,"，",",")," ","") as 角色,
+                    replace(replace(属地赋权,"，",",")," ","") as  属地赋权,
+                    replace(replace(部门编码赋权,"，",",")," ","") as 部门编码赋权,
+                    replace(replace(部门全称赋权,"，",",")," ","") as 部门全称赋权,
                     工号限权,调试赋权,维护赋权,
                     员工属地,员工部门编码,员工部门全称
-                from
-                (
-                    select 
-                        员工编号,姓名,
-                        工号,角色组,replace(replace(角色,"，",",")," ","") as 角色,
-                        replace(replace(属地赋权,"，",",")," ","") as 属地赋权,
-                        replace(replace(部门编码赋权,"，",",")," ","") as 部门编码赋权,
-                        replace(replace(部门全称赋权,"，",",")," ","") as 部门全称赋权,
-                        工号限权,调试赋权,维护赋权,
-                        员工属地,员工部门编码,员工部门全称
-                    from def_user
-                    where 有效标识="1" and 员工属地="%s" and 工号="%s" and 密码="%s"
-                ) as t1
-                left join
-                (
-                    select 角色组,replace(replace(角色编码,"，",",")," ","") as 角色编码
-                    from def_role_group
-                    where 有效标识="1"
-                ) as t2 on t1.角色组=t2.角色组', 
-                $company_id, $user_workid, $user_pswd);
-        }
+                from def_user
+                where 有效标识="1" and 员工属地="%s" and 工号="%s"
+                group by 员工属地,工号
+            ) as t1
+            left join
+            (
+                select 角色组,replace(replace(角色编码,"，",",")," ","") as 角色编码
+                from def_role_group
+                where 有效标识="1"
+            ) as t2 on t1.角色组=t2.角色组', 
+            $company_id, $user_workid);
 
         $model = new Mcommon();
         $query = $model->select($sql);
@@ -111,8 +74,6 @@ class Frame extends Controller
 
         foreach ($results as $row)
         {
-            if (strpos($row->员工属地,$company_id) === false) continue;
-
             // 角色
             $role_arr = explode(',', $row->角色);
             $role_arr = array_unique($role_arr);
@@ -313,7 +274,7 @@ class Frame extends Controller
             (
                 select GUID,角色编号,功能赋权,replace(replace(部门编码赋权,"，",",")," ","") as 编码赋权
                 from view_role
-                where 有效标识="1" and 部门编码赋权!="" and 角色编号 in (%s)
+                where 有效标识="1" and 角色编号 in (%s)
             ) as t1
             inner join def_GUID as t2 on t2.GUID<(length(编码赋权)-length(replace(编码赋权,",",""))+1)
             group by 角色编号,功能赋权,部门编码赋权
@@ -324,7 +285,7 @@ class Frame extends Controller
 
         foreach ($results as $row)
         {
-            // 加上员工表中的部门编码赋权
+            // 加上用户表中的部门编码赋权
             if ($session_arr[$row->功能赋权.'-dept_code_fld'] == '')
             {
                 continue;
@@ -438,7 +399,7 @@ class Frame extends Controller
             (
                 select GUID,角色编号,功能赋权,replace(replace(属地赋权,"，",",")," ","") as 属地
                 from view_role
-                where 有效标识="1" and 属地赋权!="" and 角色编号 in (%s)
+                where 有效标识="1" and 角色编号 in (%s)
             ) as t1
             inner join def_GUID as t2 on t2.GUID<(length(属地)-length(replace(属地,",",""))+1)
             group by 角色编号,功能赋权,属地赋权
