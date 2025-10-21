@@ -1,5 +1,5 @@
 <?php
-/* v11.15.4.1.202510211405, from office */
+/* v11.15.5.1.202510212155, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -39,8 +39,8 @@ class Frame extends Controller
             select 
                 员工编号,姓名,工号,
                 case
-                    when t1.角色组!="" and t1.角色="" and t2.角色组 is not null then t2.角色编码
-                    when t1.角色组!="" and t1.角色!="" and t2.角色组 is not null then concat(t2.角色编码,",",t1.角色)
+                    when t1.角色组!="" and t1.角色="" and t2.角色组 is not null then t2.角色编号
+                    when t1.角色组!="" and t1.角色!="" and t2.角色组 is not null then concat(t2.角色编号,",",t1.角色)
                     else t1.角色
                 end as 角色,
                 属地赋权,部门编码赋权,部门全称赋权,
@@ -62,7 +62,7 @@ class Frame extends Controller
             ) as t1
             left join
             (
-                select 角色组,replace(replace(角色编码,"，",",")," ","") as 角色编码
+                select 角色组,replace(replace(角色编号,"，",",")," ","") as 角色编号
                 from def_role_group
                 where 有效标识="1"
             ) as t2 on t1.角色组=t2.角色组', 
