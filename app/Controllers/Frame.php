@@ -1,5 +1,5 @@
 <?php
-/* v11.15.6.1.202510212225, from home */
+/* v11.15.7.1.202510212225, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -39,10 +39,10 @@ class Frame extends Controller
             select 
                 员工编号,姓名,工号,
                 case
-                    when t1.角色组!="" and t1.角色="" and t2.角色组 is not null then t2.角色编码
-                    when t1.角色组!="" and t1.角色!="" and t2.角色组 is not null then concat(t2.角色编码,",",t1.角色)
-                    else t1.角色
-                end as 角色,
+                    when t1.角色组!="" and t1.角色编码="" and t2.角色组 is not null then t2.角色编码
+                    when t1.角色组!="" and t1.角色编码!="" and t2.角色组 is not null then concat(t2.角色编码,",",t1.角色编码)
+                    else t1.角色编码
+                end as 角色编码,
                 属地赋权,部门编码赋权,部门全称赋权,
                 工号限权,"1" as 调试赋权,"1" as 维护赋权,
                 员工属地,员工部门编码,员工部门全称
@@ -50,7 +50,7 @@ class Frame extends Controller
             (
                 select 
                     员工编号,姓名,
-                    工号,角色组,replace(replace(角色,"，",",")," ","") as 角色,
+                    工号,角色组,replace(replace(角色编码,"，",",")," ","") as 角色编码,
                     replace(replace(属地赋权,"，",",")," ","") as  属地赋权,
                     replace(replace(部门编码赋权,"，",",")," ","") as 部门编码赋权,
                     replace(replace(部门全称赋权,"，",",")," ","") as 部门全称赋权,
@@ -75,7 +75,7 @@ class Frame extends Controller
         foreach ($results as $row)
         {
             // 角色
-            $role_arr = explode(',', $row->角色);
+            $role_arr = explode(',', $row->角色编码);
             $role_arr = array_unique($role_arr);
 
             $user_role_authz = '';
@@ -113,7 +113,7 @@ class Frame extends Controller
 
             // 存入session
             $session_arr = [];
-            $session_arr['user_role'] = $row->角色;
+            $session_arr['user_role'] = $row->角色编码;
             $session_arr['user_role_authz'] = $user_role_authz;
             $session_arr['user_location_authz'] = $user_location_authz;
             $session_arr['user_dept_code_authz'] = $user_dept_code_authz;
