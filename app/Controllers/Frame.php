@@ -1,5 +1,5 @@
 <?php
-/* v11.16.1.1.202510221435, from office */
+/* v11.16.2.1.202510222050, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -260,7 +260,7 @@ class Frame extends Controller
             {
                 $link = sprintf("%s/%s?func=%s", $row->功能模块, $row->功能编码, $row->一级菜单);
             }
-            //$row->功能模块 = $row->功能模块 . '/' . $row->功能编码 . '?func=' . $row->一级菜单;
+
             $children = array(
                 'text' => sprintf('<a href="javascript:void(0);" tag="%s" onclick="goto(%s)">%s</a>', $link, $row->功能编码, $row->二级菜单),
                 'expanded' => true
@@ -289,19 +289,7 @@ class Frame extends Controller
         $query = $model->select($sql);
         $results = $query->getResult();
 
-        foreach ($results as $row)
-        {
-            // 加上用户表中的部门编码赋权
-            if ($session_arr[$row->功能赋权.'-dept_code_fld'] == '')
-            {
-                continue;
-            }
-            if ($user_dept_code_authz != '')
-            {
-                $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('instr(%s,%s)', $session_arr[$row->功能赋权.'-dept_code_fld'], $user_dept_code_authz);
-            }
-        }
-
+        // 角色表中的部门编码赋权
         $func_id = '';
         foreach ($results as $row)
         {
@@ -330,9 +318,25 @@ class Frame extends Controller
             {
                 $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-dept_code_authz'], $session_arr[$row->功能赋权.'-dept_code_fld']);
             }
+
+            // 角色表中的部门编码赋权为空,启用用户表中的部门编码赋权
+            if ($session_arr[$row->功能赋权.'-dept_code_authz'] == '')
+            {
+                foreach ($results as $row)
+                {
+                    if ($session_arr[$row->功能赋权.'-dept_code_fld'] == '')
+                    {
+                        continue;
+                    }
+                    if ($user_dept_code_authz != '')
+                    {
+                        $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('instr(%s,%s)', $session_arr[$row->功能赋权.'-dept_code_fld'], $user_dept_code_authz);
+                    }
+                }
+            }
         }
 
-        // 读出角色对应的部门全称赋权
+        // 角色表中的部门全称赋权
         $sql = sprintf(
             'select 
                 t1.GUID,角色编码,功能赋权,全称赋权,
@@ -349,20 +353,6 @@ class Frame extends Controller
 
         $query = $model->select($sql);
         $results = $query->getResult();
-
-        foreach ($results as $row)
-        {
-            // 加上员工表中的部门全称赋权
-            if ($session_arr[$row->功能赋权.'-dept_name_fld'] == '')
-            {
-                continue;
-            }
-            if ($user_dept_name_authz != '')
-            {
-                $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('instr(%s,%s)', $session_arr[$row->功能赋权.'-dept_name_fld'], $user_dept_name_authz);
-                $session_arr[$row->功能赋权.'-dept_name_str'] = sprintf('%s', $user_dept_name_authz);
-            }
-        }
 
         foreach ($results as $row)
         {
@@ -394,6 +384,23 @@ class Frame extends Controller
             {
                 $session_arr[$row->功能赋权.'-dept_name_str'] = sprintf('%s,"%s"', $session_arr[$row->功能赋权.'-dept_name_str'], $row->部门全称赋权);
             }
+
+            // 角色表中的部门全称赋权为空,启用用户表中的部门全称赋权
+            if ($session_arr[$row->功能赋权.'-dept_name_authz'] == '')
+            {
+                foreach ($results as $row)
+                {
+                    if ($session_arr[$row->功能赋权.'-dept_name_fld'] == '')
+                    {
+                        continue;
+                    }
+                    if ($user_dept_name_authz != '')
+                    {
+                        $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('instr(%s,%s)', $session_arr[$row->功能赋权.'-dept_name_fld'], $user_dept_name_authz);
+                        $session_arr[$row->功能赋权.'-dept_name_str'] = sprintf('%s', $user_dept_name_authz);
+                    }
+                }
+            }
         }
 
         // 读出角色对应的属地赋权
@@ -416,19 +423,6 @@ class Frame extends Controller
 
         foreach ($results as $row)
         {
-            // 加上员工表中的属地赋权
-            if ($session_arr[$row->功能赋权.'-location_fld'] == '')
-            {
-                continue;
-            }
-            if ($user_location_authz != '')
-            {
-                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('locate(%s,"%s")>0', $session_arr[$row->功能赋权.'-location_fld'], $user_location_authz);
-            }
-        }
-
-        foreach ($results as $row)
-        {
             if ($session_arr[$row->功能赋权.'-location_fld'] == '' || $row->属地赋权 == '')
             {
                 continue;
@@ -447,6 +441,22 @@ class Frame extends Controller
             if ($session_arr[$row->功能赋权.'-upkeep_authz'] == '1' || $session_arr[$row->功能赋权.'-location_authz'] != '')
             {
                 $session_arr[$row->功能赋权.'-location_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-location_authz'], $session_arr[$row->功能赋权.'-location_fld']);
+            }
+
+            // 角色表中的属地赋权为空,启用用户表中的属地赋权
+            if ($session_arr[$row->功能赋权.'-location_authz'] == '')
+            {
+                foreach ($results as $row)
+                {
+                    if ($session_arr[$row->功能赋权.'-location_fld'] == '')
+                    {
+                        continue;
+                    }
+                    if ($user_location_authz != '')
+                    {
+                        $session_arr[$row->功能赋权.'-location_authz'] = sprintf('locate(%s,"%s")>0', $session_arr[$row->功能赋权.'-location_fld'], $user_location_authz);
+                    }
+                }
             }
         }
 
