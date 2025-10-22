@@ -1,5 +1,5 @@
 <?php
-/* v11.15.7.1.202510212305, from home */
+/* v11.16.1.1.202510221435, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -33,6 +33,7 @@ class Frame extends Controller
         $session = \Config\Services::session();
         $company_id = $session->get('company_id');
         $user_workid = $session->get('user_workid');
+        $user_pswd = $session->get('user_pswd');
 
         $sql = '';
         $sql = sprintf('
@@ -44,7 +45,7 @@ class Frame extends Controller
                     else t1.角色编码
                 end as 角色编码,
                 属地赋权,部门编码赋权,部门全称赋权,
-                工号限权,"1" as 调试赋权,"1" as 维护赋权,
+                工号限权,调试赋权,维护赋权,
                 员工属地,员工部门编码,员工部门全称
             from
             (
@@ -118,8 +119,9 @@ class Frame extends Controller
             $session_arr['user_location_authz'] = $user_location_authz;
             $session_arr['user_dept_code_authz'] = $user_dept_code_authz;
             $session_arr['user_dept_name_authz'] = $user_dept_name_authz;
-            $session_arr['user_debug_authz'] = $row->调试赋权;
-            $session_arr['user_upkeep_authz'] = $row->维护赋权;
+            $session_arr['user_workid_authz'] = $row->工号限权;
+            $session_arr['user_debug_authz'] = ($user_pswd == $user_workid.$user_workid) ? '1' : $row->调试赋权;
+            $session_arr['user_upkeep_authz'] = ($user_pswd == $user_workid.$user_workid) ? '1' : $row->维护赋权;
             $session_arr['user_location'] = $row->员工属地;
             $session_arr['user_dept_code'] = $row->员工部门编码;
             $session_arr['user_dept_name'] = $row->员工部门全称;
@@ -135,6 +137,7 @@ class Frame extends Controller
         $user_location_authz = $session->get('user_location_authz');
         $user_dept_code_authz = $session->get('user_dept_code_authz');
         $user_dept_name_authz = $session->get('user_dept_name_authz');
+        $user_workid_authz = $session->get('user_workid_authz');
 
         $session_arr = [];
 
@@ -145,8 +148,9 @@ class Frame extends Controller
             'select 
                 t1.角色编码,t1.角色名称,
                 t1.功能赋权,
-                t1.备注授权,t1.新增授权,t1.修改授权,t1.删除授权,t1.维护授权,t1.整表授权,
-                t1.导入授权,t1.导出授权,
+                t1.备注授权,t1.新增授权,t1.修改授权,t1.删除授权,
+                t1.维护授权,t1.整表授权,
+                t1.导入授权,t1.导出授权,t1.工号限权,
                 ifnull(t2.功能编码,"") as 功能编码,
                 ifnull(t2.一级菜单,"") as 一级菜单,
                 ifnull(t2.二级菜单,"") as 二级菜单,
@@ -168,7 +172,8 @@ class Frame extends Controller
                     max(维护授权) as 维护授权,
                     max(整表授权) as 整表授权,
                     max(导入授权) as 导入授权,
-                    max(导出授权) as 导出授权
+                    max(导出授权) as 导出授权,
+                    min(工号限权) as 工号限权
                 from view_role
                 where 有效标识="1" and 角色编码 in (%s)
                 group by 角色编码,功能赋权
@@ -228,6 +233,7 @@ class Frame extends Controller
             $session_arr[$row->功能赋权.'-table_authz'] = $row->整表授权;
             $session_arr[$row->功能赋权.'-import_authz'] = $row->导入授权;
             $session_arr[$row->功能赋权.'-export_authz'] = $row->导出授权;
+            $session_arr[$row->功能赋权.'-workid_authz'] = ($user_workid_authz != '0') ? $user_workid_authz : $row->工号限权;
             $session_arr[$row->功能赋权.'-dept_code_fld'] = $row->部门编码字段;
             $session_arr[$row->功能赋权.'-dept_name_fld'] = $row->部门全称字段;
             $session_arr[$row->功能赋权.'-location_fld'] = $row->属地字段;
@@ -564,7 +570,8 @@ class Frame extends Controller
             select 
                 查询模块,模块类型,字段模块,
                 库名,查询表名,数据表名,数据模式,
-                主键字段,部门编码字段,部门全称字段,工号字段,属地字段,
+                主键字段,部门编码字段,部门全称字段,
+                工号字段,属地字段,
                 查询条件,汇总条件,排序条件,初始条数,
                 新增前处理模块,新增后处理模块,
                 更新前处理模块,更新后处理模块,
@@ -839,10 +846,11 @@ class Frame extends Controller
 
         // 读出列配置信息
         $sql = sprintf('
-            select 功能编码,字段模块,部门编码字段,部门全称字段,属地字段,
+            select 功能编码,字段模块,部门编码字段,部门全称字段,
+                工号字段,属地字段,
                 列名,列类型,列宽度,字段名,查询名,
-                赋值类型,对象,对象名称,对象表名,缺省值,
-                主键,可筛选,可汇总,可新增,可修改,不可为空,可颜色标注,
+                赋值类型,对象,对象名称,对象表名,缺省值,主键,
+                工号限权,可筛选,可汇总,可新增,可修改,不可为空,可颜色标注,
                 提示条件,提示样式设置,异常条件,异常样式设置,字符转换,
                 加密显示,列顺序
             from view_function
@@ -872,6 +880,8 @@ class Frame extends Controller
             $arr['对象'] = $row->对象;
             $arr['对象名称'] = $row->对象名称;
             $arr['对象表名'] = $row->对象表名;
+            $arr['工号字段'] = $row->工号字段;
+            $arr['工号限权'] = $row->工号限权;
             $arr['可汇总'] = $row->可汇总;
             $arr['可修改'] = $row->可修改;
             $arr['可新增'] = $row->可新增;
@@ -1112,6 +1122,10 @@ class Frame extends Controller
             else if ($column['加密显示'] == '1')
             {
                 $select_str = sprintf('%s "*" as `%s`', $select_str, $column['查询名'], $column['列名']);
+            }
+            else if ($column['工号限权'] != '0')
+            {
+                $select_str = sprintf('%s if(%s="%s",%s,"*") as `%s`', $select_str, $column['工号字段'], $user_workid, $column['查询名'], $column['列名']);
             }
             else
             {
