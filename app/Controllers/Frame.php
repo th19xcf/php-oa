@@ -1,5 +1,5 @@
 <?php
-/* v11.16.2.1.202510222050, from home */
+/* v11.16.3.1.202510232250, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -299,40 +299,35 @@ class Frame extends Controller
                 $session_arr[$row->功能赋权.'-dept_code_authz']= '';
             }
 
-            if ($session_arr[$row->功能赋权.'-dept_code_fld'] == '' || $row->部门编码赋权 == '')
+            if ($session_arr[$row->功能赋权.'-dept_code_fld'] == '')
             {
                 continue;
             }
 
-            if ($session_arr[$row->功能赋权.'-dept_code_authz'] == '')
+            if ($row->部门编码赋权 == '')
             {
-                $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('left(%s,length("%s"))="%s"', $session_arr[$row->功能赋权.'-dept_code_fld'], $row->部门编码赋权, $row->部门编码赋权);
-            }
-            else
-            {
-                $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('%s or left(%s,length("%s"))="%s"', $session_arr[$row->功能赋权.'-dept_code_authz'], $session_arr[$row->功能赋权.'-dept_code_fld'], $row->部门编码赋权, $row->部门编码赋权);
-            }
+                if ($session_arr[$row->功能赋权.'-dept_code_authz'] == '')
+                {
+                    $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('left(%s,length("%s"))="%s"', $session_arr[$row->功能赋权.'-dept_code_fld'], $row->部门编码赋权, $row->部门编码赋权);
+                }
+                else
+                {
+                    $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('%s or left(%s,length("%s"))="%s"', $session_arr[$row->功能赋权.'-dept_code_authz'], $session_arr[$row->功能赋权.'-dept_code_fld'], $row->部门编码赋权, $row->部门编码赋权);
+                }
 
-            // 数据维护时取出空记录
-            if ($session_arr[$row->功能赋权.'-upkeep_authz'] == '1' || $session_arr[$row->功能赋权.'-dept_code_authz'] != '')
-            {
-                $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-dept_code_authz'], $session_arr[$row->功能赋权.'-dept_code_fld']);
+                // 数据维护时取出空记录
+                if ($session_arr[$row->功能赋权.'-upkeep_authz'] == '1' || $session_arr[$row->功能赋权.'-dept_code_authz'] != '')
+                {
+                    $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-dept_code_authz'], $session_arr[$row->功能赋权.'-dept_code_fld']);
+                }
+
+                continue;
             }
 
             // 角色表中的部门编码赋权为空,启用用户表中的部门编码赋权
-            if ($session_arr[$row->功能赋权.'-dept_code_authz'] == '')
+            if ($user_dept_code_authz != '')
             {
-                foreach ($results as $row)
-                {
-                    if ($session_arr[$row->功能赋权.'-dept_code_fld'] == '')
-                    {
-                        continue;
-                    }
-                    if ($user_dept_code_authz != '')
-                    {
-                        $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('instr(%s,%s)', $session_arr[$row->功能赋权.'-dept_code_fld'], $user_dept_code_authz);
-                    }
-                }
+                $session_arr[$row->功能赋权.'-dept_code_authz'] = sprintf('instr(%s,%s)', $session_arr[$row->功能赋权.'-dept_code_fld'], $user_dept_code_authz);
             }
         }
 
@@ -356,50 +351,45 @@ class Frame extends Controller
 
         foreach ($results as $row)
         {
-            if ($session_arr[$row->功能赋权.'-dept_name_fld'] == '' || $row->部门全称赋权 == '')
+            if ($session_arr[$row->功能赋权.'-dept_name_fld'] == '')
             {
                 continue;
             }
 
-            if ($session_arr[$row->功能赋权.'-dept_name_authz'] == '')
+            if ($row->部门全称赋权 == '')
             {
-                $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('instr(%s,"%s")', $session_arr[$row->功能赋权.'-dept_name_fld'], $row->部门全称赋权);
-            }
-            else
-            {
-                $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('%s or instr(%s,"%s")', $session_arr[$row->功能赋权.'-dept_name_authz'], $session_arr[$row->功能赋权.'-dept_name_fld'], $row->部门全称赋权);
-            }
+                if ($session_arr[$row->功能赋权.'-dept_name_authz'] == '')
+                {
+                    $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('instr(%s,"%s")', $session_arr[$row->功能赋权.'-dept_name_fld'], $row->部门全称赋权);
+                }
+                else
+                {
+                    $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('%s or instr(%s,"%s")', $session_arr[$row->功能赋权.'-dept_name_authz'], $session_arr[$row->功能赋权.'-dept_name_fld'], $row->部门全称赋权);
+                }
 
-            // 数据维护时取出空记录
-            if ($session_arr[$row->功能赋权.'-upkeep_authz'] == '1' || $session_arr[$row->功能赋权.'-dept_name_authz'] != '')
-            {
-                $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-dept_name_authz'], $session_arr[$row->功能赋权.'-dept_name_fld']);
-            }
+                // 数据维护时取出空记录
+                if ($session_arr[$row->功能赋权.'-upkeep_authz'] == '1' || $session_arr[$row->功能赋权.'-dept_name_authz'] != '')
+                {
+                    $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-dept_name_authz'], $session_arr[$row->功能赋权.'-dept_name_fld']);
+                }
 
-            if ($session_arr[$row->功能赋权.'-dept_name_str'] == '')
-            {
-                $session_arr[$row->功能赋权.'-dept_name_str'] = sprintf('"%s"', $row->部门全称赋权);
-            }
-            else
-            {
-                $session_arr[$row->功能赋权.'-dept_name_str'] = sprintf('%s,"%s"', $session_arr[$row->功能赋权.'-dept_name_str'], $row->部门全称赋权);
+                if ($session_arr[$row->功能赋权.'-dept_name_str'] == '')
+                {
+                    $session_arr[$row->功能赋权.'-dept_name_str'] = sprintf('"%s"', $row->部门全称赋权);
+                }
+                else
+                {
+                    $session_arr[$row->功能赋权.'-dept_name_str'] = sprintf('%s,"%s"', $session_arr[$row->功能赋权.'-dept_name_str'], $row->部门全称赋权);
+                }
+
+                continue;
             }
 
             // 角色表中的部门全称赋权为空,启用用户表中的部门全称赋权
-            if ($session_arr[$row->功能赋权.'-dept_name_authz'] == '')
+            if ($user_dept_name_authz != '')
             {
-                foreach ($results as $row)
-                {
-                    if ($session_arr[$row->功能赋权.'-dept_name_fld'] == '')
-                    {
-                        continue;
-                    }
-                    if ($user_dept_name_authz != '')
-                    {
-                        $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('instr(%s,%s)', $session_arr[$row->功能赋权.'-dept_name_fld'], $user_dept_name_authz);
-                        $session_arr[$row->功能赋权.'-dept_name_str'] = sprintf('%s', $user_dept_name_authz);
-                    }
-                }
+                $session_arr[$row->功能赋权.'-dept_name_authz'] = sprintf('instr(%s,%s)', $session_arr[$row->功能赋权.'-dept_name_fld'], $user_dept_name_authz);
+                $session_arr[$row->功能赋权.'-dept_name_str'] = sprintf('%s', $user_dept_name_authz);
             }
         }
 
@@ -423,40 +413,35 @@ class Frame extends Controller
 
         foreach ($results as $row)
         {
-            if ($session_arr[$row->功能赋权.'-location_fld'] == '' || $row->属地赋权 == '')
+            if ($session_arr[$row->功能赋权.'-location_fld'] == '')
             {
                 continue;
             }
 
-            if ($session_arr[$row->功能赋权.'-location_authz'] == '')
+            if ($row->属地赋权 != '')
             {
-                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('instr(%s,"%s")', $session_arr[$row->功能赋权.'-location_fld'], $row->属地赋权);
-            }
-            else
-            {
-                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('%s or instr(%s,"%s")', $session_arr[$row->功能赋权.'-location_authz'], $session_arr[$row->功能赋权.'-location_fld'], $row->属地赋权);
-            }
+                if ($session_arr[$row->功能赋权.'-location_authz'] == '')
+                {
+                    $session_arr[$row->功能赋权.'-location_authz'] = sprintf('instr(%s,"%s")', $session_arr[$row->功能赋权.'-location_fld'], $row->属地赋权);
+                }
+                else
+                {
+                    $session_arr[$row->功能赋权.'-location_authz'] = sprintf('%s or instr(%s,"%s")', $session_arr[$row->功能赋权.'-location_authz'], $session_arr[$row->功能赋权.'-location_fld'], $row->属地赋权);
+                }
 
-            // 数据维护时取出空记录
-            if ($session_arr[$row->功能赋权.'-upkeep_authz'] == '1' || $session_arr[$row->功能赋权.'-location_authz'] != '')
-            {
-                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-location_authz'], $session_arr[$row->功能赋权.'-location_fld']);
+                // 数据维护时取出空记录
+                if ($session_arr[$row->功能赋权.'-upkeep_authz'] == '1' || $session_arr[$row->功能赋权.'-location_authz'] != '')
+                {
+                    $session_arr[$row->功能赋权.'-location_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-location_authz'], $session_arr[$row->功能赋权.'-location_fld']);
+                }
+
+                continue;
             }
 
             // 角色表中的属地赋权为空,启用用户表中的属地赋权
-            if ($session_arr[$row->功能赋权.'-location_authz'] == '')
+            if ($user_location_authz != '')
             {
-                foreach ($results as $row)
-                {
-                    if ($session_arr[$row->功能赋权.'-location_fld'] == '')
-                    {
-                        continue;
-                    }
-                    if ($user_location_authz != '')
-                    {
-                        $session_arr[$row->功能赋权.'-location_authz'] = sprintf('locate(%s,"%s")>0', $session_arr[$row->功能赋权.'-location_fld'], $user_location_authz);
-                    }
-                }
+                $session_arr[$row->功能赋权.'-location_authz'] = sprintf('locate(%s,"%s")>0', $session_arr[$row->功能赋权.'-location_fld'], $user_location_authz);
             }
         }
 
