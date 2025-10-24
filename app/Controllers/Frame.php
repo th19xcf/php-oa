@@ -1,5 +1,5 @@
 <?php
-/* v11.16.3.1.202510232250, from home */
+/* v11.16.4.1.202510241050, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -304,7 +304,7 @@ class Frame extends Controller
                 continue;
             }
 
-            if ($row->部门编码赋权 == '')
+            if ($row->部门编码赋权 != '')
             {
                 if ($session_arr[$row->功能赋权.'-dept_code_authz'] == '')
                 {
@@ -356,7 +356,7 @@ class Frame extends Controller
                 continue;
             }
 
-            if ($row->部门全称赋权 == '')
+            if ($row->部门全称赋权 != '')
             {
                 if ($session_arr[$row->功能赋权.'-dept_name_authz'] == '')
                 {
