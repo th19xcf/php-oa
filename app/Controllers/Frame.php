@@ -1,5 +1,5 @@
 <?php
-/* v11.16.4.1.202510241050, from office */
+/* v11.16.5.1.202510241100, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -435,6 +435,12 @@ class Frame extends Controller
                     $session_arr[$row->功能赋权.'-location_authz'] = sprintf('%s or %s=""', $session_arr[$row->功能赋权.'-location_authz'], $session_arr[$row->功能赋权.'-location_fld']);
                 }
 
+                continue;
+            }
+
+            // 部门全称赋权优先级高于属地赋权
+            if ($session_arr[$row->功能赋权.'-dept_code_authz'] != '' || $session_arr[$row->功能赋权.'-dept_name_authz'] != '')
+            {
                 continue;
             }
 
