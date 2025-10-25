@@ -1,5 +1,5 @@
 <?php
-/* v11.16.5.1.202510241100, from office */
+/* v11.16.6.1.202510251725, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -164,7 +164,7 @@ class Frame extends Controller
                 ifnull(t3.属地字段,"") as 属地字段
             from 
             (
-                select 角色编码,角色名称,功能赋权,
+                select 角色编码,角色名称,功能编码赋权 as 功能赋权,
                     max(备注授权) as 备注授权,
                     max(新增授权) as 新增授权,
                     max(修改授权) as 修改授权,
@@ -176,7 +176,7 @@ class Frame extends Controller
                     min(工号限权) as 工号限权
                 from view_role
                 where 有效标识="1" and 角色编码 in (%s)
-                group by 角色编码,功能赋权
+                group by 角色编码,功能编码赋权
             ) as t1
             left join
             (
@@ -278,7 +278,7 @@ class Frame extends Controller
                 substring_index(substring_index(编码赋权,",",t2.GUID+1),",",-1) as 部门编码赋权
             from
             (
-                select GUID,角色编码,功能赋权,replace(replace(部门编码赋权,"，",",")," ","") as 编码赋权
+                select GUID,角色编码,功能编码赋权 as 功能赋权,replace(replace(部门编码赋权,"，",",")," ","") as 编码赋权
                 from view_role
                 where 有效标识="1" and 角色编码 in (%s)
             ) as t1
@@ -338,7 +338,7 @@ class Frame extends Controller
                 substring_index(substring_index(全称赋权,",",t2.GUID+1),",",-1) as 部门全称赋权
             from
             (
-                select GUID,角色编码,功能赋权,replace(replace(部门全称赋权,"，",",")," ","") as 全称赋权
+                select GUID,角色编码,功能编码赋权 as 功能赋权,replace(replace(部门全称赋权,"，",",")," ","") as 全称赋权
                 FROM view_role
                 where 有效标识="1" and 角色编码 in (%s)
             ) as t1
@@ -400,7 +400,7 @@ class Frame extends Controller
                 substring_index(substring_index(属地,",",t2.GUID+1),",",-1) as 属地赋权
             from
             (
-                select GUID,角色编码,功能赋权,replace(replace(属地赋权,"，",",")," ","") as 属地
+                select GUID,角色编码,功能编码赋权 as 功能赋权,replace(replace(属地赋权,"，",",")," ","") as 属地
                 from view_role
                 where 有效标识="1" and 角色编码 in (%s)
             ) as t1
