@@ -1,5 +1,5 @@
 <?php
-/* v11.16.7.1.202510261845, from home */
+/* v11.16.8.1.202510262150, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -495,6 +495,7 @@ class Frame extends Controller
         // 从session中取出数据
         $session = \Config\Services::session();
         $user_workid = $session->get('user_workid');
+        $user_workid_authz = $session->get('user_workid_authz');
         $function_authz = $session->get('function_authz');
         $dept_authz_cond = $session->get($menu_id.'-dept_authz_cond');
         $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
@@ -1122,7 +1123,7 @@ class Frame extends Controller
             {
                 $select_str = sprintf('%s "*" as `%s`', $select_str, $column['查询名'], $column['列名']);
             }
-            else if ($column['工号限权'] != '0')
+            else if ($column['工号限权'] != '0' && $user_workid_authz != '0')
             {
                 $select_str = sprintf('%s if(%s="%s",%s,"*") as `%s`', $select_str, $column['工号字段'], $user_workid, $column['查询名'], $column['列名']);
             }
