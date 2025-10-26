@@ -1,5 +1,5 @@
 <?php
-/* v11.16.8.1.202510262150, from home */
+/* v11.16.9.1.202510260020, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -396,15 +396,15 @@ class Frame extends Controller
         // 读出角色对应的属地赋权
         $sql = sprintf(
             'select 
-                t1.GUID,角色编码,功能赋权,属地,
-                substring_index(substring_index(属地,",",t2.GUID+1),",",-1) as 属地赋权
+                t1.GUID,角色编码,功能赋权,角色表属地,
+                substring_index(substring_index(角色表属地,",",t2.GUID+1),",",-1) as 属地赋权
             from
             (
-                select GUID,角色编码,功能编码赋权 as 功能赋权,replace(replace(属地赋权,"，",",")," ","") as 属地
+                select GUID,角色编码,功能编码赋权 as 功能赋权,replace(replace(属地赋权,"，",",")," ","") as 角色表属地
                 from view_role
                 where 有效标识="1" and 角色编码 in (%s)
             ) as t1
-            inner join def_GUID as t2 on t2.GUID<(length(属地)-length(replace(属地,",",""))+1)
+            inner join def_GUID as t2 on t2.GUID<(length(角色表属地)-length(replace(角色表属地,",",""))+1)
             group by 角色编码,功能赋权,属地赋权
             order by 角色编码,功能赋权,属地赋权', $user_role_authz);
 

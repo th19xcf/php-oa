@@ -1,5 +1,5 @@
 <?php
-/* v3.9.2.1.202510192300, from home */
+/* v3.9.3.1.202510260020, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -24,6 +24,7 @@ class Store extends Controller
         $user_location = $session->get('user_location');
         $user_location_authz = $session->get('user_location_authz');
         $tree_expand = $session->get('store_tree_expand');
+        $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
 
         $sql = sprintf('
             select 
@@ -34,9 +35,9 @@ class Store extends Controller
                 if(面试信息="","待面试",面试信息) as 面试信息,
                 操作来源,操作人员,操作时间
             from ee_store
-            where locate(属地,"%s")
+            where %s and 有效标识="1" and 删除标识="0"
             order by 属地,field(邀约结果,"通过","未通过","考虑","拒绝","未邀约"),面试信息,招聘渠道,convert(姓名 using gbk)',
-            $user_location_authz);
+            $location_authz_cond);
 
         $query = $model->select($sql);
         $results = $query->getResult();

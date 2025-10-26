@@ -1,5 +1,5 @@
 <?php
-/* v2.3.1.1.202510071925, from home */
+/* v2.3.2.1.202510260020, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -23,6 +23,7 @@ class Train extends Controller
         $session = \Config\Services::session();
         $user_location_authz = $session->get('user_location_authz');
         $tree_expand = $session->get('train_tree_expand');
+        $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
 
         $sql = sprintf('
             select GUID,姓名,身份证号,手机号码,属地,
@@ -31,10 +32,10 @@ class Train extends Controller
                 培训开始日期,预计完成日期,培训完成日期,
                 培训离开日期,培训离开原因
             from ee_train
-            where locate(属地,"%s") and 有效标识!="0"
+            where %s and 有效标识="1" and 删除标识="0"
             order by if(instr(培训状态,"在培"),"在培",培训状态),
                 培训老师,培训开始日期 desc,convert(姓名 using gbk)',
-            $user_location_authz);
+            $location_authz_cond);
 
         $query = $model->select($sql);
         $results = $query->getResult();

@@ -1,5 +1,5 @@
 <?php
-/* v5.3.1.1.202510071955, from home */
+/* v5.3.2.1.202510260020, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -23,6 +23,7 @@ class Employee extends Controller
         $session = \Config\Services::session();
         $user_location_authz = $session->get('user_location_authz');
         $tree_expand = $session->get('employee_tree_expand');
+        $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
 
         $sql = sprintf('
             select GUID,姓名,工号1 as 工号,属地,员工状态,
@@ -30,12 +31,12 @@ class Employee extends Controller
                 岗位名称,岗位类型,结算类型,培训完成日期,
                 floor(datediff(if(离职日期="",curdate(),离职日期),一阶段日期)/30) as 在岗月数
             from ee_onjob
-            where locate(属地,"%s") and 有效标识="1" and 删除标识="0"
+            where %s and 有效标识="1" and 删除标识="0"
             order by 属地,员工状态,
                 convert(部门名称 using gbk),
                 convert(班组 using gbk),
                 convert(姓名 using gbk)',
-            $user_location_authz);
+            $location_authz_cond);
 
         $query = $model->select($sql);
         $results = $query->getResult();
