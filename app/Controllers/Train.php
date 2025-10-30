@@ -1,5 +1,5 @@
 <?php
-/* v2.3.2.1.202510260020, from home */
+/* v2.3.3.1.202510301350, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -184,7 +184,8 @@ class Train extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function ajax($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 记录展开的节点
         if ($arg['操作'] == '展开')
@@ -251,7 +252,8 @@ class Train extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function upkeep($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -302,7 +304,8 @@ class Train extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function insert($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -344,7 +347,8 @@ class Train extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function tran($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 从session中取出数据
         $session = \Config\Services::session();
@@ -509,7 +513,8 @@ class Train extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function delete_row($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         $model = new Mcommon();
 

@@ -1,5 +1,5 @@
 <?php
-/* v5.3.2.1.202510260020, from home */
+/* v5.3.4.1.202510301320, from home */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -163,7 +163,8 @@ class Employee extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function ajax($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         // 记录展开的节点
         if ($arg['操作'] == '展开')
@@ -281,7 +282,8 @@ class Employee extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function upkeep($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         $model = new Mcommon();
 
@@ -427,7 +429,8 @@ class Employee extends Controller
     //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
     public function delete_row($menu_id='', $type='')
     {
-        $arg = $this->request->getJSON(true);
+        $request = \Config\Services::request();
+        $arg = $request->getJSON(true);
 
         $model = new Mcommon();
 
