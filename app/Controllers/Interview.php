@@ -1,5 +1,5 @@
 <?php
-/* v2.5.2.1.202510260020, from home */
+/* v2.5.2.1.202510311630, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -26,6 +26,7 @@ class Interview extends Controller
         $user_location_authz = $session->get('user_location_authz');
         $tree_expand = $session->get('interview_tree_expand');
         $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
+        $user_debug_authz = $session->get('user_debug_authz');
 
         $sql = sprintf('
             select GUID,姓名,身份证号,手机号码,属地,
@@ -39,6 +40,8 @@ class Interview extends Controller
                 field(参培信息,"待参培","已参培","未参培"),
                 招聘渠道,预约培训日期 desc,convert(姓名 using gbk)',
             $location_authz_cond);
+
+        $send_sql = str_replace('"','~~',str_replace('\'','~~',$sql));
 
         $query = $model->select($sql);
         $results = $query->getResult();
@@ -163,6 +166,8 @@ class Interview extends Controller
         $tree_arr = [];
         array_push($tree_arr, $csr_arr);
 
+        // 调试sql
+        $send_sql = str_replace('"','~~',str_replace('\'','~~',$sql));
 
         // 读出列配置信息
         $columns_arr = [];
@@ -287,6 +292,8 @@ class Interview extends Controller
 
         $send['columns_json'] = json_encode($columns_arr);
         $send['object_json'] = json_encode($object_arr);
+
+        $send['SQL'] = json_encode(($user_debug_authz=='1') ? $send_sql : '');
 
         echo view('Vinterview.php', $send);
     }

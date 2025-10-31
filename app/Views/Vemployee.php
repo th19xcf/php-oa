@@ -1,4 +1,4 @@
-<!-- v4.2.1.1.20250910, from office -->
+<!-- v4.3.1.1.202510311630, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -28,7 +28,7 @@
 </head>
 
 <body>
-    <div id='main_tb' ></div>
+    <div id='main_tb'></div>
     <div id='info_box' style='width:100%; height:10px; margin-bottom:3px; background-color: lightblue;'></div>
     <div class='float_box'>
         <div id='tree_box' style='height:100%;'></div>
@@ -90,6 +90,10 @@
             return resultPaths;
         }
 
+        // 调试数据
+        var debug_sql = '<?php echo $SQL; ?>';
+        debug_sql = debug_sql.replace(/~~/g, '"');
+
         // tree视图
         var main_tb = new dhx.Toolbar('main_tb', {css:'toobar-class'});
         main_tb.data.add({id:'刷新', type:'button', value:'刷新'});
@@ -100,6 +104,10 @@
         main_tb.data.add({type:'separator'});
         main_tb.data.add({id:'删除', type:'button', value:'删除'});
         main_tb.data.add({type:'spacer'});
+        if (debug_sql != '')
+        {
+            main_tb.data.add({id:'SQL', type:'button', value:'SQL'});
+        }
         main_tb.data.add({id:'搜索', type:'button', value:'搜索'});
         main_tb.data.add({id:'导入', type:'button', value:'导入'});
 
@@ -248,6 +256,10 @@
                     {
                         delete_submit();
                     }
+                    break;
+                case 'SQL':
+                    console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]');
+                    console.log('SQL=[`', debug_sql, '`]');
                     break;
                 case '搜索':
                     let keyword = prompt('请输入要搜索的关键词:');

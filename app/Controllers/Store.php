@@ -1,5 +1,5 @@
 <?php
-/* v3.9.3.1.202510260020, from home */
+/* v3.10.1.1.202510311630, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -25,6 +25,7 @@ class Store extends Controller
         $user_location_authz = $session->get('user_location_authz');
         $tree_expand = $session->get('store_tree_expand');
         $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
+        $user_debug_authz = $session->get('user_debug_authz');
 
         $sql = sprintf('
             select 
@@ -162,10 +163,13 @@ class Store extends Controller
         $tree_arr = [];
         array_push($tree_arr, $csr_arr);
 
+        // 调试sql
+        $send_sql = str_replace('"','~~',str_replace('\'','~~',$sql));
+
+        // 读出列配置信息
         $columns_arr = [];
         $object_arr = [];
 
-        // 读出列配置信息
         $sql = sprintf('
             select 功能编码,字段模块,部门编码字段,部门全称字段,属地字段,
                 列名,列类型,列宽度,字段名,查询名,
@@ -288,6 +292,8 @@ class Store extends Controller
 
         $send['columns_json'] = json_encode($columns_arr);
         $send['object_json'] = json_encode($object_arr);
+
+        $send['SQL'] = json_encode(($user_debug_authz=='1') ? $send_sql : '');
 
         echo view('Vstore.php', $send);
     }

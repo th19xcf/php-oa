@@ -1,5 +1,5 @@
 <?php
-/* v5.3.4.1.202510301320, from home */
+/* v5.3.4.1.202510311630, from office */
 
 namespace App\Controllers;
 use \CodeIgniter\Controller;
@@ -24,6 +24,7 @@ class Employee extends Controller
         $user_location_authz = $session->get('user_location_authz');
         $tree_expand = $session->get('employee_tree_expand');
         $location_authz_cond = $session->get($menu_id.'-location_authz_cond');
+        $user_debug_authz = $session->get('user_debug_authz');
 
         $sql = sprintf('
             select GUID,姓名,工号1 as 工号,属地,员工状态,
@@ -141,6 +142,9 @@ class Employee extends Controller
         $tree_arr = [];
         array_push($tree_arr, $csr_arr);
 
+        // 调试sql
+        $send_sql = str_replace('"','~~',str_replace('\'','~~',$sql));
+
         //grid
         $grid_arr = [];
 
@@ -154,6 +158,8 @@ class Employee extends Controller
         $send['import_func_id'] = '2042';
         $send['import_func_name'] = '培训人员';
         $send['object_json'] = json_encode($object_arr);
+
+        $send['SQL'] = json_encode(($user_debug_authz=='1') ? $send_sql : '');
 
         echo view('Vemployee.php', $send);
     }
