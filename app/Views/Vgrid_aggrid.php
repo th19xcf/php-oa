@@ -1,4 +1,4 @@
-<!-- v8.9.5.1.202511021650, from home (1.0.202511021650, from home) -->
+<!-- v8.9.6.1.202511022055, from home (1.0.202511021650, from home) -->
 <!DOCTYPE html>
 <html>
 
@@ -1194,6 +1194,7 @@
                     div_block('conditionbox');
                     break;
                 case '颜色标注':
+                {
                     if (color_grid_api != null)
                     {
                         color_grid_api.destroy();
@@ -1258,12 +1259,14 @@
                     win_color_set.show();
                     color_grid_api = agGrid.createGrid($$('color_set_grid'), color_grid_options);
                     break;
+                }
                 case '图形':
                     div_block('chartbox');
                     break;
                 case '单条修改':
                 case '多条修改':
-                    var rows = data_grid_api.getSelectedRows();
+                {
+                    let rows = data_grid_api.getSelectedRows();
 
                     if (rows.length == 0)
                     {
@@ -1317,7 +1320,9 @@
                     $$('footbox').innerHTML = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',提交记录:{' + foot_upkeep + '}</b>';
                     div_block('updatebox');
                     break;
+                }
                 case '表级修改提交':
+                {
                     let send_arr = [];
                     data_grid_api.stopEditing();
                     data_grid_api.forEachNode((rowNode, index) => 
@@ -1339,6 +1344,7 @@
                     });
 
                     break;
+                }
                 case '新增':
                     if (update_flag != id)
                     {
@@ -1352,7 +1358,8 @@
                     div_block('updatebox');
                     break;
                 case '删除':
-                    var rows = data_grid_api.getSelectedRows();
+                {
+                    let rows = data_grid_api.getSelectedRows();
                     if (rows.length == 0)
                     {
                         alert('请先选择要删除的记录');
@@ -1362,8 +1369,10 @@
                         delete_submit();
                     }
                     break;
+                }
                 case '数据钻取':
-                    var rows = data_grid_api.getSelectedRows();
+                {
+                    let rows = data_grid_api.getSelectedRows();
                     if (rows.length == 0)
                     {
                         alert('请先选择要钻取的记录');
@@ -1398,8 +1407,10 @@
                     drill_from = 'data';
                     drill_select(radio_arr);
                     break;
+                }
                 case '数据整理':
-                    var url = '<?php base_url(); ?>/frame/upkeep/<?php echo $func_id; ?>';
+                {
+                    let url = '<?php base_url(); ?>/frame/upkeep/<?php echo $func_id; ?>';
                     dhx.ajax.post(url, null).then(function (data)
                     {
                         alert(data);
@@ -1409,7 +1420,9 @@
                         alert('status' + " " + err.statusText);
                     });
                     break;
+                }
                 case 'SQL':
+                {
                     console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]');
                     console.log('查询模块=[`', '<?php echo $query_module; ?>', '`]');
                     console.log('字段模块=[`', '<?php echo $field_module; ?>', '`]');
@@ -1420,6 +1433,7 @@
                     console.log('SQL=[`', debug_sql, '`]');
                     console.log('查询条件=[`', JSON.stringify(data_grid_api.getFilterModel()), '`]');
                     break;
+                }
                 case '导入':
                     let import_func_id = '<?php echo $func_id; ?>' + '88';
                     parent.window.goto(import_func_id,'导入-'+'<?php echo $import_tag_name; ?>','upload/init/'+import_func_id+'/<?php echo $import_module; ?>');
