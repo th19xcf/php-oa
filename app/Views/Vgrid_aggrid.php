@@ -1,4 +1,4 @@
-<!-- v8.9.4.1.202510251510, from home -->
+<!-- v8.9.5.1.202511021650, from home (1.0.202511021650, from home) -->
 <!DOCTYPE html>
 <html>
 
@@ -266,11 +266,6 @@
             data_tb.data.add({id:'单条修改', type:'button', value:'单条修改'});
             data_tb.data.add({id:'多条修改', type:'button', value:'多条修改'});
         }
-        if (tb_obj['整表授权'] == true)
-        {
-            //data_tb.data.add({id:'整表修改', type:'button', value:'整表修改 - 关闭'});
-            data_tb.data.add({id:'修改提交', type:'button', value:'修改提交'});
-        }
         if (tb_obj['新增授权'] == true)
         {
             data_tb.data.add({id:'新增', type:'button', value:'新增'});
@@ -278,6 +273,11 @@
         if (tb_obj['删除授权'] == true)
         {
             data_tb.data.add({id:'删除', type:'button', value:'删除'});
+        }
+        if (tb_obj['整表授权'] == true)
+        {
+            data_tb.data.add({id:'表级修改提交', type:'button', value:'表级修改提交'});
+            data_tb.disable('表级修改提交');
         }
         data_tb.data.add({type:'spacer'});
         if (tb_obj['SQL'] == true)
@@ -400,22 +400,16 @@
                 resizable: true,
                 editable: (params) =>
                 {
-                    if (table_modify_flag == false) return true;  //readonly时,可以编辑
-
-                    for (var ii in columns_obj)
-                    {
-                        if (columns_obj[ii].列名 != params.colDef.field) continue;
-                        return (columns_obj[ii].可修改 == '1' || columns_obj[ii].可修改 == '2') ? true : false;
-                    }
-
-                    return false;
+                    // 根据配置判断是否可以修改
+                    return true;
                 },
                 filterParams:
                 {
                     maxNumConditions: 5,
                 },
             },
-            readOnlyEdit: !table_modify_flag,
+            //readOnlyEdit: !table_modify_flag,  //只读编辑模式,在onCellEditRequest中控制
+            readOnlyEdit: true,
             rowData: data_grid_obj,
             rowSelection: {mode: 'multiRow', enableClickSelection: true},
             pagination: true,
@@ -458,15 +452,53 @@
                     params.api.setColumnsVisible(col_arr, true);
                 }
             },
-            onCellEditRequest: (event) => 
+
+            onCellEditRequest: (params) => //配合readonlyedit
             {
                 if (table_modify_flag == false)
                 {
                     alert('数据在此处修改无效,请点击`单条修改`或`多条修改`按钮进行修改');
+                    return;
                 }
+
+                data_tb.enable('表级修改提交');
+
+                const new_data = {...params.data};
+                new_data[params.colDef.field] = params.newValue;
+
+                params.node.setData(new_data);
+
+                params.colDef.cellStyle = (p) =>
+                {
+                    if (p.rowIndex.toString() === params.node.id)
+                    {
+                        return {'background-color':'yellow'};
+                    }
+                    return null;
+                }
+
+                params.api.refreshCells(
+                {
+                    force: true,
+                    columns: [params.column.getId()],
+                    rowNodes: [params.node]
+                });
             },
+
             onCellValueChanged : (params) => 
             {
+                // 根据配置判断是否可以修改
+                if (table_modify_flag == false)
+                {
+                    alert('数据在此处修改无效,请点击`单条修改`或`多条修改`按钮进行修改');
+                }
+
+                for (let ii in columns_obj)
+                {
+                    if (columns_obj[ii].列名 != params.colDef.field) continue;
+                    return (columns_obj[ii].可修改 == '1' || columns_obj[ii].可修改 == '2') ? true : false;
+                }
+
                 if (params.newValue != params.oldValue)
                 {
                     if (table_modify_rows.indexOf(params.rowIndex) == -1)
@@ -1285,19 +1317,7 @@
                     $$('footbox').innerHTML = '&nbsp&nbsp<b>' + <?php echo $func_id; ?> + ',提交记录:{' + foot_upkeep + '}</b>';
                     div_block('updatebox');
                     break;
-                case '整表修改':
-                    if (table_modify_flag == false)
-                    {
-                        table_modify_flag = true;
-                        data_tb.data.update('整表修改',{value:'整表修改 - 打开'});
-                    }
-                    else
-                    {
-                        table_modify_flag = false;
-                        data_tb.data.update('整表修改',{value:'整表修改 - 关闭'});
-                    }
-                    break;
-                case '修改提交':
+                case '表级修改提交':
                     let send_arr = [];
                     data_grid_api.stopEditing();
                     data_grid_api.forEachNode((rowNode, index) => 
@@ -1308,7 +1328,7 @@
                         }
                     });
 
-                    var url = '<?php base_url(); ?>/frame/update_table/<?php echo $func_id; ?>';
+                    const url = '<?php base_url(); ?>/frame/update_table/<?php echo $func_id; ?>';
                     dhx.ajax.post(url, send_arr).then(function (data)
                     {
                         alert(data);
@@ -1343,8 +1363,6 @@
                     }
                     break;
                 case '数据钻取':
-                    console.log('数据钻取=[`', '<?php echo $func_id; ?>', '`]', '钻取模块=[`', '<?php echo $drill_module; ?>', '`]');
-
                     var rows = data_grid_api.getSelectedRows();
                     if (rows.length == 0)
                     {
@@ -1381,8 +1399,6 @@
                     drill_select(radio_arr);
                     break;
                 case '数据整理':
-                    console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]', '整理模块=[`', '<?php echo $upkeep_module; ?>', '`]');
-
                     var url = '<?php base_url(); ?>/frame/upkeep/<?php echo $func_id; ?>';
                     dhx.ajax.post(url, null).then(function (data)
                     {
@@ -1398,13 +1414,13 @@
                     console.log('查询模块=[`', '<?php echo $query_module; ?>', '`]');
                     console.log('字段模块=[`', '<?php echo $field_module; ?>', '`]');
                     console.log('整理模块=[`', '<?php echo $upkeep_module; ?>', '`]');
+                    console.log('钻取模块=[`', '<?php echo $drill_module; ?>', '`]');
+                    console.log('整理模块=[`', '<?php echo $upkeep_module; ?>', '`]');
+                    console.log('导入模块=[`', '<?php echo $import_module; ?>', '`]');
                     console.log('SQL=[`', debug_sql, '`]');
-                    let str = JSON.stringify(data_grid_api.getFilterModel());
-                    console.log('查询条件=[`', str, '`]');
+                    console.log('查询条件=[`', JSON.stringify(data_grid_api.getFilterModel()), '`]');
                     break;
                 case '导入':
-                    console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]', '导入模块=[`', '<?php echo $import_module; ?>', '`]');
-
                     let import_func_id = '<?php echo $func_id; ?>' + '88';
                     parent.window.goto(import_func_id,'导入-'+'<?php echo $import_tag_name; ?>','upload/init/'+import_func_id+'/<?php echo $import_module; ?>');
                     break;
