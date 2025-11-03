@@ -1,5 +1,5 @@
 <?php
-/* v11.16.9.1.202510260020, from home */
+/* v11.16.10.1.202511031405, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1125,7 +1125,7 @@ class Frame extends Controller
             }
             else if ($column['工号限权'] != '0' && $user_workid_authz != '0')
             {
-                $select_str = sprintf('%s if(%s="%s",%s,"*") as `%s`', $select_str, $column['工号字段'], $user_workid, $column['查询名'], $column['列名']);
+                $select_str = sprintf('%s if(%s="%s",%s,"-") as `%s`', $select_str, $column['工号字段'], $user_workid, $column['查询名'], $column['列名']);
             }
             else
             {
