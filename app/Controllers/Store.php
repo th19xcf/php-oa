@@ -1,5 +1,5 @@
 <?php
-/* v3.10.1.1.202510311630, from office */
+/* v3.10.2.1.202511030950, from office */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -31,7 +31,7 @@ class Store extends Controller
             select 
                 GUID,姓名,身份证号,性别,年龄,手机号码,
                 学校,专业,现住址,属地,
-                邀约结果,招聘渠道,信息来源,邀约日期,邀约人,
+                邀约结果,招聘渠道,邀约日期,邀约人,
                 邀约业务,邀约岗位,预约面试日期,
                 if(面试信息="","待面试",面试信息) as 面试信息,
                 操作来源,操作人员,操作时间
@@ -332,11 +332,11 @@ class Store extends Controller
         {
             $sql = sprintf('
                 select 姓名,身份证号,手机号码,邀约次数,性别,年龄,
-                    学校,专业,现住址,工作履历,信息来源,
-                    渠道类型,招聘渠道,渠道名称,招聘账号,投递类型,
-                    属地,部门名称,邀约业务,邀约岗位,发布岗位,工作地点,
+                    学校,专业,现住址,工作履历,
+                    渠道类型,招聘渠道,渠道名称,
+                    属地,部门名称,邀约业务,邀约岗位,工作地点,
                     邀约日期,邀约人,邀约结果,
-                    预约面试日期,前端GUID,面试信息,
+                    预约面试日期,面试信息,
                     操作记录,操作来源,操作人员,开始操作时间,结束操作时间,操作时间
                 from ee_store
                 where GUID=%s', $arr[1]);
@@ -355,23 +355,18 @@ class Store extends Controller
             array_push($rows_arr, array('表项'=>'专业', '值'=>$results[0]->专业));
             array_push($rows_arr, array('表项'=>'现住址', '值'=>$results[0]->现住址));
             array_push($rows_arr, array('表项'=>'工作履历', '值'=>$results[0]->工作履历));
-            array_push($rows_arr, array('表项'=>'信息来源', '值'=>$results[0]->信息来源));
             array_push($rows_arr, array('表项'=>'招聘渠道', '值'=>$results[0]->招聘渠道));
             array_push($rows_arr, array('表项'=>'渠道类型', '值'=>$results[0]->渠道类型));
             array_push($rows_arr, array('表项'=>'渠道名称', '值'=>$results[0]->渠道名称));
-            array_push($rows_arr, array('表项'=>'招聘账号', '值'=>$results[0]->招聘账号));
-            array_push($rows_arr, array('表项'=>'投递类型', '值'=>$results[0]->投递类型));
             array_push($rows_arr, array('表项'=>'属地', '值'=>$results[0]->属地));
             array_push($rows_arr, array('表项'=>'部门名称', '值'=>$results[0]->部门名称));
             array_push($rows_arr, array('表项'=>'邀约业务', '值'=>$results[0]->邀约业务));
             array_push($rows_arr, array('表项'=>'邀约岗位', '值'=>$results[0]->邀约岗位));
-            array_push($rows_arr, array('表项'=>'发布岗位', '值'=>$results[0]->发布岗位));
             array_push($rows_arr, array('表项'=>'工作地点', '值'=>$results[0]->工作地点));
             array_push($rows_arr, array('表项'=>'邀约日期', '值'=>$results[0]->邀约日期));
             array_push($rows_arr, array('表项'=>'邀约人', '值'=>$results[0]->邀约人));
             array_push($rows_arr, array('表项'=>'邀约结果', '值'=>$results[0]->邀约结果));
             array_push($rows_arr, array('表项'=>'预约面试日期', '值'=>$results[0]->预约面试日期));
-            array_push($rows_arr, array('表项'=>'前端GUID', '值'=>$results[0]->前端GUID));
             array_push($rows_arr, array('表项'=>'面试信息', '值'=>$results[0]->面试信息));
             array_push($rows_arr, array('表项'=>'操作记录', '值'=>$results[0]->操作记录));
             array_push($rows_arr, array('表项'=>'操作来源', '值'=>$results[0]->操作来源));
@@ -586,13 +581,13 @@ class Store extends Controller
             $sql = sprintf('
                 insert into ee_interview (
                     姓名,身份证号,手机号码,属地,
-                    招聘渠道,渠道类型,渠道名称,信息来源,实习结束日期,
+                    招聘渠道,渠道类型,渠道名称,实习结束日期,
                     面试业务,面试岗位,
                     一次面试日期,一次面试人,一次面试结果,
                     预约培训日期,邀约信息,
                     操作记录,操作来源,操作人员,开始操作时间)
                 select 姓名,身份证号,手机号码,属地,
-                    招聘渠道,渠道类型,渠道名称,信息来源,"" as 实习结束日期,
+                    招聘渠道,渠道类型,渠道名称,"" as 实习结束日期,
                     邀约业务 as 面试业务,邀约岗位 as 面试岗位,
                     "%s" as 住宿,"%s" as 通勤方式,"%s" as 通勤时间,
                     "%s" as 一次面试日期,"%s" as 一次面试人,"%s" as 一次面试结果,
