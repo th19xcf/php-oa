@@ -1,4 +1,4 @@
-<!-- v8.9.6.1.202511022055, from home (1.0.202511021650, from home) -->
+<!-- v8.9.7.1.202603312325, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -401,14 +401,13 @@
                 editable: (params) =>
                 {
                     // 根据配置判断是否可以修改
-                    return true;
+                    return true;  //先放开,在onCellEditRequest中控制
                 },
                 filterParams:
                 {
                     maxNumConditions: 5,
                 },
             },
-            //readOnlyEdit: !table_modify_flag,  //只读编辑模式,在onCellEditRequest中控制
             readOnlyEdit: true,
             rowData: data_grid_obj,
             rowSelection: {mode: 'multiRow', enableClickSelection: true},
@@ -468,9 +467,15 @@
 
                 params.node.setData(new_data);
 
+                // 添加到修改行数组
+                if (table_modify_rows.indexOf(params.node.id) == -1)
+                {
+                    table_modify_rows.push(params.node.id);
+                }
+
                 params.colDef.cellStyle = (p) =>
                 {
-                    if (p.rowIndex.toString() === params.node.id)
+                    if (p.node.id === params.node.id)
                     {
                         return {'background-color':'yellow'};
                     }
@@ -491,25 +496,32 @@
                 if (table_modify_flag == false)
                 {
                     alert('数据在此处修改无效,请点击`单条修改`或`多条修改`按钮进行修改');
+                    return;
                 }
 
+                // 检查列是否可修改
+                let canModify = false;
                 for (let ii in columns_obj)
                 {
                     if (columns_obj[ii].列名 != params.colDef.field) continue;
-                    return (columns_obj[ii].可修改 == '1' || columns_obj[ii].可修改 == '2') ? true : false;
+                    canModify = (columns_obj[ii].可修改 == '1' || columns_obj[ii].可修改 == '2');
+                    break;
+                }
+
+                if (!canModify) {
+                    return;
                 }
 
                 if (params.newValue != params.oldValue)
                 {
-                    if (table_modify_rows.indexOf(params.rowIndex) == -1)
+                    if (table_modify_rows.indexOf(params.node.id) == -1)
                     {
-                        table_modify_rows.push(params.rowIndex);
+                        table_modify_rows.push(params.node.id);
                     }
 
                     params.colDef.cellStyle = (p) =>
                     {
-                        //p.rowIndex.toString() === params.node.id ? {'background-color':'blue'} : {};
-                        if (p.rowIndex.toString() === params.node.id)
+                        if (p.node.id === params.node.id)
                         {
                             return {'background-color':'yellow'};
                         }
@@ -1327,7 +1339,7 @@
                     data_grid_api.stopEditing();
                     data_grid_api.forEachNode((rowNode, index) => 
                     {
-                        if (table_modify_rows.indexOf(index) != -1)
+                        if (table_modify_rows.indexOf(rowNode.id) != -1)
                         {
                             send_arr.push(rowNode.data);
                         }
