@@ -1,4 +1,4 @@
-<!-- v8.9.7.1.202603312325, from home -->
+<!-- v8.10.1.1.202604021425, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -55,6 +55,17 @@
             border: 1px solid #D0D0D0;
             box-sizing: border-box;
             float: left;
+        }
+        /* 可修改列的样式 */
+        .editable-column::before {
+            content: "✏️";
+            font-size: 8px;
+            margin-right: 1px;
+            vertical-align: middle;
+            display: inline-block;
+            line-height: normal;
+            position: relative;
+            top: -1px;
         }
     </style>
 </head>
@@ -377,7 +388,7 @@
         {
             for (let jj in columns_obj)
             {
-                if (columns_obj[jj].列名 != data_columns_arr[ii].field && data_columns_arr[ii].field != '序号') continue;
+                if (columns_obj[jj].列名 != data_columns_arr[ii].field && data_columns_arr[ii].field == '序号') continue;
 
                 if (columns_obj[jj].列类型 == '数值' || data_columns_arr[ii].type == 'numericColumn')
                 {
@@ -386,6 +397,11 @@
                 if (columns_obj[jj].提示条件 != '' || columns_obj[jj].异常条件 != '' || columns_obj[jj].可颜色标注 == '1')                
                 {
                     data_columns_arr[ii].cellStyle = set_cell_style;
+                }
+                // 为可修改的列添加特殊样式
+                if (columns_obj[jj].可修改 == '1' || columns_obj[jj].可修改 == '2')
+                {
+                    data_columns_arr[ii].headerClass = 'editable-column';
                 }
             }
         }
