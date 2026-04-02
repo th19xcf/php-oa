@@ -1,4 +1,4 @@
-<!-- v8.10.1.1.202604021425, from office -->
+<!-- v8.10.2.1.202604021510, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -388,7 +388,7 @@
         {
             for (let jj in columns_obj)
             {
-                if (columns_obj[jj].列名 != data_columns_arr[ii].field && data_columns_arr[ii].field == '序号') continue;
+                if (columns_obj[jj].列名 != data_columns_arr[ii].field || data_columns_arr[ii].field == '序号') continue;
 
                 if (columns_obj[jj].列类型 == '数值' || data_columns_arr[ii].type == 'numericColumn')
                 {
