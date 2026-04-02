@@ -1,4 +1,4 @@
-<!-- v8.10.2.1.202604021510, from office -->
+<!-- v8.10.3.1.202604022040, from home -->
 <!DOCTYPE html>
 <html>
 
@@ -56,10 +56,13 @@
             box-sizing: border-box;
             float: left;
         }
-        /* 可修改列的样式 - 斜体字、下划线 */
+        /* 可修改列的样式 - 斜体字、下划线、加粗 */
         .editable-column {
             /*font-style: italic;*/
             text-decoration: underline;
+            text-decoration-color: green;
+            text-decoration-thickness: 2px;
+            font-weight: bold;
         }
     </style>
 </head>
