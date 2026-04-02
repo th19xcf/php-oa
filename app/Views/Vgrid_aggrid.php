@@ -56,16 +56,10 @@
             box-sizing: border-box;
             float: left;
         }
-        /* 可修改列的样式 */
-        .editable-column::before {
-            content: "✏️";
-            font-size: 8px;
-            margin-right: 1px;
-            vertical-align: middle;
-            display: inline-block;
-            line-height: normal;
-            position: relative;
-            top: -1px;
+        /* 可修改列的样式 - 斜体字、下划线 */
+        .editable-column {
+            /*font-style: italic;*/
+            text-decoration: underline;
         }
     </style>
 </head>
