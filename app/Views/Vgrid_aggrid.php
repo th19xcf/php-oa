@@ -252,6 +252,7 @@
         // 生成主工具栏
         var data_tb = new dhx.Toolbar('data_tb', {css:'toobar-class'});
         data_tb.data.add({id:'刷新', type:'button', value:'刷新'});
+        data_tb.data.add({id:'固定列', type:'button', value:'固定列'});
         data_tb.data.add({id:'字段选择', type:'button', value:'字段选择'});
         data_tb.data.add({id:'设置条件', type:'button', value:'设置条件'});
         if (tb_obj['备注授权'] == true)
@@ -423,7 +424,7 @@
             },
             readOnlyEdit: true,
             rowData: data_grid_obj,
-            rowSelection: {mode: 'multiRow', enableClickSelection: true},
+            rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true },
             pagination: true,
             paginationPageSize: 500,
             paginationPageSizeSelector: [500, 1000, 2000],
@@ -433,6 +434,18 @@
             onGridReady: (params) => 
             {
                 console.log('datagrid ready');
+
+                // 固定默认的复选框列
+                let columns = params.api.getColumns();
+                for (let col of columns) {
+                    if (col.getColId() === 'ag-Grid-SelectionColumn') {
+                        params.api.applyColumnState({
+                            state: [{ colId: 'ag-Grid-SelectionColumn', pinned: 'left' }],
+                            applyOrder: false
+                        });
+                        break;
+                    }
+                }
 
                 let disp_col_obj = JSON.parse('<?php echo $disp_col_json; ?>')
                 if (disp_col_obj.length == 0) return;
@@ -957,7 +970,7 @@
             color_grid_api.stopEditing();
 
             // 获表中的数据
-            color_grid_api.forEachNode((rowNode, index) => 
+            color_grid_api.forEachNode((rowNode, index) =>
             {
                 color_arr['color_col_1'] =  color_arr['col_name_1'];
                 color_arr['color_col_2'] = color_arr['col_name_2'];
@@ -981,6 +994,119 @@
 
             win_color_set.hide();
         });
+
+        function tb_pin_column()
+        {
+            var checkbox_arr = [];
+            var key = '<?php echo $primary_key; ?>';
+            var columns_arr = data_grid_api.getColumns();
+
+            let col = {};
+            col['type'] = 'checkbox';
+            col['text'] = '全选';
+            col['id'] = '全选';
+            col['checked'] = false;
+            checkbox_arr.push(col);
+
+            col = {};
+            col['type'] = 'checkbox';
+            col['text'] = '取消全部';
+            col['id'] = '取消全部';
+            col['checked'] = false;
+            checkbox_arr.push(col);
+
+            for (let ii in columns_arr)
+            {
+                if (columns_arr[ii]['colId'] == key || columns_arr[ii]['colId'] == '序号') continue;
+
+                let col = {};
+                col['type'] = 'checkbox';
+                col['text'] = columns_arr[ii]['colId'];
+                col['id'] = columns_arr[ii]['colId'];
+                col['checked'] = columns_arr[ii]['pinned'] == 'left';
+                checkbox_arr.push(col);
+            }
+
+            const form_pin = new dhx.Form(null,
+            {
+                rows: checkbox_arr
+            });
+
+            form_pin.getItem('全选').events.on('Change', function(value)
+            {
+                if (form_pin.getItem('全选').isChecked())
+                {
+                    form_pin.getItem('取消全部').setValue(false);
+                }
+
+                let col_arr = [];
+                for (let ii in columns_arr)
+                {
+                    if (columns_arr[ii]['colId'] == '<?php echo $primary_key; ?>' || columns_arr[ii]['colId'] == '序号') continue;
+                    form_pin.getItem(columns_arr[ii]['colId']).setValue(true);
+                    col_arr.push(columns_arr[ii]['colId']);
+                }
+                applyPinnedColumns(col_arr, 'left');
+            });
+
+            form_pin.getItem('取消全部').events.on('Change', function(value)
+            {
+                if (form_pin.getItem('取消全部').isChecked())
+                {
+                    form_pin.getItem('全选').setValue(false);
+                }
+
+                let col_arr = [];
+                for (let ii in columns_arr)
+                {
+                    if (columns_arr[ii]['colId'] == '<?php echo $primary_key; ?>' || columns_arr[ii]['colId'] == '序号') continue;
+                    form_pin.getItem(columns_arr[ii]['colId']).setValue(false);
+                    col_arr.push(columns_arr[ii]['colId']);
+                }
+                applyPinnedColumns(col_arr, '');
+            });
+
+            form_pin.events.on('change', function(value)
+            {
+                if (value == '全选' || value == '取消全部') return;
+
+                form_pin.getItem('取消全部').setValue(false);
+
+                let checked = form_pin.getItem(value).getValue();
+                let pinnedState = checked ? 'left' : null;
+                data_grid_api.applyColumnState({
+                    state: [{ colId: value, pinned: pinnedState }],
+                    applyOrder: false
+                });
+            });
+
+            const win_pin = new dhx.Window(
+            {
+                title: '固定列设置',
+                footer: true,
+                modal: true,
+                width: 350,
+                height: 400,
+                closable: true,
+                movable: true
+            });
+
+            win_pin.attach(form_pin);
+            win_pin.show();
+        }
+
+        function applyPinnedColumns(col_arr, pinned)
+        {
+            let state = [];
+            for (let ii in col_arr)
+            {
+                state.push({ colId: col_arr[ii], pinned: pinned == '' ? null : 'left' });
+            }
+            data_grid_api.applyColumnState({
+                state: state,
+                applyOrder: false
+            });
+        }
 
         //////////////////////////
 
@@ -1446,6 +1572,9 @@
                     });
                     break;
                 }
+                case '固定列':
+                    tb_pin_column();
+                    break;
                 case 'SQL':
                 {
                     console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]');
