@@ -1,4 +1,4 @@
-<!-- v8.11.2.1.202604031525, from office -->
+<!-- v8.11.3.1.202604031445, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -63,6 +63,10 @@
             text-decoration-color: green;
             text-decoration-thickness: 2px;
             font-weight: bold;
+        }
+        /* 固定列表头样式 */
+        .pinned-header {
+            background-color: #e6f7ff !important;
         }
     </style>
 </head>
@@ -353,6 +357,26 @@
             columnBorder: { style: 'dotted', width: 1, color: '#c1ccc7' },
         });
 
+        // 固定列表头样式函数
+        function updatePinnedHeaderStyles(api) {
+            let columns = api.getColumns();
+            for (let col of columns) {
+                let colDef = col.getColDef();
+                let isPinned = col.getPinned() === 'left';
+                
+                if (isPinned) {
+                    if (!colDef.headerClass || !colDef.headerClass.includes('pinned-header')) {
+                        colDef.headerClass = colDef.headerClass ? colDef.headerClass + ' pinned-header' : 'pinned-header';
+                    }
+                } else {
+                    if (colDef.headerClass && colDef.headerClass.includes('pinned-header')) {
+                        colDef.headerClass = colDef.headerClass.replace('pinned-header', '').trim();
+                    }
+                }
+            }
+            api.refreshHeader();
+        }
+
         // 生成data_grid
         var data_page = 500;
         var data_columns_obj = JSON.parse('<?php echo $data_col_json; ?>');
@@ -446,6 +470,9 @@
                         break;
                     }
                 }
+
+                // 更新固定列表头样式
+                updatePinnedHeaderStyles(params.api);
 
                 let disp_col_obj = JSON.parse('<?php echo $disp_col_json; ?>')
                 if (disp_col_obj.length == 0) return;
@@ -1010,8 +1037,8 @@
 
             col = {};
             col['type'] = 'checkbox';
-            col['text'] = '取消全部';
-            col['id'] = '取消全部';
+            col['text'] = '全不选';
+            col['id'] = '全不选';
             col['checked'] = false;
             checkbox_arr.push(col);
 
@@ -1036,7 +1063,7 @@
             {
                 if (form_pin.getItem('全选').isChecked())
                 {
-                    form_pin.getItem('取消全部').setValue(false);
+                    form_pin.getItem('全不选').setValue(false);
                 }
 
                 let col_arr = [];
@@ -1049,9 +1076,9 @@
                 applyPinnedColumns(col_arr, 'left');
             });
 
-            form_pin.getItem('取消全部').events.on('Change', function(value)
+            form_pin.getItem('全不选').events.on('Change', function(value)
             {
-                if (form_pin.getItem('取消全部').isChecked())
+                if (form_pin.getItem('全不选').isChecked())
                 {
                     form_pin.getItem('全选').setValue(false);
                 }
@@ -1068,9 +1095,9 @@
 
             form_pin.events.on('change', function(value)
             {
-                if (value == '全选' || value == '取消全部') return;
+                if (value == '全选' || value == '全不选') return;
 
-                form_pin.getItem('取消全部').setValue(false);
+                form_pin.getItem('全不选').setValue(false);
 
                 let checked = form_pin.getItem(value).getValue();
                 let pinnedState = checked ? 'left' : null;
@@ -1078,6 +1105,7 @@
                     state: [{ colId: value, pinned: pinnedState }],
                     applyOrder: false
                 });
+                updatePinnedHeaderStyles(data_grid_api);
             });
 
             const win_pin = new dhx.Window(
@@ -1100,12 +1128,16 @@
             let state = [];
             for (let ii in col_arr)
             {
-                state.push({ colId: col_arr[ii], pinned: pinned == '' ? null : 'left' });
+                state.push({ 
+                    colId: col_arr[ii], 
+                    pinned: pinned == '' ? null : 'left'
+                });
             }
             data_grid_api.applyColumnState({
                 state: state,
                 applyOrder: false
             });
+            updatePinnedHeaderStyles(data_grid_api);
         }
 
         //////////////////////////
