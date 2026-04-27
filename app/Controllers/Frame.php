@@ -1,5 +1,5 @@
 <?php
-/* v11.16.11.1.202603312325, from home */
+/* v11.16.12.1.202604272240, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -712,7 +712,7 @@ class Frame extends Controller
         $results = $model->select($sql)->getResult();
         foreach ($results as $row)
         {
-            $comment_table = $row->数据表名;
+            $comment_table = $row->备注表名;
 
             str_replace(' ', '', $row->原表字段);
             str_replace('；', ';', $row->原表字段);
