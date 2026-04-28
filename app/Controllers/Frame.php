@@ -1,5 +1,5 @@
 <?php
-/* v11.16.12.1.202604272240, from home */
+/* v11.16.13.1.202604281655, from home */
 namespace App\Controllers;
 use \CodeIgniter\Controller;
 use App\Models\Mcommon;
@@ -1292,6 +1292,7 @@ class Frame extends Controller
         $send = [];
         $send['grid_style'] = json_encode($grid_style);
         $send['drill_module'] = json_encode(($user_debug_authz=='1') ? $drill_module : '');
+        $send['comment_module'] = json_encode(($user_debug_authz=='1') ? $comment_module : '');
         $send['upkeep_module'] = json_encode(($user_debug_authz=='1') ? $data_upkeep : '');
         $send['import_module'] = json_encode(($user_debug_authz=='1') ? $import_module : '');
         $send['SQL'] = json_encode(($user_debug_authz=='1') ? $send_sql : '');

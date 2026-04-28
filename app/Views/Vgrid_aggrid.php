@@ -1,4 +1,4 @@
-<!-- v8.11.3.1.202604031445, from office -->
+<!-- v8.11.4.1.202604281655, from office -->
 <!DOCTYPE html>
 <html>
 
@@ -1612,8 +1612,8 @@
                     console.log('功能编码=[`', '<?php echo $func_id; ?>', '`]');
                     console.log('查询模块=[`', '<?php echo $query_module; ?>', '`]');
                     console.log('字段模块=[`', '<?php echo $field_module; ?>', '`]');
-                    console.log('整理模块=[`', '<?php echo $upkeep_module; ?>', '`]');
                     console.log('钻取模块=[`', '<?php echo $drill_module; ?>', '`]');
+                    console.log('批注模块=[`', '<?php echo $comment_module; ?>', '`]');
                     console.log('整理模块=[`', '<?php echo $upkeep_module; ?>', '`]');
                     console.log('导入模块=[`', '<?php echo $import_module; ?>', '`]');
                     console.log('SQL=[`', debug_sql, '`]');
